@@ -109,14 +109,14 @@ Section bfn.
       red in H2 |- *; rewrite bft_f_fix_3.
       simpl; rewrite <- app_nil_end; auto.
     + simpl in Hm; subst; destruct Hmm as (H1 & H2).
-      apply Forall2_app_inv in H1.
-      2: apply Forall2_length in H1; repeat rewrite app_length in H1; simpl in H1; omega.
-      destruct H1 as (H1 & H3).
-      apply Forall2_cons_inv in H3; destruct H3 as (H3 & H4).
-      apply Forall2_cons_inv, proj1 in H4.
-      split; auto.
-      red in H2 |- *. 
-      rewrite bft_f_fix_3; simpl; auto.
+      Forall2 inv H1 as H3.
+      * Forall2 inv H1 as H4.
+        Forall2 inv H1 as H5.
+        split; auto.
+        red in H2 |- *. 
+        rewrite bft_f_fix_3; simpl; auto.
+      * apply Forall2_length in H1. 
+        repeat rewrite app_length in H1; simpl in H1; omega.
   Defined.
 
   Section bfn.
@@ -133,9 +133,9 @@ Section bfn.
       + apply Acc_measure.
       + exfalso; subst; apply proj1 in Hl; inversion Hl.
       + subst; destruct Hl as (H1 & H2).
-        apply Forall2_cons_inv in H1; destruct H1 as (H1 & H0).
-        apply Forall2_nil_inv_right in H0; subst.
-        split; auto.
+        Forall2 inv H1 as H3.
+        Forall2 inv H1 as H1.
+        subst; split; auto.
         red in H2.
         rewrite <- bft_std_eq_bft; auto.
     Qed.

@@ -7,7 +7,7 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-(** Bibary trees *)
+(** Binary trees *)
 
 Require Import List.
 
