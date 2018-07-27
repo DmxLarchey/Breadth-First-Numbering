@@ -7,41 +7,12 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-(** Extraction of a breadth-first search and breadth-first numbering algorithms 
-    from Coq to Ocaml 
+(** Extraction of breadth-first numbering algorithm from Coq to Ocaml 
 
        see http://okasaki.blogspot.com/2008/07/breadth-first-numbering-algorithm-in.html
        and https://www.westpoint.edu/eecs/SiteAssets/SitePages/Faculty%20Publication%20Documents/Okasaki/jfp95queue.pdf
        and https://www.cs.cmu.edu/~rwh/theses/okasaki.pdf
        and https://www.westpoint.edu/eecs/SiteAssets/SitePages/Faculty%20Publication%20Documents/Okasaki/icfp00bfn.pdf
-
-*)
-
-(* open List;;
-
-   type 'a bt = Leaf of 'a | Node of 'a bt * 'a * 'a bt;;
-
-   let root t = match t with Leaf x -> x | Node (_,x,_) -> x;;
-
-   let rec subt ll =
-     match ll with
-       | []                 -> []
-       | Leaf _       :: ll -> subt ll
-       | Node (a,_,b) :: ll -> a :: b :: subt ll;;
-
-  let rec niveaux ll =
-    match ll with
-      | [] -> []
-      | _  -> map root ll :: niveaux (subt ll);;
-
-
-  let rec list2bt x ll =
-    match ll with
-      | []    -> Leaf 0
-      | y::ll -> Node (Leaf y,x,list2bt x ll);;
-
-  niveaux [Node (Leaf 1,2,Leaf 3)];;
-  niveaux [list2bt 0 [1;2;3;4;5]];;
 
 *)
 

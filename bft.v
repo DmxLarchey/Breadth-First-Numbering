@@ -7,17 +7,9 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-(** Extraction of a breadth-first search and breadth-first numbering algorithms 
-    from Coq to Ocaml 
+(** Extraction of a breadth-first traversal from Coq to Ocaml 
 
-       see http://okasaki.blogspot.com/2008/07/breadth-first-numbering-algorithm-in.html
-       and https://www.westpoint.edu/eecs/SiteAssets/SitePages/Faculty%20Publication%20Documents/Okasaki/jfp95queue.pdf
-       and https://www.cs.cmu.edu/~rwh/theses/okasaki.pdf
-       and https://www.westpoint.edu/eecs/SiteAssets/SitePages/Faculty%20Publication%20Documents/Okasaki/icfp00bfn.pdf
-
-*)
-
-(* open List;;
+   open List;;
 
    type 'a bt = Leaf of 'a | Node of 'a bt * 'a * 'a bt;;
 
