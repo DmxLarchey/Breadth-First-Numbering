@@ -4,3 +4,5 @@ bft.v
 bt.v
 queues.v
 bfn.v
+fifo.v
+bfn_fifo.v

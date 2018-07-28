@@ -244,6 +244,7 @@ Section breadth_first_traversal.
 
 End breadth_first_traversal.
 
+Require Import Extraction.
 Recursive Extraction bft_std bft.
 
 Check bft_std_eq_bft.
