@@ -59,3 +59,49 @@ Section fifo_trivial.
   Defined.
 
 End fifo_trivial.
+
+Section fifo_two_lists.
+
+  Variable X : Type.
+
+  Implicit Type q : (list X * list X).
+
+  Let Q := (list X * list X)%type.
+  Let fifo_list q := let (l,r) := q in r++rev l.
+  Let fifo_nil : Q := (nil,nil).
+  Let fifo_enq q x := let (l,r) := q in (x::l,r).
+  Let fifo_deq q (Hq : fifo_list q <> nil) : X * Q.
+  Proof.
+    revert Hq.
+    refine (match q with 
+      | (l,x::r)  => fun _ => (x,(l,r))
+      | (l,nil)   => match rev l as rl return rev l = rl -> _ with
+        | nil   => fun H E => _
+        | x::rl => fun _ _ => (x,(nil,rl))
+      end eq_refl
+    end).
+    destruct E; auto.
+  Defined.
+  
+  Let fifo_void q := 
+    match q with (nil,nil) => true | _ => false end.
+
+  Definition fifo_two_lists : fifo X.
+  Proof.
+    exists Q fifo_list fifo_nil fifo_enq fifo_deq fifo_void; auto.
+    + intros (l,r) x; simpl; rewrite app_ass; auto.
+    + intros (l,[ | x r]); simpl; auto.
+      generalize (rev l); clear l; intros [ | x rl ].
+      * intros []; reflexivity.
+      * intros _; apply app_nil_end.
+    + intros (l,r); simpl.
+      destruct l as [ | x l ].
+      * destruct r; simpl; split; auto; discriminate.
+      * simpl. destruct r; destruct (rev l); split; discriminate.
+  Defined.
+
+End fifo_two_lists.
+
+Section fifo_two_lazy_lists.
+
+End fifo_two_lazy_lists.

@@ -168,9 +168,10 @@ End bfn.
 
 Require Import Extraction.
 
-Definition bfn X := bfn_gen (fifo_trivial (bt X)) (fifo_trivial (bt nat)).
+Definition bfn X := bfn_gen (fifo_two_lists (bt X)) (fifo_two_lists (bt nat)).
 
-Extraction Inline bfn_f_gen bfn_gen fifo_trivial.
+
+(* Extraction Inline bfn_f_gen bfn_gen fifo_trivial. *)
 Recursive Extraction bfn.
 
 Check bfn.
