@@ -30,6 +30,92 @@ Section measure_rect.
 
 End measure_rect.
 
+Section zip.
+
+  Variable (X : Type) (f : X -> X -> X).
+
+  Fixpoint zip l m : list X :=
+    match l, m with
+      | nil,  _    => m
+      | _,    nil  => l
+      | x::l, y::m => f x y :: zip l m
+    end.
+
+  Fact zip_fix_1 l : zip l nil = l.
+  Proof. destruct l; auto. Qed.
+
+  Fact zip_spec l m c : In c (zip l m) <-> (exists m1 m2, length l <= length m1 /\ m = m1++c::m2)
+                                        \/ (exists l1 l2, length m <= length l1 /\ l = l1++c::l2)
+                                        \/ (exists l1 x l2 m1 y m2, c = f x y /\ l = l1++x::l2 /\ m = m1++y::m2 /\ length l1 = length m1). 
+  Proof.
+    split.
+    + revert m; induction l as [ | x l IHl ]; simpl; intros m H.
+      * apply in_split in H; destruct H as (m1 & m2 & ?); subst.
+        left; exists m1, m2; split; auto; omega.
+      * destruct m as [ | y m ]; destruct H as [ H | H ].
+        - right; left; subst; exists nil, l; auto.
+        - apply in_split in H; destruct H as (l1 & l2 & ?); subst.
+          right; left; exists (x::l1), l2; split; auto; simpl; omega.
+        - subst; right; right; exists nil, x, l, nil, y, m; simpl; auto.
+        - destruct (IHl _ H) as [ (m1 & m2 & H1 & H2) 
+                              | [ (l1 & l2 & H1 & H2) 
+                                | (l1 & a & l2 & m1 & b & m2 & H1 & H2 & H3 & H4) ] ].
+          ++ left; subst; exists (y::m1), m2; simpl; split; auto; omega.
+          ++ right; left; subst; exists (x::l1), l2; simpl; split; auto; omega.
+          ++ right; right; subst; exists (x::l1), a, l2, (y::m1), b, m2; simpl; auto.
+    + intros [ (m1 & m2 & H1 & H2) 
+           | [ (l1 & l2 & H1 & H2) 
+             | (l1 & a & l2 & m1 & b & m2 & H1 & H2 & H3 & H4) ] ]; subst.
+      * revert m1 H1; induction l as [ | x l IHl ]; simpl; intros m H1.
+        - apply in_or_app; simpl; auto.
+        - destruct m; simpl in H1 |- *; try omega.
+          right; apply IHl; omega.
+      * revert l1 H1; induction m as [ | y m IHm ]; simpl; intros l H1.
+        - rewrite zip_fix_1; apply in_or_app; simpl; auto.
+        - destruct l; simpl in H1 |- *; try omega.
+          right; apply IHm; omega.
+      * revert m1 H4; induction l1; simpl; intros [] H1; simpl; try discriminate; auto.
+  Qed.
+
+End zip.
+
+Section app.
+
+  Variable X : Type.
+
+  Fact split_In ll l (x : X) r : ll = l++x::r -> In x ll.
+  Proof. intros; subst; apply in_or_app; simpl; auto. Qed.
+
+  Fact in_concat_iff ll (x : X) : In x (concat ll) <-> exists l, In x l /\ In l ll.
+  Proof.
+    split.
+    * induction ll as [ | l ll IH ]; simpl.
+      - tauto.
+      - intros H; apply in_app_or in H.
+        destruct H as [ H | H ].
+        + exists l; split; auto.
+        + destruct IH as (l1 & ? & ?); auto; exists l1; auto.
+   * intros (l & H1 & H2).
+     apply in_split in H2.
+     destruct H2 as (ll1 & ll2 & ?); subst.
+     rewrite concat_app; apply in_or_app; simpl; right.
+     apply in_or_app; simpl; auto.
+  Qed.
+
+End app.
+
+Section Forall.
+
+  Variable (X : Type) (R : X -> Prop).
+
+  Fact Forall_app l m : Forall R l -> Forall R m -> Forall R (l++m).
+  Proof. induction 1; simpl; auto. Qed.
+
+  Fact Forall_map Y f l : Forall (fun y : Y => R (f y)) l -> Forall R (map f l).
+  Proof. induction 1; constructor; auto. Qed.
+
+End Forall.
+
 Section Forall2.
 
   Variables (X Y : Type) (R : X -> Y -> Prop).

@@ -6,3 +6,4 @@ queues.v
 bfn.v
 fifo.v
 bfn_fifo.v
+bft_spec.v

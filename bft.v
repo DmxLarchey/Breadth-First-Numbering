@@ -42,13 +42,6 @@ Require Import utils bt.
 
 Set Implicit Arguments.
 
-Fixpoint zip {X: Type} (f : X -> X -> X) (l m: list X): list X :=
-  match l, m with
-    | nil,  _    => m
-    | _,    nil  => l
-    | x::l, y::m => f x y :: zip f l m
-  end.
-
 Section breadth_first_traversal.
 
   Context (X : Type).
