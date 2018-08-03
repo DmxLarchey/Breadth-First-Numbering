@@ -7,8 +7,6 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-(** Binary trees *)
-
 Require Import List.
 
 Set Implicit Arguments.
@@ -49,7 +47,7 @@ Section fifo_trivial.
     intros []; reflexivity.
   Defined.
   
-  Let fifo_void q :=  match q with nil => true | _ => false end.
+  Let fifo_void q: bool:=  match q with nil => true | _ => false end.
 
   Definition fifo_trivial : fifo X.
   Proof.
@@ -78,7 +76,7 @@ Section rev_linear.
     rewrite IHm, app_ass; auto.
   Qed.
 
-  Definition rev_linear l := rev_aux nil l.
+  Definition rev_linear l: list X := rev_aux nil l.
 
   Fact rev_linear_spec l : rev_linear l = rev l.
   Proof.
@@ -111,7 +109,7 @@ Section fifo_two_lists.
     destruct E; auto.
   Defined.
   
-  Let fifo_void q := 
+  Let fifo_void q: bool :=
     match q with (nil,nil) => true | _ => false end.
 
   Definition fifo_two_lists : fifo X.
