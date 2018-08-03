@@ -13,7 +13,7 @@ Set Implicit Arguments.
 
 Section measure_rect.
 
-  Variables (X : Type) (m : X -> nat) (P : X -> Type)
+  Context  {X : Type} (m : X -> nat) (P : X -> Type)
             (HP : forall x, (forall y, m y < m x -> P y) -> P x).
 
   Let R x y := m x < m y.

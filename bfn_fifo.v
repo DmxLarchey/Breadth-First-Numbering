@@ -25,7 +25,7 @@ Section seq_an.
 
   (* seq_an a n = [a;a+1;...;a+(n-1)] *)
 
-  Fixpoint seq_an a n := 
+  Fixpoint seq_an a n: list nat :=
     match n with
       | 0    => nil
       | S n  => a::seq_an (S a) n
@@ -40,7 +40,7 @@ Section seq_an.
       [ | rewrite IHn ]; omega.
   Qed.
 
-  Fixpoint is_seq_from n (l : list nat) { struct l } :=
+  Fixpoint is_seq_from n (l : list nat) { struct l }: Prop :=
     match l with  
       | nil  => True
       | x::l => n=x /\ is_seq_from (S n) l

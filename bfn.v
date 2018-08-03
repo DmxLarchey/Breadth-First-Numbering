@@ -25,7 +25,7 @@ Section seq_an.
 
   (* seq_an a n = [a;a+1;...;a+(n-1)] *)
 
-  Fixpoint seq_an a n := 
+  Fixpoint seq_an a n: list nat :=
     match n with
       | 0    => nil
       | S n  => a::seq_an (S a) n
@@ -40,7 +40,7 @@ Section seq_an.
       [ | rewrite IHn ]; omega.
   Qed.
 
-  Fixpoint is_seq_from n (l : list nat) { struct l } :=
+  Fixpoint is_seq_from n (l : list nat) { struct l }: Prop :=
     match l with  
       | nil  => True
       | x::l => n=x /\ is_seq_from (S n) l
@@ -61,7 +61,7 @@ End seq_an.
 
 (** Of course, this needs to be replaced by a queue to obtain something efficient *)
 
-Definition list_snoc_match X l : 2 <= length l -> { x : X & { y : _ & { m | l = m++y::x::nil } } }.
+Definition list_snoc_match (X: Type) (l: list X) : 2 <= length l -> { x : X & { y : _ & { m | l = m++y::x::nil } } }.
 Proof.
   rewrite <- (rev_involutive l), rev_length.
   destruct (rev l) as [ | x [ | y l' ] ]; simpl; try omega; intros _.
@@ -108,7 +108,7 @@ Section bfn.
       subst; split; auto.
       red in H2 |- *; rewrite bft_f_fix_3.
       simpl; rewrite <- app_nil_end; auto.
-    + simpl in Hm; subst; destruct Hmm as (H1 & H2).
+    + subst; destruct Hmm as (H1 & H2).
       Forall2 inv H1 as H3.
       * Forall2 inv H1 as H4.
         Forall2 inv H1 as H5.
