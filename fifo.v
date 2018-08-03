@@ -60,6 +60,33 @@ Section fifo_trivial.
 
 End fifo_trivial.
 
+Section rev_linear.
+
+  Variable (X : Type).
+  Implicit Type (l m : list X).
+
+  Let rev_aux : list X -> list X -> list X :=
+    fix loop l m { struct m } :=
+      match m with
+        | nil  => l
+        | x::m => loop (x::l) m
+      end.
+
+  Let rev_aux_spec l m : rev_aux l m = rev m ++ l.
+  Proof.
+    revert l; induction m as [ | x m IHm ]; simpl; intros l; auto.
+    rewrite IHm, app_ass; auto.
+  Qed.
+
+  Definition rev_linear l := rev_aux nil l.
+
+  Fact rev_linear_spec l : rev_linear l = rev l.
+  Proof.
+    unfold rev_linear; rewrite rev_aux_spec, <- app_nil_end; auto.
+  Qed.
+
+End rev_linear.
+
 Section fifo_two_lists.
 
   Variable X : Type.
@@ -75,11 +102,12 @@ Section fifo_two_lists.
     revert Hq.
     refine (match q with 
       | (l,x::r)  => fun _ => (x,(l,r))
-      | (l,nil)   => match rev l as rl return rev l = rl -> _ with
+      | (l,nil)   => match rev_linear l as rl return rev_linear l = rl -> _ with
         | nil   => fun H E => _
         | x::rl => fun _ _ => (x,(nil,rl))
       end eq_refl
     end).
+    rewrite rev_linear_spec in H.
     destruct E; auto.
   Defined.
   
@@ -91,6 +119,7 @@ Section fifo_two_lists.
     exists Q fifo_list fifo_nil fifo_enq fifo_deq fifo_void; auto.
     + intros (l,r) x; simpl; rewrite app_ass; auto.
     + intros (l,[ | x r]); simpl; auto.
+      rewrite rev_linear_spec.
       generalize (rev l); clear l; intros [ | x rl ].
       * intros []; reflexivity.
       * intros _; apply app_nil_end.
