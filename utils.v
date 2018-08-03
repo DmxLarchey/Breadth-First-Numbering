@@ -77,6 +77,11 @@ Section zip.
       * revert m1 H4; induction l1; simpl; intros [] H1; simpl; try discriminate; auto.
   Qed.
 
+  Variable (P : X -> Prop).
+
+  Fact zip_monotone l m : Forall P l -> Forall P m -> (forall x y, In x l -> In y m -> P (f x y)) -> Forall P (zip l m).
+  Proof. intros H; revert H m; do 2 (induction 1; simpl; auto). Qed.
+
 End zip.
 
 Section app.

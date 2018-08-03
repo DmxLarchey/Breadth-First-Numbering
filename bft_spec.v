@@ -31,6 +31,17 @@ Section sorted.
     + apply IH2; intros; apply H3; simpl; auto.
   Qed.
 
+  Variable (f : X -> X) (Hf : forall x y, R x y -> R (f x) (f y)).
+
+  Fact sorted_map l : sorted l -> sorted (map f l).
+  Proof.
+    induction 1 as [ | x l H1 H2 IH2 ]; simpl; constructor; auto.
+    apply Forall_forall.
+    rewrite Forall_forall in H1.
+    intros y; rewrite in_map_iff.
+    intros (? & ? & ?); subst; auto.
+  Qed.
+
 End sorted.
 
 Section increase.
@@ -66,6 +77,17 @@ Section increase.
   End map.
 
 End increase.
+
+Section sorted_concat.
+
+  Variable (X : Type) (P : nat -> list X -> Prop) (R : X -> X -> Prop) 
+           (HPR : forall i j x l y m, i < j -> P i l -> P j l -> In x l -> In y m -> R x y).
+
+  Fact concat_sorted n ll : increase P n ll -> Forall (sorted R) ll -> sorted R (concat ll).
+  Proof.
+  Admitted.
+
+End sorted_concat.
 
 Section bt_branches.
 
@@ -296,8 +318,24 @@ Section bt_branches.
     + repeat constructor.
     + constructor.
       * repeat constructor.
-      * 
-  Admitted. 
+      * apply zip_monotone.
+        - apply Forall_map; revert Hu; apply Forall_impl.
+          intros; apply sorted_map; auto.
+          intros; constructor; auto.
+        - apply Forall_map; revert Hv; apply Forall_impl.
+          intros; apply sorted_map; auto.
+          intros; constructor; auto.
+        - rewrite Forall_forall in Hu, Hv.
+          intros ? ?; do 2 rewrite in_map_iff.
+          intros (l & ? & H1) (m & ? & H2); subst.
+          apply sorted_app.
+          ++ intros c d; do 2 rewrite in_map_iff.
+             intros (r & ? & ?) (s & ? & ?); subst; constructor.
+          ++ apply sorted_map; auto.
+             intros; constructor; auto.
+          ++ apply sorted_map; auto.
+             intros; constructor; auto.
+  Qed. 
 
   Definition bft_br t : list (list bool) := concat (niveaux_br t).
 
@@ -306,6 +344,9 @@ Section bt_branches.
     unfold bft_br; intros l; rewrite in_concat_iff.
     intros (ll & H1 & H2); apply niveaux_br_spec_1 with ll; auto.
   Qed.
+
+  Fact bft_br_spec_2 t : sorted bft_order (bft_br t).
+  Proof.
 
   Fixpoint list_in_map U V (P : U -> Prop) (f : forall u, P u -> V) (l : list U) : 
                (forall x, In x l -> P x) -> list V.
