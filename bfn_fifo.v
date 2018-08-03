@@ -59,7 +59,7 @@ Section seq_an.
 
 End seq_an.
 
-Definition fifo_sum { X } { f : fifo (bt X) } (q : f) := lsum (fifo_list q). 
+Definition fifo_sum { X } { f : fifo (bt X) } (q : f): nat := lsum (fifo_list q).
 
 Section bfn.
 
@@ -69,11 +69,12 @@ Section bfn.
      its breadth first traversal yields [n;n+1;....;m[ for some m
    *)
 
-  Definition is_bfn_from n l := is_seq_from n (bft_f l).
+  Definition is_bfn_from n l: Prop := is_seq_from n (bft_f l).
 
-  (* Breath First Numbering: maps a forest X to a forest nat such that
+  (* Breadth First Numbering: maps a forest X to a forest nat such that
           1) the two forests are of the same shape
-          2) the result is a breadth first numbering from n  
+          2) the result is a breadth first numbering from n
+     For this, the resulting forest is interpreted as a snoc list (in the spec., it is reversed as a list).
    *)
 
   Fixpoint bfn_f_gen n (p : fX) (D : Acc (fun x y => fifo_sum x < fifo_sum y) p) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
