@@ -200,6 +200,18 @@ Section bt_branches.
           apply Forall_impl; auto.
   Qed.
 
+  (* dft_br contains the branches of t *)
+
+  Fact dft_br_spec l t : btb l t <-> In l (dft_br t).
+  Proof.
+    split.
+    + induction 1 as [ t | l u x v H IH | m u x v H IH ]; simpl.
+      * destruct t; simpl; auto.
+      * right; apply in_or_app; left; apply in_map; auto.
+      * right; apply in_or_app; right; apply in_map; auto.
+    + revert l; apply Forall_forall, dft_br_spec_1.
+  Qed.
+
   (* number of branches equals size of tree *)
 
   Fact dft_br_spec_2 t : length (dft_br t) = m_bt t.
@@ -237,6 +249,21 @@ Section bt_branches.
       * right; constructor.
       * left; constructor.
       * destruct (IHl m); [ left | right ]; constructor; auto.
+  Qed.
+
+  (* the branches of t in dft_br t are sorted according to lb_lex *)
+
+  Fact dft_br_spec_3 t : sorted lb_lex (dft_br t).
+  Proof.
+    induction t as [ x | u Hu x v Hv ]; simpl.
+    + do 2 constructor.
+    + constructor.
+      * apply Forall_app; rewrite Forall_forall; intros y; rewrite in_map_iff; intros (z & ? & H); subst y; constructor.
+      * apply sorted_app.
+        - intros a b; do 2 rewrite in_map_iff.
+          intros (r & ? & H1) (s & ? & H2); subst a b; constructor.
+        - apply sorted_map; auto; constructor; auto.
+        - apply sorted_map; auto; constructor; auto.
   Qed.
 
   (* The Breadth First Search order between bt branches *)
@@ -509,6 +536,9 @@ Section bt_branches.
   Proof. unfold bft_std, bft_br; rewrite map_concat, map_concat, niveaux_br_spec_4; auto. Qed.
 
 End bt_branches.
+
+Check dft_br_spec.
+Check dft_br_spec_3.
 
 Check bft_br_spec_1.
 Check bft_br_spec_2.
