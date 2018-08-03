@@ -13,6 +13,44 @@ Require Import utils bt bft.
 
 Set Implicit Arguments.
 
+Section map.
+
+  Variables (X Y : Type) (f g : X -> Y).
+
+  Fact map_ext l : (forall x, In x l -> f x = g x) -> map f l = map g l.
+  Proof. rewrite <- Forall_forall; induction 1; simpl; f_equal; auto. Qed.
+
+End map.
+
+Section map_concat_zip.
+
+  Variable (X Y : Type) (f : X -> Y) (g : X -> X -> X) (h : Y -> Y -> Y).
+
+  Fact map_concat ll : map f (concat ll) = concat (map (map f) ll).
+  Proof. 
+    induction ll; simpl; f_equal; auto.
+    rewrite map_app; f_equal; auto.
+  Qed.
+
+  Hypothesis Hgh : forall x y, f (g x y) = h (f x) (f y). 
+
+  Fact map_zip l m : map f (zip g l m) = zip h (map f l) (map f m).
+  Proof. revert m; induction l; intros [|]; simpl; f_equal; auto. Qed.
+
+End map_concat_zip.
+
+Section zip_app.
+
+  Variable (X : Type).
+
+(*
+  Fact zip_app_left l m x u : In x u -> In u l -> In x (zip (@app X) l m).
+  Proof.
+    revert m; induction l as [ | y l IHl ]; intros [|]; simpl; try tauto.
+    intros [|]; subst.
+*)
+End zip_app.
+
 Section sorted.
 
   Variable (X : Type) (R : X -> X -> Prop).
@@ -44,6 +82,17 @@ Section sorted.
 
 End sorted.
 
+Fact sorted_mono X (R S : X -> X -> Prop) l : (forall x y, In x l -> In y l -> R x y -> S x y) -> sorted R l -> sorted S l.
+Proof.
+  intros H1 H2; revert H2 H1.
+  induction 1 as [ | x l H1 H2 IH2 ]; intros H3.
+  + constructor.
+  + constructor.
+    * revert H1; do 2 rewrite Forall_forall.
+      intros H1 y Hy; apply H3; simpl; auto.
+    * apply IH2; intros ? ? ? ?; apply H3; simpl; auto.
+Qed.
+
 Section increase.
  
   Variable (X : Type) (P : nat -> X -> Prop).
@@ -51,6 +100,16 @@ Section increase.
   Inductive increase : nat -> list X -> Prop :=
     | in_increase_0 : forall n, increase n nil
     | in_increase_1 : forall n x l, P n x -> increase (S n) l -> increase n (x::l).
+
+  Fact increase_inv n l x : increase n l -> In x l -> exists k, n <= k /\ P k x.
+  Proof.
+    intros H Hx; revert H; induction 1 as [ n | n y l H1 H2 IH2 ]; simpl.
+    + destruct Hx.
+    + destruct Hx as [ | Hx ]; subst.
+      * exists n; split; auto.
+      * destruct IH2 as (k & ? & ?); auto.
+        exists k; split; auto; omega.
+  Qed.
 
   Section zip.
 
@@ -81,11 +140,20 @@ End increase.
 Section sorted_concat.
 
   Variable (X : Type) (P : nat -> list X -> Prop) (R : X -> X -> Prop) 
-           (HPR : forall i j x l y m, i < j -> P i l -> P j l -> In x l -> In y m -> R x y).
+           (HPR : forall i j x l y m, i < j -> P i l -> P j m -> In x l -> In y m -> R x y).
 
   Fact concat_sorted n ll : increase P n ll -> Forall (sorted R) ll -> sorted R (concat ll).
   Proof.
-  Admitted.
+    induction 1 as [ n | n l ll H1 H2 IH2 ]; simpl.
+    + constructor.
+    + inversion 1; subst.
+      apply sorted_app; auto.
+      intros x y; rewrite in_concat_iff.
+      intros G1 (m & G2 & G3).
+      apply increase_inv with (2 := G3) in H2.
+      destruct H2 as (k & H0 & H2).
+      revert G1 G2; apply (@HPR n k); auto.
+  Qed.
 
 End sorted_concat.
 
@@ -112,43 +180,17 @@ Section bt_branches.
   Fact btb_inv_2 l u x v : btb (true::l) (node u x v) -> btb l v.
   Proof. inversion 1; trivial. Defined.
 
-  Hint Resolve btb_inv_1  btb_inv_2.
+  (* The tree branches by Depth First Traversal *)
 
-  Fixpoint btb_node l t (D : btb l t) { struct l } : X.
-  Proof.
-    refine (match l as l' return l = l' -> _ with
-      | nil   => fun _ => root t
-      | b::l' => match t as t' return t = t' -> _ with 
-        | leaf _     => fun E1 E2 => _
-        | node u _ v => fun E1 E2 => btb_node l' (if b then v else u) _
-      end eq_refl
-    end eq_refl).
-    + exfalso; subst; inversion D.
-    + subst; destruct b; revert D; (apply btb_inv_1 || apply btb_inv_2).
-  Defined.
-
-  Arguments btb_node : clear implicits.
- 
-  Fact btbn_fix_0 t D : btb_node nil t D = root t.
-  Proof. auto. Qed.
-
-  Fact btbn_fix_1 l u x v D : btb_node (false::l) (node u x v) D = btb_node l u (btb_inv_1 D).
-  Proof. auto. Qed.
-
-  Fact btbn_fix_2 l u x v D : btb_node (true::l) (node u x v) D = btb_node l v (btb_inv_2 D).
-  Proof. auto. Qed.
-
-  (* The tree branches by Depth First Search *)
-
-  Fixpoint dfs_br (t : bt X) : list (list bool) :=
+  Fixpoint dft_br (t : bt X) : list (list bool) :=
     nil::match t with 
            | leaf _     => nil
-           | node u _ v => map (cons false) (dfs_br u) ++ map (cons true) (dfs_br v)
+           | node u _ v => map (cons false) (dft_br u) ++ map (cons true) (dft_br v)
          end.
 
   (* branches t included in btb _ t *)
 
-  Fact dfs_br_spec_1 t : Forall (fun l => btb l t) (dfs_br t).
+  Fact dft_br_spec_1 t : Forall (fun l => btb l t) (dft_br t).
   Proof.
     induction t as [ x | u Hu x v Hv ].
     + do 2 constructor.
@@ -160,37 +202,8 @@ Section bt_branches.
 
   (* number of branches equals size of tree *)
 
-  Fact dfs_br_spec_2 t : length (dfs_br t) = m_bt t.
+  Fact dft_br_spec_2 t : length (dft_br t) = m_bt t.
   Proof. induction t; simpl; auto; rewrite app_length; repeat rewrite map_length; omega. Qed.
-
-  Fixpoint in_bt (x : X) t :=
-    match t with
-      | leaf y => x = y
-      | node u y v => x = y \/ in_bt x u \/ in_bt x v
-    end.
-
-  (* each node corresponding to a branch is in the tree *)
-
-  Fact btbn_spec l t D : in_bt (btb_node l t D) t.
-  Proof.
-    revert t D.
-    induction l as [ | [] ]; intros [|] D; 
-      try (simpl; auto; fail); inversion D.
-  Qed.
-
-  (* each value in a tree corresponds to some node of a branch *)
-
-  Fact in_bt_inv x t : in_bt x t -> exists l D, x = btb_node l t D.
-  Proof.
-    induction t as [ y | u Hu y v Hv ]; simpl.
-    + intros []; exists nil, (in_btb_0 _); auto.
-    + intros [ [] | [ H | H ] ].
-      - exists nil, (in_btb_0 _); auto.
-      - destruct (Hu H) as (l & D & H1); subst.
-        exists (false::l), (in_btb_1 _ _ D); auto.
-      - destruct (Hv H) as (l & D & H1); subst.
-        exists (true::l), (in_btb_2 _ _ D); auto.
-  Qed.
 
   Inductive lb_lex : list bool -> list bool -> Prop :=
     | in_lb_0 : forall l, lb_lex nil l
@@ -296,6 +309,65 @@ Section bt_branches.
           ** constructor; apply Hv with (2 := H4); auto.
   Qed.
 
+  Fact niveaux_br_spec_0 l t : btb l t -> exists ll, In l ll /\ In ll (niveaux_br t).
+  Proof.
+    induction 1 as [ t | l u x v H (ll & H1 & H2) | m u x v H (mm & H1 & H2) ].
+    + exists (nil::nil); destruct t; simpl; auto.
+    + apply in_split in H2.
+      destruct H2 as (u1 & u2 & H2).
+      destruct (list_length_split (length u1) (niveaux_br v))
+        as [ (v1 & [ | mm v2 ] & H3 & H4) | H3 ].
+      - exists (map (cons false) ll); simpl; split.
+        * apply in_map_iff; exists l; auto.
+        * right; apply zip_spec.
+          right; left; exists (map (map (cons false)) u1), (map (map (cons false)) u2).
+          repeat rewrite map_length.
+          rewrite H2, map_app, H3, <- app_nil_end, H4; simpl; auto.
+      - exists (map (cons false) ll++map (cons true) mm); simpl; split.
+        * apply in_or_app; left; apply in_map_iff; exists l; auto.
+        * right; apply zip_spec; right; right.
+          exists (map (map (cons false)) u1), (map (cons false) ll), (map (map (cons false)) u2),
+                 (map (map (cons true)) v1), (map (cons true) mm), (map (map (cons true)) v2); repeat split; auto.
+          ++ rewrite H2, map_app; auto.
+          ++ rewrite H3, map_app; auto.
+          ++ rewrite map_length, map_length; auto.
+      - exists  (map (cons false) ll); simpl; split.
+        * apply in_map_iff; exists l; auto.
+        * right; rewrite H2, map_app; apply zip_app_left.
+          ++ do 2 rewrite map_length; auto.
+          ++ apply in_map; simpl; auto.
+    + apply in_split in H2.
+      destruct H2 as (v1 & v2 & H2).
+      destruct (list_length_split (length v1) (niveaux_br u))
+        as [ (u1 & [ | ll u2 ] & H3 & H4) | H3 ].
+      - exists (map (cons true) mm); simpl; split.
+        * apply in_map_iff; exists m; auto.
+        * right; apply zip_spec.
+          left; exists (map (map (cons true)) v1), (map (map (cons true)) v2).
+          repeat rewrite map_length.
+          rewrite H2, map_app, H3, <- app_nil_end, H4; simpl; auto.
+      - exists (map (cons false) ll++map (cons true) mm); simpl; split.
+        * apply in_or_app; right; apply in_map_iff; exists m; auto.
+        * right; apply zip_spec; right; right.
+          exists (map (map (cons false)) u1), (map (cons false) ll), (map (map (cons false)) u2),
+                 (map (map (cons true)) v1), (map (cons true) mm), (map (map (cons true)) v2); repeat split; auto.
+          ++ rewrite H3, map_app; auto.
+          ++ rewrite H2, map_app; auto.
+          ++ rewrite map_length, map_length; auto.
+      - exists  (map (cons true) mm); simpl; split.
+        * apply in_map_iff; exists m; auto.
+        * right; rewrite H2, map_app; apply zip_app_right.
+          ++ do 2 rewrite map_length; auto.
+          ++ apply in_map; simpl; auto.
+  Qed.
+
+  Fact niveaux_br_spec l t : btb l t <-> exists ll, In l ll /\ In ll (niveaux_br t).
+  Proof.
+    split.
+    + apply niveaux_br_spec_0.
+    + intros (ll & H1 & H2); revert H1 H2; apply niveaux_br_spec_1.
+  Qed.
+  
   Fact niveaux_br_spec_2 t : increase (fun n ll => Forall (fun l => length l = n) ll) 0 (niveaux_br t).
   Proof.
     induction t as [ x | u Hu x v Hv ]; simpl.
@@ -339,41 +411,105 @@ Section bt_branches.
 
   Definition bft_br t : list (list bool) := concat (niveaux_br t).
 
-  Fact bft_br_spec_1 t : forall l, In l (bft_br t) -> btb l t.
+  (* bft_br contains the branches of t *)
+
+  Fact bft_br_spec_1 l t : In l (bft_br t) <-> btb l t.
+  Proof. unfold bft_br; rewrite niveaux_br_spec, in_concat_iff; tauto. Qed.
+ 
+  Hint Resolve niveaux_br_spec_2.
+
+  (* The list of branches generated by bft_br is sorted according to bft_order *)
+
+  Theorem bft_br_spec_2 t : sorted bft_order (bft_br t).
   Proof.
-    unfold bft_br; intros l; rewrite in_concat_iff.
-    intros (ll & H1 & H2); apply niveaux_br_spec_1 with ll; auto.
+    apply concat_sorted with (P := fun n ll => Forall (fun l => length l = n) ll) (n := 0); auto.
+    + intros i j x l y m; do 2 rewrite Forall_forall; intros H1 H2 H3 H4 H5.
+      apply H2 in H4; apply H3 in H5.
+      left; omega.
+    + generalize (niveaux_br_spec_3 t).
+      do 2 rewrite Forall_forall.
+      intros H l Hl; generalize (H _ Hl).
+      apply sorted_mono.
+      intros x y H1 H2 H3; right; split; auto.
+      generalize (niveaux_br_spec_2 t); intros H4.
+      apply increase_inv with (2 := Hl) in H4.
+      destruct H4 as (k & _ & H4).
+      rewrite Forall_forall in H4.
+      repeat rewrite H4; auto.
   Qed.
 
-  Fact bft_br_spec_2 t : sorted bft_order (bft_br t).
+  Fixpoint in_bt (x : X) t :=
+    match t with
+      | leaf y => x = y
+      | node u y v => x = y \/ in_bt x u \/ in_bt x v
+    end.
+
+  Hint Resolve btb_inv_1  btb_inv_2.
+
+  Fixpoint btb_node (l : list bool) t : option X :=
+    match l with
+      | nil  => Some (root t)
+      | b::l => match t with 
+        | leaf _     => None
+        | node u _ v => btb_node l (if b then v else u)
+      end
+    end.
+
+  Fact btbn_fix_0 t : btb_node nil t = Some (root t).
+  Proof. auto. Qed.
+
+  Fact btbn_fix_1 b l x : btb_node (b::l) (leaf x) = None.
+  Proof. auto. Qed.
+
+  Fact btbn_fix_2 l u x v : btb_node (false::l) (node u x v) = btb_node l u.
+  Proof. auto. Qed.
+
+  Fact btbn_fix_3 l u x v : btb_node (true::l) (node u x v) = btb_node l v.
+  Proof. auto. Qed.
+
+  (* each node corresponding to a branch is in the tree *)
+
+  Fact btbn_spec l t x : btb_node l t = Some x -> in_bt x t.
   Proof.
+    revert t x.
+    induction l as [ | [] ]; intros [|] ?; simpl; try discriminate.
+    + inversion 1; auto.
+    + inversion 1; auto.
+    + intros G; apply IHl in G; tauto.
+    + intros G; apply IHl in G; tauto.
+  Qed.
 
-  Fixpoint list_in_map U V (P : U -> Prop) (f : forall u, P u -> V) (l : list U) : 
-               (forall x, In x l -> P x) -> list V.
+  (* each value in a tree corresponds to some node of a branch *)
+
+  Fact in_bt_inv x t : in_bt x t -> exists l, btb_node l t = Some x.
   Proof.
-    refine (match l with
-      | nil  => fun _ => nil
-      | x::l => fun H => f x _ :: @list_in_map _ _ P f l _
-    end).
-    + intros; apply H; left; trivial.
-    + intros; apply H; right; trivial.
-  Defined.
- 
-  Fact bft_br_spec_2 t : bft_std t = list_in_map _ (fun l H => btb_node l t H) _ (bft_br_spec_1 t).
+    induction t as [ y | u Hu y v Hv ]; simpl.
+    + intros []; exists nil; auto.
+    + intros [ [] | [ H | H ] ].
+      - exists nil; auto.
+      - destruct (Hu H) as (l & H1); subst; exists (false::l); auto.
+      - destruct (Hv H) as (l & H1); subst; exists (true::l); auto.
+  Qed.
+
+  Fact niveaux_br_spec_4 t : map (map (@Some _)) (niveaux_tree t) = map (map (fun l => btb_node l t)) (niveaux_br t).
   Proof.
-    unfold bft_std.
-    induction t; simpl; auto; f_equal.
-    
-    SearchAbout [ flat_map ].
+    induction t as [ x | u Hu x v Hv ]; simpl; f_equal; auto.
+    rewrite map_zip with (h := @app _).
+    2: intros; apply map_app.
+    rewrite map_zip with (h := @app _).
+    2: intros; apply map_app.
+    rewrite Hu, Hv; repeat rewrite map_map; f_equal;
+    apply map_ext; intros l _; rewrite map_map; apply map_ext; intros; simpl; auto.
+  Qed.
 
+  (* The list of nodes computed by bft_std is the direct map of the sorted list of branches,
+     according to the bft_order *)
 
+  Theorem bft_br_spec_3 t : map (@Some _) (bft_std t) = map (fun l => btb_node l t) (bft_br t).
+  Proof. unfold bft_std, bft_br; rewrite map_concat, map_concat, niveaux_br_spec_4; auto. Qed.
 
-  
-
- 
-
-
-
-
-  
 End bt_branches.
+
+Check bft_br_spec_1.
+Check bft_br_spec_2.
+Check bft_br_spec_3.
