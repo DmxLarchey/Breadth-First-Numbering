@@ -42,7 +42,7 @@ Require Import utils bt.
 
 Set Implicit Arguments.
 
-Fixpoint zip X (f : X -> X -> X) l m :=
+Fixpoint zip {X: Type} (f : X -> X -> X) (l m: list X): list X :=
   match l, m with
     | nil,  _    => m
     | _,    nil  => l
@@ -51,21 +51,21 @@ Fixpoint zip X (f : X -> X -> X) l m :=
 
 Section breadth_first_traversal.
 
-  Variable X : Type.
+  Context (X : Type).
  
   Implicit Type (t : bt X) (l ll : list (bt X)).
 
-  (* This is the standart/obvious specification of breath-first traversal *)
+  (* This is the standard/obvious specification of breadth-first traversal *)
 
-  Fixpoint niveaux_tree t :=
+  Fixpoint niveaux_tree t : list (list X) :=
     match t with 
       | leaf x     => (x::nil) :: nil
       | node a x b => (x::nil) :: zip (@app _) (niveaux_tree a) (niveaux_tree b)
     end.
     
-  Definition bft_std t := concat (niveaux_tree t).
+  Definition bft_std t : list X := concat (niveaux_tree t).
 
-  Fixpoint subt ll :=
+  Fixpoint subt ll : list (bt X) :=
     match ll with
       | nil              => nil
       | leaf _     :: ll => subt ll
@@ -79,7 +79,7 @@ Section breadth_first_traversal.
 
   Definition lsum := fold_right (fun t y => m_bt t + y) 0.
 
-  Fact lsum_app l m : lsum (l++m) = lsum l+lsum m.
+  Fact lsum_app l m : lsum (l++m) = lsum l + lsum m.
   Proof. induction l; simpl; omega. Qed.
 
   Fact subt_dec ll : ll = nil \/ lsum (subt ll) < lsum ll.
@@ -165,7 +165,7 @@ Section breadth_first_traversal.
         subst; discriminate.
     Qed.
 
-    Definition niveaux ll := proj1_sig (@niveaux_rec ll (Acc_measure _ _)).
+    Definition niveaux ll : list (list X) := proj1_sig (@niveaux_rec ll (Acc_measure _ _)).
  
     Fact niveaux_spec ll : g_niv ll (niveaux ll).
     Proof. apply (proj2_sig _). Qed.
@@ -195,7 +195,7 @@ Section breadth_first_traversal.
 
   Definition bft t := bft_f (t::nil).
 
-  (* bft is extensionnally equal to bft_std *)
+  (* bft is extensionally equal to bft_std *)
   
   Theorem bft_std_eq_bft t : bft t = bft_std t.
   Proof. unfold bft_std, bft, bft_f; f_equal; apply niveaux_eq_niveaux_tree. Qed.

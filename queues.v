@@ -1,4 +1,5 @@
 Require Import List Arith Omega Wellfounded.
+Require Extraction.
 
 Set Implicit Arguments.
 
@@ -484,8 +485,10 @@ Proof.
     * intros j [ ? | [] ]; subst; omega.
 Qed.
 
-Fact bt_numbering_fix_node i a x b : bt_numbering i (node a x b) <-> i = x /\ bt_numbering 
-  
+(* NOT READY YET
+
+Fact bt_numbering_fix_node i a x b : bt_numbering i (node a x b) <-> i = x /\ bt_numbering
+
 (* Show that bt_numering i t -> bt_list t ~ [i,...,i+bt_size t[ *)
   
 Inductive bt_iso X Y (R : X -> Y -> Prop) : bt X -> bt Y -> Prop :=
@@ -511,8 +514,9 @@ Proof.
    G2.
   
   Inductive sub_bt : bt -> bt -> Prop :=
-    match 
-    
+    match
+
+*)
 
 Section lsum.
 
@@ -538,6 +542,8 @@ Section lsum.
     induction l; simpl; auto.
     rewrite lsum_app; simpl; omega.
   Qed.
+
+(* NOT READY YET
 
   Definition qsum f (q : list X * list X) := let (l,m) := q in lsum f l + lsum f m.
   
@@ -569,9 +575,11 @@ Section lsum.
     do 2 rewrite qsum_queue_list.
     intros E; rewrite E; auto.
   Qed.
+*)
 
 End lsum.
 
+(* NOT READY YET
 Section bfnum.
 
   Variable X : Type.
@@ -623,4 +631,4 @@ Section bfnum.
       exist _ (enq (bfnum' q' _ i) leaf) _).
     
     
-
+*)
