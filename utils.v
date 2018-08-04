@@ -30,6 +30,18 @@ Section measure_rect.
 
 End measure_rect.
 
+Section map.
+
+  Variables (X Y : Type) (f g : X -> Y).
+
+  Fact map_ext_dep l : (forall x, In x l -> f x = g x) -> map f l = map g l.
+  Proof. rewrite <- Forall_forall; induction 1; simpl; f_equal; auto. Qed.
+
+  Fact map_ext : (forall x, f x = g x) -> (forall l, map f l = map g l).
+  Proof. intros; apply map_ext_dep; auto. Qed.
+
+End map.
+
 Section length_split.
 
   Variable (X : Type).
@@ -121,6 +133,27 @@ Section zip.
 
 End zip.
 
+Section map_concat_zip.
+
+  Variable (X Y : Type) (f : X -> Y) (g : X -> X -> X) (h : Y -> Y -> Y).
+
+  Fact map_concat ll : map f (concat ll) = concat (map (map f) ll).
+  Proof. 
+    induction ll; simpl; f_equal; auto.
+    rewrite map_app; f_equal; auto.
+  Qed.
+
+  Hypothesis Hgh : forall x y, f (g x y) = h (f x) (f y). 
+
+  Fact map_zip l m : map f (zip g l m) = zip h (map f l) (map f m).
+  Proof. revert m; induction l; intros [|]; simpl; f_equal; auto. Qed.
+
+End map_concat_zip.
+
+Fact map_zip_app X Y (f : X -> Y) l m : 
+    map (map f) (zip (@app _) l m) = zip (@app _) (map (map f) l) (map (map f) m).
+Proof. apply map_zip; intros; apply map_app. Qed.
+
 Section app.
 
   Variable X : Type.
@@ -202,7 +235,18 @@ Section Forall2.
     apply Forall2_snoc_inv in H; destruct H as (H1 & H).
     apply Forall2_snoc_inv in H; tauto.
   Qed.
-   
+
+  Hint Resolve Forall2_app.
+
+  Fact Forall2_concat l m : Forall2 (Forall2 R) l m -> Forall2 R (concat l) (concat m).
+  Proof. induction 1; simpl; auto. Qed.
+
+  Fact Forall2_zip_app l1 m1 l2 m2 : 
+       Forall2 (Forall2 R) l1 l2
+    -> Forall2 (Forall2 R) m1 m2
+    -> Forall2 (Forall2 R) (zip (@app _) l1 m1) (zip (@app _) l2 m2).
+  Proof. intros H; revert H m1 m2; do 2 (induction 1; simpl; auto). Qed.
+
 End Forall2.
 
 Tactic Notation "Forall2" "inv" hyp(H) "as" ident(E) :=
@@ -212,3 +256,119 @@ Tactic Notation "Forall2" "inv" hyp(H) "as" ident(E) :=
     | Forall2 _ (_++_::nil) (_++_::nil) => apply Forall2_snoc_inv in H; destruct H as [ E H ]
     | Forall2 _ (_++_) (_++_) => apply Forall2_app_inv in H; [ destruct H as [ E H ] | ]
   end.
+
+Fact Forall2_map_left X Y Z (f : X -> Y) (R : Y -> Z -> Prop) l m : 
+     Forall2 (fun x z => R (f x) z) l m -> Forall2 R (map f l) m.
+Proof. induction 1; simpl; auto. Qed.
+
+Fact Forall2_mono X Y (R S : X -> Y -> Prop) l m : 
+        (forall x y, R x y -> S x y)
+     -> Forall2 R l m -> Forall2 S l m.
+Proof. induction 2; auto. Qed.
+
+Section sorted.
+
+  Variable (X : Type) (R : X -> X -> Prop).
+
+  Inductive sorted : list X -> Prop :=
+    | in_sorted_0 : sorted nil
+    | in_sorted_1 : forall x l, Forall (R x) l -> sorted l -> sorted (x::l).
+
+  Fact sorted_app l m : (forall x y, In x l -> In y m -> R x y) -> sorted l -> sorted m -> sorted (l++m).
+  Proof.
+    intros H H1 Hm; revert H1 H.
+    induction 1 as [ | x l H1 H2 IH2 ]; intros H3; simpl; auto.
+    constructor.
+    + apply Forall_app; auto.
+      apply Forall_forall; intros; apply H3; simpl; auto.
+    + apply IH2; intros; apply H3; simpl; auto.
+  Qed.
+
+  Variable (f : X -> X) (Hf : forall x y, R x y -> R (f x) (f y)).
+
+  Fact sorted_map l : sorted l -> sorted (map f l).
+  Proof.
+    induction 1 as [ | x l H1 H2 IH2 ]; simpl; constructor; auto.
+    apply Forall_forall.
+    rewrite Forall_forall in H1.
+    intros y; rewrite in_map_iff.
+    intros (? & ? & ?); subst; auto.
+  Qed.
+
+End sorted.
+
+Fact sorted_mono X (R S : X -> X -> Prop) l : (forall x y, In x l -> In y l -> R x y -> S x y) -> sorted R l -> sorted S l.
+Proof.
+  intros H1 H2; revert H2 H1.
+  induction 1 as [ | x l H1 H2 IH2 ]; intros H3.
+  + constructor.
+  + constructor.
+    * revert H1; do 2 rewrite Forall_forall.
+      intros H1 y Hy; apply H3; simpl; auto.
+    * apply IH2; intros ? ? ? ?; apply H3; simpl; auto.
+Qed.
+
+Section increase.
+ 
+  Variable (X : Type) (P : nat -> X -> Prop).
+
+  Inductive increase : nat -> list X -> Prop :=
+    | in_increase_0 : forall n, increase n nil
+    | in_increase_1 : forall n x l, P n x -> increase (S n) l -> increase n (x::l).
+
+  Fact increase_inv n l x : increase n l -> In x l -> exists k, n <= k /\ P k x.
+  Proof.
+    intros H Hx; revert H; induction 1 as [ n | n y l H1 H2 IH2 ]; simpl.
+    + destruct Hx.
+    + destruct Hx as [ | Hx ]; subst.
+      * exists n; split; auto.
+      * destruct IH2 as (k & ? & ?); auto.
+        exists k; split; auto; omega.
+  Qed.
+
+  Section zip.
+
+     Variable (f : X -> X -> X) (Hf : forall n x y, P n x -> P n y -> P n (f x y)).
+
+     Fact zip_increase l m n : increase n l -> increase n m -> increase n (zip f l m).
+     Proof.
+       intros H; revert H m.
+       induction 1 as [ n | n x l H1 H2 IH2 ]; simpl; intros m Hm; auto.
+       destruct m as [ | y m ]; simpl.
+       * constructor; auto.
+       * constructor; inversion Hm; auto.
+     Qed.
+
+  End zip.
+
+  Section map.
+
+    Variable (f : X -> X) (Hf : forall n x, P n x -> P (S n) (f x)).
+
+    Fact map_increase n l : increase n l -> increase (S n) (map f l).
+    Proof. induction 1; simpl; constructor; auto. Qed.
+
+  End map.
+
+End increase.
+
+Section sorted_concat.
+
+  Variable (X : Type) (P : nat -> list X -> Prop) (R : X -> X -> Prop) 
+           (HPR : forall i j x l y m, i < j -> P i l -> P j m -> In x l -> In y m -> R x y).
+
+  Fact concat_sorted n ll : increase P n ll -> Forall (sorted R) ll -> sorted R (concat ll).
+  Proof.
+    induction 1 as [ n | n l ll H1 H2 IH2 ]; simpl.
+    + constructor.
+    + inversion 1; subst.
+      apply sorted_app; auto.
+      intros x y; rewrite in_concat_iff.
+      intros G1 (m & G2 & G3).
+      apply increase_inv with (2 := G3) in H2.
+      destruct H2 as (k & H0 & H2).
+      revert G1 G2; apply (@HPR n k); auto.
+  Qed.
+
+End sorted_concat.
+
