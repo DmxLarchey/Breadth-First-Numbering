@@ -7,7 +7,9 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import List Arith Omega Wellfounded.
+Require Import List Arith Omega Wellfounded Permutation.
+
+Require Import php.
 
 Set Implicit Arguments.
 
@@ -154,6 +156,27 @@ Fact map_zip_app X Y (f : X -> Y) l m :
     map (map f) (zip (@app _) l m) = zip (@app _) (map (map f) l) (map (map f) m).
 Proof. apply map_zip; intros; apply map_app. Qed.
 
+Fact In_concat_zip_app_left X (x : X) ll mm : In x (concat ll) -> In x (concat (zip (@app _) ll mm)).
+Proof.
+  intros H; revert H mm.
+  induction ll as [ | l ll IH ]; simpl.
+  + intros [].
+  + intros H; apply in_app_or in H.
+    destruct H as [ H | H ].
+    * intros []; simpl; try rewrite app_ass; apply in_or_app; tauto.
+    * intros []; simpl; try rewrite app_ass; repeat (apply in_or_app; right; auto).
+Qed.
+
+Fact In_concat_zip_app_right X (x : X) ll mm : In x (concat mm) -> In x (concat (zip (@app _) ll mm)).
+Proof.
+  revert mm.
+  induction ll as [ | l ll IH ]; simpl; auto.
+  intros [ | m mm ]; simpl; intros H1; try tauto.
+  rewrite app_ass; apply in_or_app; right.
+  apply in_or_app.
+  apply in_app_or in H1; firstorder.
+Qed.
+
 Section app.
 
   Variable X : Type.
@@ -247,6 +270,12 @@ Section Forall2.
     -> Forall2 (Forall2 R) (zip (@app _) l1 m1) (zip (@app _) l2 m2).
   Proof. intros H; revert H m1 m2; do 2 (induction 1; simpl; auto). Qed.
 
+  Fact Forall2_sym l m : Forall2 R l m -> Forall2 (fun y x => R x y) m l.
+  Proof. induction 1; constructor; auto. Qed.
+  
+  Fact Forall2_In_inv_left l m x : Forall2 R l m -> In x l -> exists y, In y m /\ R x y.
+  Proof. induction 1; intros []; subst; firstorder. Qed.    
+
 End Forall2.
 
 Tactic Notation "Forall2" "inv" hyp(H) "as" ident(E) :=
@@ -307,6 +336,43 @@ Proof.
       intros H1 y Hy; apply H3; simpl; auto.
     * apply IH2; intros ? ? ? ?; apply H3; simpl; auto.
 Qed.
+
+Section sorted_no_dup.
+ 
+  Variables (X : Type) (R : X -> X -> Prop) (HR : forall x, ~ R x x).
+
+  Lemma sorted_no_dup l : sorted R l -> ~ list_has_dup l.
+  Proof.
+    induction 1 as [ | x l H1 H2 IH2 ]; intros H.
+    + inversion H.
+    + apply list_hd_cons_inv in H.
+      destruct H as [ H | H ]; try tauto.
+      rewrite Forall_forall in H1; firstorder.
+  Qed.
+
+End sorted_no_dup.
+
+Section sorted_perm.
+
+  Variables (X : Type) (R S : X -> X -> Prop)
+            (HR : forall x, ~ R x x) (HS : forall x, ~ S x x)
+            (l m : list X) (Hl : sorted R l) (Hm : sorted S m) 
+            (Hlm : forall x, In x l <-> In x m).
+
+  Theorem sorted_perm : l ~p m.
+  Proof.
+    destruct (le_lt_dec (length l) (length m)) as [ H | H ].
+    + destruct (@length_le_and_incl_implies_dup_or_perm _ l m) as [ C | C ]; auto.
+      * intro; apply Hlm.
+      * contradict C; revert Hm; apply sorted_no_dup, HS.
+      * apply Permutation_sym; auto.
+    + destruct (@length_le_and_incl_implies_dup_or_perm _ m l) as [ C | C ]; auto.
+      * omega.
+      * intro; apply Hlm.
+      * contradict C; revert Hl; apply sorted_no_dup, HR.
+  Qed.
+
+End sorted_perm.
 
 Section increase.
  

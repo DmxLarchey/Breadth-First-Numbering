@@ -55,6 +55,9 @@ Section bt.
     | in_bpn_1 : forall l u x v r, bt_path_node u l r -> bt_path_node (node u x v) (false::l) r
     | in_bpn_2 : forall l u x v r, bt_path_node v l r -> bt_path_node (node u x v) (true::l) r.
 
+  Fact bt_pat_node_fun t l x y :  bt_path_node t l x ->  bt_path_node t l y -> x = y.
+  Proof. induction 1; inversion 1; auto. Qed.
+
   Fact btb_spec l t : btb t l <-> exists x, bt_path_node t l x.
   Proof.
     split.
