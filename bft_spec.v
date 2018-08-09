@@ -17,7 +17,7 @@ Section bt_branches.
 
   Variable X : Type.
 
-  (* The tree branches by Depth First Traversal *)
+  (* Depth first traversal, VERY standard algo *)
 
   Fixpoint dft_std (t : bt X) :=
     match t with 
@@ -27,6 +27,8 @@ Section bt_branches.
 
   Fact dft_std_length t : length (dft_std t) = m_bt t.
   Proof. induction t; simpl; repeat rewrite app_length; omega. Qed.
+
+  (* The tree branches by Depth First Traversal *)
 
   Fixpoint dft_br (t : bt X) : list (list bool) :=
     nil::match t with 
@@ -38,7 +40,7 @@ Section bt_branches.
 
   Theorem dft_br_std t : Forall2 (bt_path_node t) (dft_br t) (dft_std t).
   Proof.
-    induction t as [ x | u Hu x v Hv ]; simpl; repeat constructor.
+    induction t as [ | ? Hu ? ? Hv ]; simpl; repeat constructor.
     apply Forall2_app; apply Forall2_map_left; [ revert Hu | revert Hv ];
       apply Forall2_mono; constructor; auto.
   Qed.
@@ -80,7 +82,7 @@ Section bt_branches.
         - apply sorted_map; auto; constructor; auto.
   Qed.
 
-  (* Now niveaux and then bft aka breadth first traversal *)
+  (* Now niveaux and then Breadth first traversal *)
 
   Fixpoint niveaux_br (t : bt X) : list (list (list bool)) :=
     match t with 
@@ -100,8 +102,6 @@ Section bt_branches.
       intros ? ? H; apply Forall2_map_left; revert H.
       apply Forall2_mono; constructor; auto.
   Qed.
-
-  (* A much shorted proof *)
 
   Lemma niveaux_br_spec_0 l t : btb t l -> In l (concat (niveaux_br t)).
   Proof.
@@ -154,10 +154,8 @@ Section bt_branches.
           apply sorted_app.
           ++ intros c d; do 2 rewrite in_map_iff.
              intros (r & ? & ?) (s & ? & ?); subst; constructor.
-          ++ apply sorted_map; auto.
-             intros; constructor; auto.
-          ++ apply sorted_map; auto.
-             intros; constructor; auto.
+          ++ apply sorted_map; auto; intros; constructor; auto.
+          ++ apply sorted_map; auto; intros; constructor; auto.
   Qed.
 
   Definition bft_br t : list (list bool) := concat (niveaux_br t).

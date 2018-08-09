@@ -31,7 +31,11 @@ Section bt.
       | node a _ b => 1 + m_bt a + m_bt b
     end.
 
+  (* A branch is a list of left/right Boolean choices *)
+
   Unset Elimination Schemes.
+
+  (* The branches that correspond to a node in a binary tree *)
 
   Inductive btb : bt -> list bool -> Prop :=
     | in_btb_0 : forall t, btb t nil
@@ -50,13 +54,17 @@ Section bt.
   Fact btb_inv_2 l u x v : btb (node u x v) (true::l) -> btb v l.
   Proof. inversion 1; trivial. Defined.
 
+  (* The partial functional map from a branch to the value of that node *)
+
   Inductive bt_path_node : bt -> list bool -> X -> Prop :=
     | in_bpn_0 : forall t, bt_path_node t nil (root t)
     | in_bpn_1 : forall l u x v r, bt_path_node u l r -> bt_path_node (node u x v) (false::l) r
     | in_bpn_2 : forall l u x v r, bt_path_node v l r -> bt_path_node (node u x v) (true::l) r.
 
-  Fact bt_pat_node_fun t l x y :  bt_path_node t l x ->  bt_path_node t l y -> x = y.
+  Fact bt_path_node_fun t l x y :  bt_path_node t l x ->  bt_path_node t l y -> x = y.
   Proof. induction 1; inversion 1; auto. Qed.
+
+  (* A branch has a value through bt_path_node iff it is a branch of the tree *)
 
   Fact btb_spec l t : btb t l <-> exists x, bt_path_node t l x.
   Proof.
@@ -78,10 +86,21 @@ Hint Constructors btb.
 
 Section branch_orders.
 
+  (** We define two total and decidable strict orders on branches
+        <l : for lexicographic order corresponding to DFT
+        <b : for length then lexico corresponding to BFT
+
+    *)
+
   Reserved Notation "x '<l' y" (at level 70, no associativity).
   Reserved Notation "x '<b' y" (at level 70, no associativity).
 
-  (* The Depth First Traversal order between bt branches *)
+  (* The Depth First Traversal order between bt branches 
+
+     The order is the lexicographic product very left (false)
+     is less than right (true)
+
+   *)
 
   Inductive lb_lex : list bool -> list bool -> Prop :=
     | in_lb_0 : forall b l, nil <l b::l
@@ -122,9 +141,15 @@ Section branch_orders.
       * right; constructor; auto.
    Qed.
 
-  (* The Breadth First Traversal order between bt branches *)
+  (* The Breadth First Traversal order between bt branches 
 
-  Definition bft_order l m := length l < length m \/ length l = length m /\ l <l m.
+     Shorter branches are first and two branches of the 
+     same length are sorted lexicographically 
+ 
+   *)
+
+  Definition bft_order l m := length l < length m 
+                           \/ length l = length m /\ l <l m.
 
   Notation "l <b m" := (bft_order l m).
 
@@ -155,6 +180,9 @@ Section branch_orders.
   Qed.
 
 End branch_orders.
+
+(** Equivalence between trees and forests, same structure,
+    only the value of nodes differ *)
 
 Reserved Notation "x '~t' y" (at level 70, no associativity).
 Reserved Notation "x '~lt' y" (at level 70, no associativity).
