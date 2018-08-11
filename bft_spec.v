@@ -58,10 +58,8 @@ Section bt_branches.
     + intros Hl; rewrite btb_spec.
       destruct Forall2_In_inv_left with (1 := dft_br_std t) (2 := Hl) as (x & ? & ?).
       exists x; auto.
-    + induction 1 as [ t | | ]; simpl.
-      * destruct t; simpl; auto.
-      * right; apply in_or_app; left; apply in_map; auto.
-      * right; apply in_or_app; right; apply in_map; auto.
+    + induction 1 as [ [] | | ]; simpl; auto; right; apply in_or_app;
+        [ left | right ]; apply in_map; auto.
    Qed.
 
   Corollary dft_br_spec_1 t : Forall (btb t) (dft_br t).
@@ -71,13 +69,14 @@ Section bt_branches.
 
   Fact dft_br_sorted t : sorted lb_lex (dft_br t).
   Proof.
-    induction t as [ x | u Hu x v Hv ]; simpl.
+    induction t; simpl.
     + do 2 constructor.
     + constructor.
-      * apply Forall_app; rewrite Forall_forall; intros y; rewrite in_map_iff; intros (z & ? & H); subst y; constructor.
+      * apply Forall_app; rewrite Forall_forall; intro; 
+          rewrite in_map_iff; intros (? & ? & ?); subst; constructor.
       * apply sorted_app.
-        - intros a b; do 2 rewrite in_map_iff.
-          intros (? & ? & ?) (? & ? & ?); subst a b; constructor.
+        - intros ? ?; do 2 rewrite in_map_iff.
+          intros (? & ? & ?) (? & ? & ?); subst; constructor.
         - apply sorted_map; auto; constructor; auto.
         - apply sorted_map; auto; constructor; auto.
   Qed.
@@ -93,13 +92,10 @@ Section bt_branches.
 
   Lemma niveaux_br_tree t : Forall2 (Forall2 (bt_path_node t)) (niveaux_br t) (niveaux_tree t).
   Proof.
-    induction t as [ x | u Hu x v Hv ]; simpl; repeat constructor.
-    apply Forall2_zip_app; apply Forall2_map_left.
-    + revert Hu; apply Forall2_mono.
-      intros ? ? H; apply Forall2_map_left; revert H.
-      apply Forall2_mono; constructor; auto.
-    + revert Hv; apply Forall2_mono.
-      intros ? ? H; apply Forall2_map_left; revert H.
+    induction t as [ | ? Hu ? ? Hv ]; simpl; repeat constructor.
+    apply Forall2_zip_app; apply Forall2_map_left; 
+      [ revert Hu | revert Hv ]; apply Forall2_mono;
+      intros ? ? G; apply Forall2_map_left; revert G;
       apply Forall2_mono; constructor; auto.
   Qed.
 
@@ -114,25 +110,22 @@ Section bt_branches.
   Corollary niveaux_br_spec_1 t : forall l ll, In l ll -> In ll (niveaux_br t) -> btb t l.
   Proof.
     intros l ll H1 H2.
-    destruct Forall2_In_inv_left with (1 := niveaux_br_tree t) (2 := H2) as (mm & H3 & H4).
-    destruct Forall2_In_inv_left with (1 := H4) (2 := H1) as (x & H5 & H6).
+    destruct Forall2_In_inv_left with (1 := niveaux_br_tree t) (2 := H2) as (? & ? & H3).
+    destruct Forall2_In_inv_left with (1 := H3) (2 := H1) as (? & ? & ?).
     apply btb_spec; firstorder.
   Qed.
   
   Fact niveaux_br_increase t : increase (fun n ll => Forall (fun l => length l = n) ll) 0 (niveaux_br t).
   Proof.
-    induction t as [ x | u Hu x v Hv ]; simpl.
+    induction t as [ | u Hu x v Hv ]; simpl.
     + do 2 constructor; auto.
     + constructor.
       * constructor; auto.
       * apply zip_increase.
-        - intros; apply Forall_app; auto.
-        - apply map_increase; auto. 
-          intros l ll H; apply Forall_map; simpl.
-          revert H; apply Forall_impl; intros; omega.
-        - apply map_increase; auto. 
-          intros l ll H; apply Forall_map; simpl.
-          revert H; apply Forall_impl; intros; omega.
+        1: intros; apply Forall_app; auto.
+        1,2 : apply map_increase; auto; 
+            intros ? ? G; apply Forall_map; simpl;
+            revert G; apply Forall_impl; intros; omega.
   Qed.
 
   Fact niveaux_br_sorted t : Forall (sorted lb_lex) (niveaux_br t).
@@ -149,11 +142,11 @@ Section bt_branches.
           intros; apply sorted_map; auto.
           intros; constructor; auto.
         - rewrite Forall_forall in Hu, Hv.
-          intros ? ?; do 2 rewrite in_map_iff.
-          intros (l & ? & H1) (m & ? & H2); subst.
+          intros ? ?; do 2 rewrite in_map_iff;
+            intros (? & ? & ?) (? & ? & ?); subst.
           apply sorted_app.
-          ++ intros c d; do 2 rewrite in_map_iff.
-             intros (r & ? & ?) (s & ? & ?); subst; constructor.
+          ++ intros ? ?; do 2 rewrite in_map_iff;
+             intros (? & ? & ?) (? & ? & ?); subst; constructor.
           ++ apply sorted_map; auto; intros; constructor; auto.
           ++ apply sorted_map; auto; intros; constructor; auto.
   Qed.
@@ -170,7 +163,7 @@ Section bt_branches.
   Fact bft_br_spec l t : In l (bft_br t) <-> btb t l.
   Proof.
     unfold bft_br; split.
-    + rewrite in_concat_iff; intros (ll & H1 & H2); revert H1 H2; apply niveaux_br_spec_1.
+    + rewrite in_concat_iff; intros (? & H1 & H2); revert H1 H2; apply niveaux_br_spec_1.
     + apply niveaux_br_spec_0.
   Qed.
 
@@ -182,8 +175,7 @@ Section bt_branches.
   Proof.
     apply concat_sorted with (P := fun n ll => Forall (fun l => length l = n) ll) (n := 0); auto.
     + intros i j x l y m; do 2 rewrite Forall_forall; intros H1 H2 H3 H4 H5.
-      apply H2 in H4; apply H3 in H5.
-      left; omega.
+      apply H2 in H4; apply H3 in H5; left; omega.
     + generalize (niveaux_br_sorted t).
       do 2 rewrite Forall_forall.
       intros H l Hl; generalize (H _ Hl).
