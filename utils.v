@@ -7,6 +7,8 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
+(** small additions made by Ralph Matthes, CNRS, IRIT *)
+
 Require Import List Arith Omega Wellfounded Permutation.
 
 Require Import php.
@@ -118,7 +120,8 @@ Section zip.
 
   Fact zip_spec l m c : In c (zip l m) <-> (exists m1 m2, length l <= length m1 /\ m = m1++c::m2)
                                         \/ (exists l1 l2, length m <= length l1 /\ l = l1++c::l2)
-                                        \/ (exists l1 x l2 m1 y m2, c = f x y /\ l = l1++x::l2 /\ m = m1++y::m2 /\ length l1 = length m1). 
+                                        \/ (exists l1 x l2 m1 y m2, c = f x y /\ l = l1++x::l2 /\
+                                                              m = m1++y::m2 /\ length l1 = length m1).
   Proof.
     split.
     + revert m; induction l as [ | x l IHl ]; simpl; intros m H.
@@ -131,7 +134,7 @@ Section zip.
         - subst; right; right; exists nil, x, l, nil, y, m; simpl; auto.
         - destruct (IHl _ H) as [ (m1 & m2 & H1 & H2) 
                               | [ (l1 & l2 & H1 & H2) 
-                                | (l1 & a & l2 & m1 & b & m2 & H1 & H2 & H3 & H4) ] ].
+                                | (l1 & a & l2 & m1 & b & m2 & H1 & H2 & H3 & H4) ] ]; clear H IHl.
           ++ left; subst; exists (y::m1), m2; simpl; split; auto; omega.
           ++ right; left; subst; exists (x::l1), l2; simpl; split; auto; omega.
           ++ right; right; subst; exists (x::l1), a, l2, (y::m1), b, m2; simpl; auto.
@@ -140,7 +143,7 @@ Section zip.
              | (l1 & a & l2 & m1 & b & m2 & H1 & H2 & H3 & H4) ] ]; subst.
       * revert m1 H1; induction l as [ | x l IHl ]; simpl; intros m H1.
         - apply in_or_app; simpl; auto.
-        - destruct m; simpl in H1 |- *; try omega.
+        - change (In c (zip (x :: l) (m ++ c :: m2))). destruct m; simpl in H1 |- *; try omega.
           right; apply IHl; omega.
       * revert l1 H1; induction m as [ | y m IHm ]; simpl; intros l H1.
         - rewrite zip_fix_1; apply in_or_app; simpl; auto.
@@ -160,12 +163,14 @@ Section map_concat_zip.
 
   Variable (X Y : Type) (f : X -> Y) (g : X -> X -> X) (h : Y -> Y -> Y).
 
-  Fact map_concat ll : map f (concat ll) = concat (map (map f) ll).
+  (** the following expresses naturality of the monad multiplication [concat]: *)
+  Fact map_concat (ll: list (list X)) : map f (concat ll) = concat (map (map f) ll).
   Proof. 
     induction ll; simpl; f_equal; auto.
     rewrite map_app; f_equal; auto.
   Qed.
 
+  (** [f] is a "morphism" from [g] to [h]: *)
   Hypothesis Hgh : forall x y, f (g x y) = h (f x) (f y). 
 
   Fact map_zip l m : map f (zip g l m) = zip h (map f l) (map f m).
@@ -173,7 +178,7 @@ Section map_concat_zip.
 
 End map_concat_zip.
 
-Fact map_zip_app X Y (f : X -> Y) l m : 
+Fact map_zip_app X Y (f : X -> Y) (l m: list(list X)) :
     map (map f) (zip (@app _) l m) = zip (@app _) (map (map f) l) (map (map f) m).
 Proof. apply map_zip; intros; apply map_app. Qed.
 
@@ -182,9 +187,10 @@ Proof.
   intros H; revert H mm.
   induction ll as [ | l ll IH ]; simpl.
   + intros [].
-  + intros H; apply in_app_or in H.
+  + intros H. change (forall mm, In x (concat (zip (app (A:=X)) (l::ll) mm))).
+    apply in_app_or in H.
     destruct H as [ H | H ].
-    * intros []; simpl; try rewrite app_ass; apply in_or_app; tauto.
+    * clear IH; intros []; simpl; try rewrite app_ass; apply in_or_app; tauto.
     * intros []; simpl; try rewrite app_ass; repeat (apply in_or_app; right; auto).
 Qed.
 
@@ -209,7 +215,7 @@ Section app.
   Proof.
     split.
     * induction ll as [ | l ll IH ]; simpl.
-      - tauto.
+      - intros [].
       - intros H; apply in_app_or in H.
         destruct H as [ H | H ].
         + exists l; split; auto.
@@ -282,14 +288,14 @@ Section Forall2.
 
   Hint Resolve Forall2_app.
 
-  Fact Forall2_concat l m : Forall2 (Forall2 R) l m -> Forall2 R (concat l) (concat m).
+  Fact Forall2_concat (l: list(list X)) (m: list(list Y)) : Forall2 (Forall2 R) l m -> Forall2 R (concat l) (concat m).
   Proof. induction 1; simpl; auto. Qed.
 
-  Fact Forall2_zip_app l1 m1 l2 m2 : 
-       Forall2 (Forall2 R) l1 l2
-    -> Forall2 (Forall2 R) m1 m2
-    -> Forall2 (Forall2 R) (zip (@app _) l1 m1) (zip (@app _) l2 m2).
-  Proof. intros H; revert H m1 m2; do 2 (induction 1; simpl; auto). Qed.
+  Fact Forall2_zip_app l1 l2 m1 m2 :
+       Forall2 (Forall2 R) l1 m1
+    -> Forall2 (Forall2 R) l2 m2
+    -> Forall2 (Forall2 R) (zip (@app _) l1 l2) (zip (@app _) m1 m2).
+  Proof. intros H; revert H l2 m2; do 2 (induction 1; simpl; auto). Qed.
 
   Fact Forall2_sym l m : Forall2 R l m -> Forall2 (fun y x => R x y) m l.
   Proof. induction 1; constructor; auto. Qed.
@@ -373,24 +379,62 @@ Section sorted_no_dup.
 
 End sorted_no_dup.
 
-Section sorted_perm.
+
+Section no_dup_sorted_with_ineq.
+
+  Variables (X : Type).
+  Local Definition R := fun (x y: X) => x <> y.
+
+  (** for this specific relation, not having duplicates is equivalent to being sorted: *)
+  Lemma no_dup_sorted_with_ineq l: ~ list_has_dup l -> sorted R l.
+  Proof.
+    induction l as [ | x l IHl].
+    - intros _. constructor.
+    - intro H. constructor.
+      + rewrite Forall_forall.
+        intros y H1 Heq.
+        subst.
+        apply H.
+        constructor 1; assumption.
+      + apply IHl.
+        intro H1; apply H.
+        constructor 2; assumption.
+  Qed.
+
+End no_dup_sorted_with_ineq.
+
+Section sorted_perm_aux.
 
   Variables (X : Type) (R S : X -> X -> Prop)
-            (HR : forall x, ~ R x x) (HS : forall x, ~ S x x)
-            (l m : list X) (Hl : sorted R l) (Hm : sorted S m) 
+            (l m : list X) (Hl : ~ list_has_dup l) (Hm : ~ list_has_dup m)
             (Hlm : forall x, In x l <-> In x m).
 
-  Theorem sorted_perm : l ~p m.
+  Lemma sorted_perm_aux : l ~p m.
   Proof.
     destruct (le_lt_dec (length l) (length m)) as [ H | H ].
     + destruct (@length_le_and_incl_implies_dup_or_perm _ l m) as [ C | C ]; auto.
       * intro; apply Hlm.
-      * contradict C; revert Hm; apply sorted_no_dup, HS.
-      * apply Permutation_sym; auto.
+      * contradiction.
+      * apply Permutation_sym; assumption.
     + destruct (@length_le_and_incl_implies_dup_or_perm _ m l) as [ C | C ]; auto.
       * omega.
       * intro; apply Hlm.
-      * contradict C; revert Hl; apply sorted_no_dup, HR.
+      * contradiction.
+  Qed.
+
+End sorted_perm_aux.
+
+Section sorted_perm.
+
+   Variables (X : Type) (R S : X -> X -> Prop)
+             (HR : forall x, ~ R x x) (HS : forall x, ~ S x x)
+             (l m : list X) (Hl : sorted R l) (Hm : sorted S m)
+             (Hlm : forall x, In x l <-> In x m).
+  Theorem sorted_perm : l ~p m.
+  Proof.
+    apply sorted_no_dup in Hl; try assumption.
+    apply sorted_no_dup in Hm; try assumption.
+    apply sorted_perm_aux; assumption.
   Qed.
 
 End sorted_perm.
@@ -421,6 +465,7 @@ Section increase.
      Proof.
        intros H; revert H m.
        induction 1 as [ n | n x l H1 H2 IH2 ]; simpl; intros m Hm; auto.
+       change (increase n (zip f (x::l) m)).
        destruct m as [ | y m ]; simpl.
        * constructor; auto.
        * constructor; inversion Hm; auto.
