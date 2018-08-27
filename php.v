@@ -265,6 +265,31 @@ Section pigeon.
                    apply Permutation_length in H4.
                    simpl in Hl', H4; omega.
   Qed.
+
+  Fact identify_duplicates_from_dup m: list_has_dup m ->
+                                      exists x aa bb cc, m = aa++x::bb++x::cc.
+  Proof.
+    intro Hm.
+    induction Hm as [ m x Hm | m x _ IHm ].
+    - apply in_split in Hm.
+      destruct Hm as (bb & cc & Hm).
+      exists x, nil, bb, cc; subst; auto.
+    - destruct IHm as (y & aa & bb & cc & IHm).
+      exists y, (x::aa), bb, cc; subst; auto.
+  Qed.
+
+  (** the other direction holds a well, although it will not be needed in the sequel *)
+  Fact dup_from_duplicates m: (exists x aa bb cc, m = aa++x::bb++x::cc) ->
+                              list_has_dup m.
+  Proof.
+    intro Hm.
+    destruct Hm as (x & aa & bb & cc & Hm).
+    subst m.
+    apply list_has_dup_app_left.
+    constructor 1; apply in_or_app; right.
+    constructor 1; reflexivity.
+  Qed.
+
   
   Theorem finite_pigeon_hole l m : 
        length l < length m 
@@ -303,13 +328,7 @@ Section pigeon.
           rewrite app_ass; simpl.
           apply list_has_dup_app_left, in_list_hd0, in_or_app; simpl; auto.
     } *)
-    clear H1 H2.
-    induction Hm as [ m x Hm | m x _ IHm ].
-    - apply in_split in Hm.
-      destruct Hm as (bb & cc & Hm).
-      exists x, nil, bb, cc; subst; auto.
-    - destruct IHm as (y & aa & bb & cc & IHm).
-      exists y, (x::aa), bb, cc; subst; auto.
+    apply (identify_duplicates_from_dup Hm).
   Qed.
 
 End pigeon.
