@@ -81,18 +81,39 @@ Section zip.
     revert m1; induction l1 as [| ? ? IH]; intros [|]; simpl; auto; try discriminate; intros; f_equal; apply IH; omega.
   Qed.
 
-  Fact zip_app_left l1 l2 m x : length m < length l1 -> In x l2 -> In x (zip (l1++l2) m).
+
+  Fact zip_app_left_le l1 l2 m x : length m <= length l1 -> In x l2 -> In x (zip (l1++l2) m).
   Proof.
     revert m; induction l1 as [ | y l1 IH ]; intros [ | z m ]; simpl; try omega.
+    + rewrite zip_fix_1; intros; assumption.
     + right; apply in_or_app; simpl; auto.
     + intros H1 H2; right; apply IH; auto; omega.
   Qed.
 
-  Fact zip_app_right l m1 m2 x : length l < length m1 -> In x m2 -> In x (zip l (m1++m2)).
+  (** the obvious weakening to strict inequality *)
+  Corollary zip_app_left l1 l2 m x : length m < length l1 -> In x l2 -> In x (zip (l1++l2) m).
+  Proof.
+    intros H1 H2.
+    apply (zip_app_left_le l1 l2 m x).
+    + omega.
+    + assumption.
+  Qed.
+
+  Fact zip_app_right_le l m1 m2 x : length l <= length m1 -> In x m2 -> In x (zip l (m1++m2)).
   Proof.
     revert m1; induction l as [ | y l IH ]; intros [ | z m1 ]; simpl; try omega.
+    + intros; assumption.
     + right; apply in_or_app; simpl; auto.
     + intros H1 H2; right; apply IH; auto; omega.
+  Qed.
+
+  (** the obvious weakening to strict inequality *)
+  Corollary zip_app_right l m1 m2 x : length l < length m1 -> In x m2 -> In x (zip l (m1++m2)).
+  Proof.
+    intros H1 H2.
+    apply (zip_app_right_le l m1 m2 x).
+    + omega.
+    + assumption.
   Qed.
 
   Fact zip_spec l m c : In c (zip l m) <-> (exists m1 m2, length l <= length m1 /\ m = m1++c::m2)
