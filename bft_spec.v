@@ -7,7 +7,6 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-
 Require Import List Arith Omega Wellfounded Permutation.
 Require Import utils php bt bft.
 

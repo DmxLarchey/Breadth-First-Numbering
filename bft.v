@@ -206,8 +206,8 @@ Section breadth_first_traversal.
 
   Lemma bft_f_fix_1 l m : bft_f (l++m) = map root l ++ bft_f (m++subt l).
   Proof.
-    unfold bft_f; pattern l, m; revert l m.
-    apply measure_double_rect with (m := fun l m => lsum (l++m)).
+    unfold bft_f.
+    double measure induction on l m with (lsum (l++m)).
     intros [ | [ x | a x b ] l ] m IH.
     + rewrite <- app_nil_end; auto.
     + rewrite niveaux_fix_1; try discriminate; simpl; f_equal.

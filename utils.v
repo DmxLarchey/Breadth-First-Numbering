@@ -15,24 +15,22 @@ Set Implicit Arguments.
 
 Section measure_rect.
 
-  Context  {X : Type} (m : X -> nat) (P : X -> Type)
-            (HP : forall x, (forall y, m y < m x -> P y) -> P x).
+  Variable (X : Type) (m : X -> nat) (P : X -> Type)
+           (HP : forall x, (forall y, m y < m x -> P y) -> P x).
 
   Let R x y := m x < m y.
 
-  Fact Acc_measure : well_founded R.
-  Proof. unfold R; apply wf_inverse_image, lt_wf. Qed.
-
-  Theorem measure_rect : forall x, P x.
+  Theorem measure_rect x : P x.
   Proof.
-    intros x; generalize (Acc_measure x); revert x.
-    refine (fix loop x (H : Acc R x) { struct H } : P x := @HP x (fun y Hy => loop y _)).
-    destruct H as [ H ]; apply H; trivial.
+    cut (Acc R x).
+    + revert x.
+      exact (fix loop x Hx { struct Hx } := @HP x (fun y Hy => loop y (Acc_inv Hx Hy))).
+    + unfold R; apply wf_inverse_image, lt_wf.
   Qed.
 
 End measure_rect.
 
-Section measure_double_ind.
+Section measure_double_rect.
 
   Variable (X Y : Type) (m : X -> Y -> nat) (P : X -> Y -> Type)
            (HP : forall x y, (forall x' y', m x' y' < m x y -> P x' y') -> P x y).
@@ -48,7 +46,13 @@ Section measure_double_ind.
     + unfold R; apply wf_inverse_image, lt_wf.
   Qed.
 
-End measure_double_ind.
+End measure_double_rect.
+
+Tactic Notation "measure" "induction" "on" hyp(x) "with" uconstr(f) :=
+  pattern x; revert x; apply measure_rect with (m := fun x => f).
+
+Tactic Notation "double" "measure" "induction" "on" hyp(x) hyp(y) "with" uconstr(f) :=
+  pattern x, y; revert x y; apply measure_double_rect with (m := fun x y => f).
 
 Section map.
 
