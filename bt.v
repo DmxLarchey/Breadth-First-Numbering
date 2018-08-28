@@ -25,7 +25,8 @@ Section bt.
       | node _ x _ => x
     end.
 
-  Fixpoint m_bt t :=
+  (** measure: number of constructors *)
+  Fixpoint m_bt t : nat :=
     match t with 
       | leaf _     => 1
       | node a _ b => 1 + m_bt a + m_bt b
@@ -37,6 +38,7 @@ Section bt.
 
   (* The branches that correspond to a node in a binary tree *)
 
+  (** [false] for the left subtree, [true] for the right subtree *)
   Inductive btb : bt -> list bool -> Prop :=
     | in_btb_0 : forall t, btb t nil
     | in_btb_1 : forall l u x v, btb u l -> btb (node u x v) (false::l) 
@@ -97,7 +99,7 @@ Section branch_orders.
 
   (* The Depth First Traversal order between bt branches 
 
-     The order is the lexicographic product very left (false)
+     The order is the lexicographic product where left (false)
      is less than right (true)
 
    *)
@@ -112,7 +114,7 @@ Section branch_orders.
   Proof. 
     assert (forall l m, l <l m -> l <> m) as H.
     { induction 1; try discriminate; inversion 1; tauto. }
-    intros H1; apply (H _ _ H1); auto.
+    intros H1; apply (H _ _ H1); reflexivity.
   Qed.
 
   Fact lb_lex_trans l m k : l <l m -> m <l k -> l <l k.
@@ -164,7 +166,7 @@ Section branch_orders.
   Proof.
     intros [ | [] ] [ | [] ]; try (left; omega).
     right; split; try omega.
-    apply lb_lex_trans with m; auto.
+    apply lb_lex_trans with m; assumption.
   Qed.
  
   Definition bft_order_dec l m : { l <b m } + { l = m } + { m <b l }.
@@ -182,7 +184,7 @@ Section branch_orders.
 End branch_orders.
 
 (** Equivalence between trees and forests, same structure,
-    only the value of nodes differ *)
+    only the values of nodes differ *)
 
 Reserved Notation "x '~t' y" (at level 70, no associativity).
 Reserved Notation "x '~lt' y" (at level 70, no associativity).
