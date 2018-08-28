@@ -17,7 +17,7 @@
 *)
 
 Require Import List Arith Omega Wellfounded.
-Require Import utils bt bft fifo.
+Require Import list_utils wf_utils bt bft fifo.
 
 Set Implicit Arguments.
 
@@ -76,8 +76,10 @@ Section bfn.
           2) the result is a breadth first numbering from n  
    *)
 
-  Fixpoint bfn_f_gen n (p : fX) (D : Acc (fun x y => fifo_sum x < fifo_sum y) p) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
+  Definition bfn_f_gen n (p : fX) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
   Proof.
+    double measure induction on n p with (fifo_sum p).
+    intros n p bfn_f_gen.
     refine (match fifo_void p as b return fifo_void p = b -> _ with
       | true  => fun H1 => exist _ fifo_nil _
       | false => fun H1 => _
@@ -93,7 +95,7 @@ Section bfn.
     end eq_refl); intros H3.
     + generalize (fifo_deq_spec _ p H2); rewrite H3; intros H4.
       refine (let (q,Hq) := bfn_f_gen (S n) p' _ in exist _ (fifo_enq q (leaf n)) _).
-      { apply Acc_inv with (1 := D); unfold fifo_sum; rewrite H4; simpl; omega. }
+      { unfold fifo_sum; rewrite H4; simpl; omega. }
       destruct Hq as (H5 & H6).
       rewrite H4, fifo_enq_spec.
       subst; split; auto.
@@ -102,6 +104,59 @@ Section bfn.
       rewrite bft_f_fix_3; simpl; rewrite <- app_nil_end; auto.
     + generalize (fifo_deq_spec _ p H2); rewrite H3; intros H4.
       refine (let (q,Hq) := bfn_f_gen (S n) (fifo_enq (fifo_enq p' a) b) _ in _).
+      { unfold fifo_sum. 
+        rewrite fifo_enq_spec, fifo_enq_spec, app_ass; simpl.
+        rewrite lsum_app, H4; simpl; omega. }
+      destruct Hq as (H5 & H6).
+      rewrite fifo_enq_spec, fifo_enq_spec, app_ass in H5; simpl in H5.
+      assert (2 <= length (fifo_list q)) as H7.
+      { apply Forall2_length in H5.
+        rewrite app_length, rev_length in H5.
+        simpl in H5; omega. }
+      assert (fifo_list q <> nil) as H8.
+      { revert H7; destruct (fifo_list q); simpl; try discriminate; intro; omega. } 
+      generalize (fifo_deq_spec _ _ H8).
+      refine (match fifo_deq _ H8 with (u,q') => _ end); intros H9.
+      assert (fifo_list q' <> nil) as H10.
+      { revert H7; rewrite H9; destruct (fifo_list q'); simpl; try discriminate; intro; omega. }
+      generalize (fifo_deq_spec _ _ H10).
+      refine (match fifo_deq _ H10 with (v,q'') => _ end); intros H11.
+      exists (fifo_enq q'' (node v n u)).
+      rewrite H4, fifo_enq_spec, rev_app_distr; simpl.
+      rewrite H9, H11 in H5; simpl in H5; rewrite app_ass in H5; simpl in H5.
+      rewrite H9, H11 in H6; simpl in H6; rewrite app_ass in H6; simpl in H6.
+      unfold is_bfn_from in H6 |- *.
+      apply Forall2_2snoc_inv in H5.
+      destruct H5 as (G1 & G2 & H5).
+      rewrite bft_f_fix_3; simpl; split; auto.
+  Defined.
+
+  Fixpoint bfn_f_gen' n (p : fX) (D : Acc (fun x y => fifo_sum x < fifo_sum y) p) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
+  Proof.
+    refine (match fifo_void p as b return fifo_void p = b -> _ with
+      | true  => fun H1 => exist _ fifo_nil _
+      | false => fun H1 => _
+    end eq_refl).
+    { rewrite fifo_void_spec in H1.
+      rewrite H1, fifo_nil_spec; split; simpl; auto.
+      red; rewrite bft_f_fix_0; simpl; auto. }
+    assert (fifo_list p <> nil) as H2.
+    { red; rewrite <- fifo_void_spec, H1; discriminate. }
+    refine (match fifo_deq p H2 as k return fifo_deq p H2 = k -> _ with
+      | (leaf x ,p') => _
+      | (node a x b, p') => _
+    end eq_refl); intros H3.
+    + generalize (fifo_deq_spec _ p H2); rewrite H3; intros H4.
+      refine (let (q,Hq) := bfn_f_gen' (S n) p' _ in exist _ (fifo_enq q (leaf n)) _).
+      { apply Acc_inv with (1 := D); unfold fifo_sum; rewrite H4; simpl; omega. }
+      destruct Hq as (H5 & H6).
+      rewrite H4, fifo_enq_spec.
+      subst; split; auto.
+      rewrite rev_app_distr; simpl; auto.
+      rewrite rev_app_distr; simpl; red.
+      rewrite bft_f_fix_3; simpl; rewrite <- app_nil_end; auto.
+    + generalize (fifo_deq_spec _ p H2); rewrite H3; intros H4.
+      refine (let (q,Hq) := bfn_f_gen' (S n) (fifo_enq (fifo_enq p' a) b) _ in _).
       { apply Acc_inv with (1 := D); unfold fifo_sum. 
         rewrite fifo_enq_spec, fifo_enq_spec, app_ass; simpl.
         rewrite lsum_app, H4; simpl; omega. }
@@ -133,8 +188,8 @@ Section bfn.
 
     Let bfn_full (t : bt X) : { t' | t ~t t' /\ is_seq_from 0 (bft_std t') }.
     Proof.
-      refine (match @bfn_f_gen 0 (fifo_enq fifo_nil t) _ with exist _ q Hq => _ end).
-      { apply Acc_measure. }
+      refine (match @bfn_f_gen 0 (fifo_enq fifo_nil t) with exist _ q Hq => _ end).
+    (*  { apply Acc_measure. } *)
       rewrite fifo_enq_spec, fifo_nil_spec in Hq; simpl in Hq.
       destruct Hq as (H1 & H2).
       assert (fifo_list q <> nil) as H3.

@@ -8,7 +8,7 @@
 (**************************************************************)
 
 Require Import List Arith Omega Wellfounded Permutation.
-Require Import utils php bt bft.
+Require Import list_utils wf_utils bt zip sorted increase bft.
 
 Set Implicit Arguments.
 

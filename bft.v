@@ -37,8 +37,8 @@
 
 *)
 
-Require Import List Arith Omega Wellfounded.
-Require Import utils bt.
+Require Import List Arith Omega Wellfounded Extraction.
+Require Import list_utils wf_utils zip bt.
 
 Set Implicit Arguments.
 
@@ -137,28 +137,24 @@ Section breadth_first_traversal.
 
   Section niveaux_rec.
 
-    Let R x y := lsum x < lsum y.
+    (* Let R x y := lsum x < lsum y. *)
 
-    Let niveaux_rec : forall ll, Acc R ll -> sig (g_niv ll).
+    Let niveaux_rec ll : sig (g_niv ll).
     Proof.
-      refine (fix loop ll T { struct T } := 
-        match ll as l return ll = l -> sig (g_niv l) with
+      measure induction on ll with (lsum ll).
+      intros ll niveaux_rec.
+      refine (match ll as l return ll = l -> sig (g_niv l) with
           | nil  => fun _ => exist _ nil _
-          | t::l => fun E => 
-            let (r,Hr) := loop (subt ll) _
-            in               exist _ (map root ll :: r) _
+          | t::l => fun E => let (r,Hr) := niveaux_rec (subt ll) _
+                             in exist _ (map root ll :: r) _
         end eq_refl).
       1,2 : cycle 1. 
-      * apply Acc_inv with (1 := T); red.
-        destruct (subt_dec ll); auto.
-        subst; discriminate.
+      * destruct (subt_dec ll); auto; subst; discriminate.
       * constructor.
-      * rewrite <- E.
-        constructor; auto.
-        subst; discriminate.
+      * rewrite <- E; constructor; auto; subst; discriminate.
     Qed.
 
-    Definition niveaux ll : list (list X) := proj1_sig (@niveaux_rec ll (Acc_measure _ _)).
+    Definition niveaux ll : list (list X) := proj1_sig (@niveaux_rec ll).
  
     Fact niveaux_spec ll : g_niv ll (niveaux ll).
     Proof. apply (proj2_sig _). Qed.
@@ -230,7 +226,6 @@ Section breadth_first_traversal.
 
 End breadth_first_traversal.
 
-Require Import Extraction.
 Recursive Extraction bft_std bft.
 
 Check bft_std_eq_bft.

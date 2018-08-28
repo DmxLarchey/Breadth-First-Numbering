@@ -1,5 +1,4 @@
 -R . Top
-utils.v
 bft.v
 bt.v
 queues.v
@@ -8,3 +7,8 @@ fifo.v
 bfn_fifo.v
 bft_spec.v
 php.v
+list_utils.v
+wf_utils.v
+zip.v
+sorted.v
+increase.v
