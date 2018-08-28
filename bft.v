@@ -141,8 +141,7 @@ Section breadth_first_traversal.
 
     Let niveaux_rec ll : sig (g_niv ll).
     Proof.
-      measure induction on ll with (lsum ll).
-      intros ll niveaux_rec.
+      measure induction on ll with (lsum ll) as niveaux_rec.
       refine (match ll as l return ll = l -> sig (g_niv l) with
           | nil  => fun _ => exist _ nil _
           | t::l => fun E => let (r,Hr) := niveaux_rec (subt ll) _
@@ -203,8 +202,8 @@ Section breadth_first_traversal.
   Lemma bft_f_fix_1 l m : bft_f (l++m) = map root l ++ bft_f (m++subt l).
   Proof.
     unfold bft_f.
-    double measure induction on l m with (lsum (l++m)).
-    intros [ | [ x | a x b ] l ] m IH.
+    double measure induction on l m with (lsum (l++m)) as IH.
+    destruct l as [ | [ x | a x b ] l ].
     + rewrite <- app_nil_end; auto.
     + rewrite niveaux_fix_1; try discriminate; simpl; f_equal.
       rewrite map_app, <- app_assoc; f_equal.

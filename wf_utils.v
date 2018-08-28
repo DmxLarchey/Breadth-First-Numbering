@@ -53,10 +53,10 @@ Section measure_double_rect.
 
 End measure_double_rect.
 
-Tactic Notation "measure" "induction" "on" hyp(x) "with" uconstr(f) :=
-  pattern x; revert x; apply measure_rect with (m := fun x => f).
+Tactic Notation "measure" "induction" "on" hyp(x) "with" uconstr(f) "as" ident(IH) :=
+  pattern x; revert x; apply measure_rect with (m := fun x => f); intros x IH.
 
-Tactic Notation "double" "measure" "induction" "on" hyp(x) hyp(y) "with" uconstr(f) :=
-  pattern x, y; revert x y; apply measure_double_rect with (m := fun x y => f).
+Tactic Notation "double" "measure" "induction" "on" hyp(x) hyp(y) "with" uconstr(f) "as" ident(IH) :=
+  pattern x, y; revert x y; apply measure_double_rect with (m := fun x y => f); intros x y IH.
 
 Extraction Inline measure_rect measure_double_rect.

@@ -85,9 +85,7 @@ Section bfn.
 
   Definition bfn_f n (l : list (bt X)) : { m | l ~lt m /\ is_bfn_from n m }.
   Proof.
-    double measure induction on n l with (lsum l).
-    intros n l bfn_f.
-
+    double measure induction on n l with (lsum l) as bfn_f.
     refine (match l as l' return l = l' -> _ with
       | nil              => fun H => exist _ nil _
       | leaf x :: ll     => fun H => let (mm,Hm) := bfn_f (S n) ll _ in exist _ (leaf n::mm) _

@@ -104,8 +104,8 @@ Section pigeon_list.
                       -> incl m l 
                       -> list_has_dup m \/ m ~p l.
   Proof.
-    measure induction on l with (length l).
-    intros [ | x l ] IHl.
+    measure induction on l with (length l) as IHl.
+    destruct l as [ | x l ].
     + intros [ | y ] _ H.
       * right; auto.
       * destruct (H y); simpl; auto.

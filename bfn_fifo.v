@@ -78,8 +78,7 @@ Section bfn.
 
   Definition bfn_f_gen n (p : fX) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
   Proof.
-    double measure induction on n p with (fifo_sum p).
-    intros n p bfn_f_gen.
+    double measure induction on n p with (fifo_sum p) as bfn_f_gen.
     refine (match fifo_void p as b return fifo_void p = b -> _ with
       | true  => fun H1 => exist _ fifo_nil _
       | false => fun H1 => _
@@ -224,7 +223,6 @@ End bfn.
 Require Import Extraction.
 
 Definition bfn X := bfn_gen (fifo_two_lists (bt X)) (fifo_two_lists (bt nat)).
-
 
 (* Extraction Inline bfn_f_gen bfn_gen fifo_trivial. *)
 Recursive Extraction bfn.
