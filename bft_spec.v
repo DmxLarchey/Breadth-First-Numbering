@@ -9,7 +9,7 @@
 
 
 Require Import List Arith Omega Wellfounded Permutation.
-Require Import utils php bt bft.
+Require Import utils bt bft.
 
 Set Implicit Arguments.
 
@@ -192,6 +192,8 @@ Section bt_branches.
   Hint Resolve dft_br_sorted bft_br_sorted lb_lex_irrefl bft_order_irrefl.
 
   (* dft_br and bft_br compute the same list of branches ... up to permutation *)
+
+  Infix "~p" := (@Permutation _) (at level 80).
 
   Theorem bft_br_dft_br t : dft_br t ~p bft_br t.
   Proof.
