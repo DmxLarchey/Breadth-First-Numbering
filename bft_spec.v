@@ -93,7 +93,7 @@ Section bt_branches.
   Lemma niveaux_br_tree t : Forall2 (Forall2 (bt_path_node t)) (niveaux_br t) (niveaux_tree t).
   Proof.
     induction t as [ | ? Hu ? ? Hv ]; simpl; repeat constructor.
-    apply Forall2_zip_app; apply Forall2_map_left; 
+    apply Forall2_zip_app; apply Forall2_map_left;
       [ revert Hu | revert Hv ]; apply Forall2_mono;
       intros ? ? G; apply Forall2_map_left; revert G;
       apply Forall2_mono; constructor; auto.
@@ -103,18 +103,19 @@ Section bt_branches.
   Proof.
     induction 1 as [ t | | ].
     + apply in_concat_iff; exists (nil::nil); destruct t; simpl; auto.
-    + simpl; right; apply In_concat_zip_app_left; rewrite <- map_concat; apply in_map; auto.
-    + simpl; right; apply In_concat_zip_app_right; rewrite <- map_concat; apply in_map; auto.
+    + simpl; right; apply In_concat_zip_app_left; rewrite <- map_concat; apply in_map; assumption.
+    + simpl; right; apply In_concat_zip_app_right; rewrite <- map_concat; apply in_map; assumption.
   Qed. 
 
+  (** the other direction is a corollary to [niveaux_br_tree] *)
   Corollary niveaux_br_spec_1 t : forall l ll, In l ll -> In ll (niveaux_br t) -> btb t l.
   Proof.
     intros l ll H1 H2.
     destruct Forall2_In_inv_left with (1 := niveaux_br_tree t) (2 := H2) as (? & ? & H3).
-    destruct Forall2_In_inv_left with (1 := H3) (2 := H1) as (? & ? & ?).
-    apply btb_spec; firstorder.
+    destruct Forall2_In_inv_left with (1 := H3) (2 := H1) as (x0 & ? & ?).
+    apply btb_spec; exists x0; assumption.
   Qed.
-  
+
   Fact niveaux_br_increase t : increase (fun n ll => Forall (fun l => length l = n) ll) 0 (niveaux_br t).
   Proof.
     induction t as [ | u Hu x v Hv ]; simpl.
@@ -123,7 +124,7 @@ Section bt_branches.
       * constructor; auto.
       * apply zip_increase.
         1: intros; apply Forall_app; auto.
-        1,2 : apply map_increase; auto; 
+        1,2 : apply map_increase; try assumption;
             intros ? ? G; apply Forall_map; simpl;
             revert G; apply Forall_impl; intros; omega.
   Qed.
