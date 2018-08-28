@@ -61,8 +61,8 @@ Section breadth_first_traversal.
   Fixpoint subt ll : list (bt X) :=
     match ll with
       | nil              => nil
-      | leaf _     :: ll => subt ll
-      | node a _ b :: ll => a :: b :: subt ll
+      | leaf _     :: l => subt l
+      | node a _ b :: l => a :: b :: subt l
     end.
     
   Fact subt_app l m : subt (l++m) = subt l ++ subt m.
