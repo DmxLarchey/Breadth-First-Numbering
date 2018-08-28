@@ -149,7 +149,7 @@ Section breadth_first_traversal.
             in               exist _ (map root ll :: r) _
         end eq_refl).
       1,2 : cycle 1. 
-      * destruct T as [ T ]; apply T; red.
+      * apply Acc_inv with (1 := T); red.
         destruct (subt_dec ll); auto.
         subst; discriminate.
       * constructor.
