@@ -32,6 +32,24 @@ Section measure_rect.
 
 End measure_rect.
 
+Section measure_double_ind.
+
+  Variable (X Y : Type) (m : X -> Y -> nat) (P : X -> Y -> Type)
+           (HP : forall x y, (forall x' y', m x' y' < m x y -> P x' y') -> P x y).
+
+  Let R c d := m (fst c) (snd c) < m (fst d) (snd d).
+
+  Theorem measure_double_rect x y : P x y.
+  Proof.
+    cut (Acc R (x,y)).
+    + revert x y.
+      refine (fix loop x y H { struct H } := @HP x y (fun x' y' H' => loop x' y' (Acc_inv H _))).
+      apply H'.
+    + unfold R; apply wf_inverse_image, lt_wf.
+  Qed.
+
+End measure_double_ind.
+
 Section map.
 
   Variables (X Y : Type) (f g : X -> Y).

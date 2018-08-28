@@ -198,36 +198,29 @@ Section breadth_first_traversal.
   Fact bft_f_fix_0 : bft_f nil = nil.
   Proof. unfold bft_f; rewrite niveaux_fix_0; auto. Qed. 
 
-  Section bft_f_fix_1.
+  (** The identity   bft_f (l++m) = map root l ++ bft_f (m++subt l) is critical
+      to show the correctness of Breadth First Numbering *)
 
-    (** The identity   bft_f (l++m) = map root l ++ bft_f (m++subt l)   is critical
-        to show the correctness of Breadth First Numbering *)
+  (* The induction is a bit complex here because l and m alternate in the proof
+     so we proceed by induction on lsum (l++m) *)
 
-    (* The induction is a bit complex here because l and m alternate in the proof *)
-
-    Let cnsapp_rec n : forall l m, lsum (l++m) < n -> concat (niveaux (l++m)) = map root l ++ concat (niveaux (m++subt l)).
-    Proof.
-      induction n as [ | n IHn ]; simpl; intros l m H; try omega.
-      destruct l as [ | [ x | a x b ] l ].
-      + rewrite <- app_nil_end; auto.
-      + rewrite niveaux_fix_1; try discriminate; simpl; f_equal.
-        rewrite map_app, <- app_assoc; f_equal.
-        rewrite IHn, <- subt_app; auto.
-        apply lt_S_n, le_lt_trans with (2 := H).
-        simpl; repeat rewrite lsum_app.
-        generalize (subt_le l); omega.
-      + simpl; rewrite niveaux_fix_1; try discriminate.
-        simpl; f_equal; rewrite map_app, <- app_assoc; f_equal.
-        rewrite IHn, subt_app; auto.
-        apply lt_S_n, le_lt_trans with (2 := H).
-        simpl; repeat rewrite lsum_app; simpl.
-        generalize (subt_le l); omega.
-    Qed.
-
-    Lemma bft_f_fix_1 l m : bft_f (l++m) = map root l ++ bft_f (m++subt l).
-    Proof. apply cnsapp_rec with (1 := le_refl _). Qed.
-
-  End bft_f_fix_1.
+  Lemma bft_f_fix_1 l m : bft_f (l++m) = map root l ++ bft_f (m++subt l).
+  Proof.
+    unfold bft_f; pattern l, m; revert l m.
+    apply measure_double_rect with (m := fun l m => lsum (l++m)).
+    intros [ | [ x | a x b ] l ] m IH.
+    + rewrite <- app_nil_end; auto.
+    + rewrite niveaux_fix_1; try discriminate; simpl; f_equal.
+      rewrite map_app, <- app_assoc; f_equal.
+      rewrite IH, <- subt_app; auto.
+      simpl; repeat rewrite lsum_app.
+      generalize (subt_le l); omega.
+    + simpl; rewrite niveaux_fix_1; try discriminate.
+      simpl; f_equal; rewrite map_app, <- app_assoc; f_equal.
+      rewrite IH, subt_app; auto.
+      simpl; repeat rewrite lsum_app; simpl.
+      generalize (subt_le l); omega.
+  Qed.
 
   Corollary bft_f_fix_2 l : bft_f l = map root l ++ bft_f (subt l).
   Proof. rewrite (app_nil_end l) at 1; apply bft_f_fix_1. Qed.
