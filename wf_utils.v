@@ -29,7 +29,7 @@ Section measure_rect.
     + revert x.
       exact (fix loop x Hx { struct Hx } := @HP x (fun y Hy => loop y (Acc_inv Hx Hy))).
     + apply Acc_measure.
-  Qed.
+  Defined.
 
 End measure_rect.
 
@@ -49,14 +49,22 @@ Section measure_double_rect.
       refine (fix loop x y H { struct H } := @HP x y (fun x' y' H' => loop x' y' (Acc_inv H _))).
       apply H'.
     + unfold R; apply wf_inverse_image, lt_wf.
-  Qed.
+  Defined.
 
 End measure_double_rect.
 
+(*
 Tactic Notation "measure" "induction" "on" hyp(x) "with" uconstr(f) "as" ident(IH) :=
   pattern x; revert x; apply measure_rect with (m := fun x => f); intros x IH.
 
 Tactic Notation "double" "measure" "induction" "on" hyp(x) hyp(y) "with" uconstr(f) "as" ident(IH) :=
+  pattern x, y; revert x y; apply measure_double_rect with (m := fun x y => f); intros x y IH.
+*)
+
+Tactic Notation "induction" "on" hyp(x) "as" ident(IH) "with" "measure" uconstr(f) :=
+  pattern x; revert x; apply measure_rect with (m := fun x => f); intros x IH.
+
+Tactic Notation "induction" "on" hyp(x) hyp(y) "as" ident(IH) "with" "measure" uconstr(f) :=
   pattern x, y; revert x y; apply measure_double_rect with (m := fun x y => f); intros x y IH.
 
 Extraction Inline measure_rect measure_double_rect.
