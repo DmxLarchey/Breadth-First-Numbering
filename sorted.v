@@ -70,24 +70,60 @@ Section sorted_no_dup.
 
 End sorted_no_dup.
 
+Section no_dup_sorted_with_ineq.
+
+  Variables (X : Type).
+  
+  Let R := fun (x y: X) => x <> y.
+
+  (** for this specific relation, not having duplicates is equivalent to being sorted: *)
+
+  Lemma no_dup_sorted_with_ineq l: sorted R l <-> ~ list_has_dup l.
+  Proof.
+    split.
+    * apply sorted_no_dup; intros ? []; trivial.
+    * induction l as [ | x l IHl].
+      - constructor.
+      - intros H; constructor.
+        + rewrite Forall_forall.
+          intros y Hy ?; subst.
+          apply H.
+          constructor 1; trivial.
+        + apply IHl; contradict H.
+          constructor 2; trivial.
+  Qed.
+
+End no_dup_sorted_with_ineq.
+
 Section sorted_perm.
 
-  Variables (X : Type) (R S : X -> X -> Prop)
-            (HR : forall x, ~ R x x) (HS : forall x, ~ S x x)
-            (l m : list X) (Hl : sorted R l) (Hm : sorted S m) 
-            (Hlm : forall x, In x l <-> In x m).
+  Variables (X : Type) (R S : X -> X -> Prop) (l m : list X) (Hlm : forall x, In x l <-> In x m).
+
+  Section sorted_perm_aux.
+  
+    Hypothesis (Hl : ~ list_has_dup l) (Hm : ~ list_has_dup m).
+
+    Hint Resolve Permutation_sym.
+
+    (* length_le_and_incl_implies_dup_or_perm is from the proof of the PHP, see php.v
+       I know, I should find a better name ...
+     *)
+
+    Lemma sorted_perm_aux : l ~p m.
+    Proof.
+      destruct (le_lt_dec (length l) (length m)).
+      + destruct (@length_le_and_incl_implies_dup_or_perm _ l m); auto; try tauto; intro; apply Hlm.
+      + destruct (@length_le_and_incl_implies_dup_or_perm _ m l); auto; try tauto; try omega; intro; apply Hlm.
+    Qed.
+
+  End sorted_perm_aux.
+
+  Hypothesis (HR : forall x, ~ R x x) (HS : forall x, ~ S x x)
+             (Hl : sorted R l) (Hm : sorted S m).
+
+  Hint Resolve sorted_no_dup.
 
   Theorem sorted_perm : l ~p m.
-  Proof.
-    destruct (le_lt_dec (length l) (length m)) as [ H | H ].
-    + destruct (@length_le_and_incl_implies_dup_or_perm _ l m) as [ C | C ]; auto.
-      * intro; apply Hlm.
-      * contradict C; revert Hm; apply sorted_no_dup, HS.
-      * apply Permutation_sym; auto.
-    + destruct (@length_le_and_incl_implies_dup_or_perm _ m l) as [ C | C ]; auto.
-      * omega.
-      * intro; apply Hlm.
-      * contradict C; revert Hl; apply sorted_no_dup, HR.
-  Qed.
+  Proof. apply sorted_perm_aux; eauto. Qed.
 
 End sorted_perm.

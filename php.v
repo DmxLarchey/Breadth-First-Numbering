@@ -71,14 +71,20 @@ Section pigeon_list.
       constructor 1; reflexivity.
   Qed.
 
-  Fact repeat_choice_two x m : (forall a, In a m -> a = x) -> (exists m', m = x::x::m') \/ m = nil \/ m = x::nil.
+  Fact repeat_choice_two x m : Forall (eq x) m -> (exists m', m = x::x::m') \/ m = nil \/ m = x::nil.
   Proof.
     intros H.
-    destruct m as [ | a [ | b m ] ].
-    + right; left; auto.
-    + right; right; rewrite (H a); auto; left; auto.
-    + left; rewrite (H a), (H b); simpl; auto; exists m; auto.
+    destruct m as [ | a [ | b m ] ]; auto.
+    + inversion H; subst; auto.
+    + rewrite Forall_forall in H.
+      rewrite <- (H a), <- (H b); simpl; auto; left; exists m; auto.
   Qed.
+
+  (* If m in included in x::l then 
+       a) either m is included in l
+       b) or m has a duplicate (x but that does not matter here)
+       c) or m is permutable with x::m' with m' included in l
+   *)
 
   Fact incl_right_cons_incl_or_lhd_or_perm m x l : 
        incl m (x::l) -> incl m l 
@@ -88,23 +94,32 @@ Section pigeon_list.
     intros H.
     apply incl_cons_rinv in H.
     destruct H as (m1 & m2 & H1 & H2 & H3).
-    destruct (repeat_choice_two _ H2) as [ (m3 & H4) | [ H4 | H4 ] ]; 
+    destruct (repeat_choice_two H2) as [ (?&?) | [|] ]; 
       subst m1; simpl in H1; clear H2.
-    + apply Permutation_sym in H1.
-      right; left.
-      apply perm_list_has_dup with (1 := H1).
-      apply in_list_hd0; left; auto.
-    + left; apply perm_incl_left with (1 := H1); auto.
-    + right; right.
-      exists m2; auto.
+    + right; left; apply perm_list_has_dup with (1 := Permutation_sym H1), in_list_hd0; left; auto.
+    + left; revert H1 H3; apply perm_incl_left.
+    + firstorder.
   Qed.
+
+  (** length_le_and_incl_implies_dup_or_perm is a generalisation of the PHP
+      for which the inductive case works w/o needing decidable equality  
+
+      But I know, I should find a better name for it ...
+
+      If  m is longer than l 
+      and m is (set) included in l
+      then either it has a duplicate 
+               or it is permutable with l
+
+      The proof is by measure induction on length l
+   *)
  
-  Lemma length_le_and_incl_implies_dup_or_perm l :  
-               forall m, length l <= length m 
-                      -> incl m l 
-                      -> list_has_dup m \/ m ~p l.
+  Lemma length_le_and_incl_implies_dup_or_perm l m :  
+            length l <= length m 
+         -> incl m l 
+         -> list_has_dup m \/ m ~p l.
   Proof.
-    induction on l as IHl with measure (length l).
+    revert m; induction on l as IHl with measure (length l).
     destruct l as [ | x l ].
     + intros [ | y ] _ H.
       * right; auto.
@@ -148,6 +163,14 @@ Section pigeon_list.
                  apply Permutation_length in H4.
                  simpl in Hl', H4; omega. }
   Qed.
+
+  (** If  m is strictly longer than l 
+      and m is (set) included in l
+      then either it has a duplicate 
+
+      This proof does not require weakly decidable equality
+      and it does not find where is the duplicate
+    *)
 
   Theorem finite_pigeon_hole l m : 
          length l < length m 

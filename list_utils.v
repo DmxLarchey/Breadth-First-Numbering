@@ -96,12 +96,13 @@ Section incl.
         - intros ? [|]; subst; auto.
   Qed.
   
-  Fact incl_cons_rinv x l m : incl m (x::l) -> exists m1 m2, m ~p m1 ++ m2 /\ (forall a, In a m1 -> a = x) /\ incl m2 l.
+  Fact incl_cons_rinv x l m : incl m (x::l) -> exists m1 m2, m ~p m1 ++ m2 /\ Forall (eq x) m1 /\ incl m2 l.
   Proof.
     intros H.
     apply (@incl_app_rinv (x::nil) _ l) in H.
     destruct H as (m1 & m2 & H1 & H2 & H3).
     exists m1, m2; repeat split; auto.
+    rewrite Forall_forall.
     intros a Ha; apply H2 in Ha; destruct Ha as [ | [] ]; auto.
   Qed.
 
@@ -116,6 +117,7 @@ Section incl.
     apply Permutation_in; auto.
     left.
     apply Permutation_in with (1 := Permutation_sym H1).
+    rewrite Forall_forall in H2.
     rewrite (H2 y); left; auto.
   Qed.
 
