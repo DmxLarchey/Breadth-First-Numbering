@@ -101,6 +101,18 @@ Section pigeon_list.
     + firstorder.
   Qed.
 
+  Fact incl_left_right_php x l y m : incl (y::m) (x::l) -> list_has_dup (y::m)
+                                                        \/ x = y  /\ incl m l
+                                                        \/ In y l /\ incl m l
+                                                        \/ In y l /\ exists m', m ~p x::m' /\ incl m' l.
+  Proof.
+    intros H; apply incl_left_right_cons in H.
+    destruct H as [ (? & ?) | [ (? & ?) | (H1 & H2) ] ]; subst; auto.
+    + left; apply in_list_hd0; auto.
+    + apply incl_right_cons_incl_or_lhd_or_perm in H2; firstorder.
+      left; apply in_list_hd1; auto.
+  Qed.
+
   (** length_le_and_incl_implies_dup_or_perm is a generalisation of the PHP
       for which the inductive case works w/o needing decidable equality  
 
@@ -113,18 +125,6 @@ Section pigeon_list.
 
       The proof is by measure induction on length l
    *)
-
-  Fact incl_left_right_php x l y m : incl (y::m) (x::l) -> list_has_dup (y::m)
-                                                        \/ x = y  /\ incl m l
-                                                        \/ In y l /\ incl m l
-                                                        \/ In y l /\ exists m', m ~p x::m' /\ incl m' l.
-  Proof.
-    intros H; apply incl_left_right_cons in H.
-    destruct H as [ (? & ?) | [ (? & ?) | (H1 & H2) ] ]; subst; auto.
-    + left; apply in_list_hd0; auto.
-    + apply incl_right_cons_incl_or_lhd_or_perm in H2; firstorder.
-      left; apply in_list_hd1; auto.
-  Qed.
 
   Lemma length_le_and_incl_implies_dup_or_perm l m :  
             length l <= length m 
