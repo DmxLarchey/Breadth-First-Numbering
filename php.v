@@ -168,7 +168,7 @@ Section pigeon_list.
 
   (** If  m is strictly longer than l 
       and m is (set) included in l
-      then either it has a duplicate 
+      then it has a duplicate 
 
       This proof does not require weakly decidable equality
       and it does not find where is the duplicate
