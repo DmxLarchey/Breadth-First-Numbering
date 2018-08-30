@@ -113,55 +113,57 @@ Section pigeon_list.
 
       The proof is by measure induction on length l
    *)
- 
+
+  Fact incl_left_right_php x l y m : incl (y::m) (x::l) -> list_has_dup (y::m)
+                                                        \/ x = y  /\ incl m l
+                                                        \/ In y l /\ incl m l
+                                                        \/ In y l /\ exists m', m ~p x::m' /\ incl m' l.
+  Proof.
+    intros H; apply incl_left_right_cons in H.
+    destruct H as [ (? & ?) | [ (? & ?) | (H1 & H2) ] ]; subst; auto.
+    + left; apply in_list_hd0; auto.
+    + apply incl_right_cons_incl_or_lhd_or_perm in H2; firstorder.
+      left; apply in_list_hd1; auto.
+  Qed.
+
   Lemma length_le_and_incl_implies_dup_or_perm l m :  
             length l <= length m 
          -> incl m l 
          -> list_has_dup m \/ m ~p l.
   Proof.
-    revert m; induction on l as IHl with measure (length l).
-    destruct l as [ | x l ].
-    + intros [ | y ] _ H.
-      * right; auto.
-      * destruct (H y); simpl; auto.
-    + intros [ | y m ] H1 H2; simpl in H1; try omega.
-      apply le_S_n in H1.
-      apply incl_cons_linv in H2. 
-      destruct H2 as [ [ H3 | H3 ] H4 ].
-      * subst y.
-        apply incl_right_cons_choose in H4.
-        destruct H4 as [ H4 | H4 ].
-        - left; apply in_list_hd0; auto.
-        - destruct IHl with (3 := H4); auto.
-          left; apply in_list_hd1; auto.
-      * apply incl_right_cons_incl_or_lhd_or_perm in H4.
-        destruct H4 as [ H4 | [ H4 | (m' & H4 & H5) ] ].
-        - destruct IHl with (3 := H4) as [ H5 | H5 ]; auto.
-          ++ left; apply in_list_hd1; auto.
-          ++ left; apply in_list_hd0; revert H3.
-             apply Permutation_in, Permutation_sym; auto.
-        - left; apply in_list_hd1; auto.
-        - apply Permutation_sym in H4.
-          apply perm_in_head in H3.
-          destruct H3 as (l' & Hl').
-          apply perm_incl_right with (1 := Hl'), 
-                incl_right_cons_choose in H5.
-          destruct H5 as [ H5 | H5 ].
-          ++ left; apply in_list_hd0, Permutation_in with (1 := H4); right; auto.
-          ++ { apply IHl in H5.
-               + destruct H5 as [ H5 | H5 ].
-                 * left; apply perm_list_has_dup in H4; apply in_list_hd1; auto.
-                 * right.
-                    apply Permutation_trans with (y::x::m').
-                    - apply perm_skip, Permutation_sym; auto.
-                    - apply Permutation_trans with (1 := perm_swap _ _ _),
-                            perm_skip, Permutation_sym,
-                            Permutation_trans with (1 := Hl'),
-                            perm_skip, Permutation_sym; auto.
-               + apply Permutation_length in Hl'; simpl in Hl' |- *; omega.
-               + apply Permutation_length in Hl'.
-                 apply Permutation_length in H4.
-                 simpl in Hl', H4; omega. }
+    revert m; induction on l as IHl with measure (length l); revert l IHl.
+    intros [ | x l ] IHl [ | y m ]; simpl; intros H1 H2; auto; try omega;
+      try (destruct (H2 y); simpl; auto; fail).
+    apply le_S_n in H1.
+    apply incl_left_right_php in H2.
+    destruct H2 as [  H2 
+                 | [ (H2 & H3) 
+                 | [ (H2 & H3) 
+                   | (H2 & m' & H3 & H4) ] ] ]; auto; try subst y.
+    * destruct IHl with (3 := H3); auto.
+      left; apply in_list_hd1; auto.
+    * destruct IHl with (3 := H3); auto.
+      + left; apply in_list_hd1; auto.
+      + left; apply in_list_hd0; revert H2.
+        apply Permutation_in, Permutation_sym; auto.
+    * apply perm_in_head in H2; destruct H2 as (l' & Hl').
+      apply Permutation_sym in H3.
+      apply perm_incl_right with (1 := Hl'), 
+            incl_right_cons_choose in H4.
+      destruct H4 as [ H4 | H4 ].
+      + left; apply in_list_hd0, Permutation_in with (1 := H3); right; auto.
+      + destruct IHl with (3 := H4) as [ H5 | H5 ].
+        - apply Permutation_length in Hl'; simpl in Hl' |- *; omega.
+        - apply Permutation_length in Hl'.
+          apply Permutation_length in H3.
+          simpl in Hl', H3; omega.
+        - left; apply perm_list_has_dup in H3; apply in_list_hd1; auto.
+        - { right; apply Permutation_trans with (y::x::m').
+            + apply perm_skip, Permutation_sym; auto.
+            + apply Permutation_trans with (1 := perm_swap _ _ _),
+                    perm_skip, Permutation_sym,
+                    Permutation_trans with (1 := Hl'),
+                    perm_skip, Permutation_sym; auto. }
   Qed.
 
   (** If  m is strictly longer than l 

@@ -121,6 +121,15 @@ Section incl.
     rewrite (H2 y); left; auto.
   Qed.
 
+  Fact incl_left_right_cons x l y m : incl (x::l) (y::m) -> y = x  /\ In y l 
+                                                         \/ y = x  /\ incl l m
+                                                         \/ In x m /\ incl l (y::m).
+  Proof.
+    intros H; apply incl_cons_linv in H.
+    destruct H as [ [|] H2 ]; auto.
+    apply incl_right_cons_choose in H2; tauto.
+  Qed.
+
   Fact perm_incl_left m1 m2 l: m1 ~p m2 -> incl m2 l -> incl m1 l.
   Proof. intros H1 H2 ? H. apply H2; revert H; apply Permutation_in; auto. Qed.
 
