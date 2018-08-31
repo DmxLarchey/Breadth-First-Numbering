@@ -52,7 +52,7 @@ Section app.
   Proof.
     split.
     * induction ll as [ | l ll IH ]; simpl.
-      - tauto.
+      - intros [].
       - intros H; apply in_app_or in H.
         destruct H as [ H | H ].
         + exists l; split; auto.
@@ -112,13 +112,13 @@ Section incl.
     apply incl_cons_rinv in H.
     destruct H as ( m1 & m2 & H1 & H2 & H3 ); simpl in H1.
     destruct m1 as [ | y m1 ].
-    right.
-    intros u H; apply H3; revert H.
-    apply Permutation_in; auto.
-    left.
-    apply Permutation_in with (1 := Permutation_sym H1).
-    rewrite Forall_forall in H2.
-    rewrite (H2 y); left; auto.
+    + right.
+      intros u H; apply H3; revert H.
+      apply Permutation_in; auto.
+    + left.
+      apply Permutation_in with (1 := Permutation_sym H1).
+      rewrite Forall_forall in H2.
+      rewrite (H2 y); left; auto.
   Qed.
 
   Fact incl_left_right_cons x l y m : incl (x::l) (y::m) -> y = x  /\ In y l 

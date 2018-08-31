@@ -69,7 +69,7 @@ Section zip.
         - subst; right; right; exists nil, x, l, nil, y, m; simpl; auto.
         - destruct (IHl _ H) as [ (m1 & m2 & H1 & H2) 
                               | [ (l1 & l2 & H1 & H2) 
-                                | (l1 & a & l2 & m1 & b & m2 & H1 & H2 & H3 & H4) ] ].
+                                | (l1 & a & l2 & m1 & b & m2 & H1 & H2 & H3 & H4) ] ]; clear H IHl.
           ++ left; subst; exists (y::m1), m2; simpl; split; auto; omega.
           ++ right; left; subst; exists (x::l1), l2; simpl; split; auto; omega.
           ++ right; right; subst; exists (x::l1), a, l2, (y::m1), b, m2; simpl; auto.
@@ -98,6 +98,8 @@ Section map_concat_zip.
 
   Variable (X Y : Type) (f : X -> Y) (g : X -> X -> X) (h : Y -> Y -> Y).
 
+  (** the following expresses naturality of the monad multiplication [concat]: *)
+
   Fact map_concat ll : map f (concat ll) = concat (map (map f) ll).
   Proof. 
     induction ll; simpl; f_equal; auto.
@@ -105,6 +107,8 @@ Section map_concat_zip.
   Qed.
 
   Hypothesis Hgh : forall x y, f (g x y) = h (f x) (f y). 
+
+  (** [f] is a "morphism" from [g] to [h]: *)
 
   Fact map_zip l m : map f (zip g l m) = zip h (map f l) (map f m).
   Proof. revert m; induction l; intros [|]; simpl; f_equal; auto. Qed.
