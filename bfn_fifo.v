@@ -78,7 +78,7 @@ Section bfn.
 
   Definition bfn_f_gen n (p : fX) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
   Proof.
-    induction on n p as bfn_f_gen with measure (fun _ p => fifo_sum p).
+    induction on n p as bfn_f_gen with measure (fifo_sum p).
     refine (match fifo_void p as b return fifo_void p = b -> _ with
       | true  => fun H1 => exist _ fifo_nil _
       | false => fun H1 => _

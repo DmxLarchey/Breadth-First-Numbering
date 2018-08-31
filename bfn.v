@@ -85,7 +85,7 @@ Section bfn.
 
   Definition bfn_f n (l : list (bt X)) : { m | l ~lt m /\ is_bfn_from n m }.
   Proof.
-    induction on n l as bfn_f with measure (fun _ l => lsum l).
+    induction on n l as bfn_f with measure (lsum l).
     refine (match l as l' return l = l' -> _ with
       | nil              => fun H => exist _ nil _
       | leaf x :: ll     => fun H => let (mm,Hm) := bfn_f (S n) ll _ in exist _ (leaf n::mm) _
@@ -119,42 +119,6 @@ Section bfn.
         repeat rewrite app_length in H1; simpl in H1; omega.
   Defined.
 
-  Fixpoint bfn_f' n (l : list (bt X)) (D : Acc (fun x y => lsum x < lsum y) l) : { m | l ~lt m /\ is_bfn_from n m }.
-  Proof.
-    refine (match l as l' return l = l' -> _ with
-      | nil              => fun H => exist _ nil _
-      | leaf x :: ll     => fun H => let (mm,Hm) := bfn_f' (S n) ll _ in exist _ (leaf n::mm) _
-      | node a x b :: ll => fun H => let (mm,Hmm) := bfn_f' (S n) (ll++a::b::nil) _ in 
-                                     match list_snoc_match mm _ with
-                                       | existT _ v (existT _ u (exist _ m Hm)) => exist _ (node u n v::m) _
-                                     end
-    end eq_refl).
-    1,2,4,5: cycle 1.
-
-    + apply Acc_inv with (1 := D); subst; simpl; omega.
-    + apply Acc_inv with (1 := D); subst; simpl; rewrite lsum_app; simpl; omega.
-
-    + apply proj1, Forall2_length in Hmm.
-      rewrite <- Hmm, app_length; simpl; omega.
-
-    + subst; split.
-      * constructor.
-      * red; rewrite bft_f_fix_0; simpl; auto.
-    + destruct Hm as (H1 & H2).
-      subst; split; auto.
-      red in H2 |- *; rewrite bft_f_fix_3.
-      simpl; rewrite <- app_nil_end; auto.
-    + subst; destruct Hmm as (H1 & H2).
-      Forall2 inv H1 as H3.
-      * Forall2 inv H1 as H4.
-        Forall2 inv H1 as H5.
-        split; auto.
-        red in H2 |- *. 
-        rewrite bft_f_fix_3; simpl; auto.
-      * apply Forall2_length in H1. 
-        repeat rewrite app_length in H1; simpl in H1; omega.
-  Defined.
-
   Section bfn.
 
     Let bfn_full (t : bt X) : { t' | t ~t t' /\ is_seq_from 0 (bft_std t') }.
@@ -166,7 +130,6 @@ Section bfn.
           | t'::l => fun E => exist _ t' _
         end eq_refl
       end); simpl in *.
- (*     + apply Acc_measure. *)
       + exfalso; subst; apply proj1 in Hl; inversion Hl.
       + subst; destruct Hl as (H1 & H2).
         Forall2 inv H1 as H3.
@@ -188,7 +151,7 @@ Section bfn.
 
 End bfn.
 
-Recursive Extraction bfn bfn_f'.
+Recursive Extraction bfn.
 
 Check bfn.
 Check bfn_spec_1.

@@ -131,7 +131,7 @@ Section pigeon_list.
          -> incl m l 
          -> list_has_dup m \/ m ~p l.
   Proof.
-    revert m; induction on l as IHl with measure (@length _); revert l IHl.
+    revert m; induction on l as IHl with measure (length l); revert l IHl.
     intros [ | x l ] IHl [ | y m ]; simpl; intros H1 H2; auto; try omega;
       try (destruct (H2 y); simpl; auto; fail).
     apply le_S_n in H1.
