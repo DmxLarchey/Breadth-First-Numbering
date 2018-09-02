@@ -151,12 +151,44 @@ Section infinite_enum.
     inversion 1; auto.
   Qed.
 
+  Theorem ienum_0_prop n : n = ienum 0 <-> P n /\ forall i, i < n -> ~ P i.
+  Proof.
+    split.
+    + intros; subst; split.
+      * apply ienum_P.
+      * intros i H1 H2.
+        apply ienum_zero in H2; omega.
+    + intros (H1 & H2).
+      apply g_enum_fun with 0.
+      2: apply ienum_spec.
+      constructor; auto.
+      intros i Hi. 
+      destruct (le_lt_dec n i) as [ | C ]; auto.
+      destruct (H2 _ C); auto.
+  Qed.
+
   Theorem ienum_next n : ienum n < ienum (S n)
                       /\ forall k, ienum n < k -> P k -> ienum (S n) <= k.
   Proof.
     generalize (ienum (S n)) (ienum_spec (S n)).
     inversion 1; subst.
     rewrite (g_enum_fun _ _ _ (ienum_spec n) H1); auto.
+  Qed.
+
+  Fact ienum_S_le n k : k <= ienum (S n) <-> k <= ienum n \/ ienum n < k /\ forall i, ienum n < i < k -> ~ P i.
+  Proof.
+    split.
+    * intros H.
+      destruct (le_lt_dec k (ienum n)) as [ | H1 ]; auto.
+      right; split; auto.
+      generalize (ienum_next n); intros (H2 & H3) i Hi H4.
+      apply H3 in H4; omega.
+    * intros [ H1 | [ H1 H2 ] ].
+      + apply le_trans with (1 := H1), lt_le_weak, ienum_next.
+      + specialize (ienum_P (S n)); intros H3.
+        generalize (ienum_next n); intros (H0 & _).
+        destruct (le_lt_dec k (ienum (S n))) as [ H4 | H4 ]; auto.
+        apply H2 in H3; omega.
   Qed.
 
   Theorem ienum_smono : smono ienum.
@@ -171,7 +203,31 @@ Section infinite_enum.
       | S n => if Pdec n then S (ienum_inv n) else ienum_inv n
     end.
 
- 
+  Fact ienum_inv_prop n m : n <= m -> (forall i, n <= i < m -> ~ P i) -> ienum_inv n = ienum_inv m.
+  Proof.
+    induction 1 as [ | m H IH ]; auto; intros H1.
+    simpl.
+    destruct (Pdec m) as [ H2 | H2 ].
+    + apply H1 in H2; try tauto; omega.
+    + apply IH; intros; apply H1; omega.
+  Qed.
+
+  Fact find_max n : { m | m < n /\ P m /\ forall i, m < i < n -> ~ P i } + { forall i, i < n -> ~ P i }.
+  Proof.
+    induction n as [ | n IHn ].
+    + right; intros; omega.
+    + destruct (Pdec n) as [ H | H ].
+      - left; exists n; repeat split; auto; intros; omega.
+      - destruct IHn as [ (m & H1 & H2 & H3) | H1 ].
+        * left; exists m; repeat split; auto.
+          intros i H4.
+          destruct (eq_nat_dec i n); subst; auto;
+            apply H3; omega.
+        * right; intros i Hi.
+          destruct (eq_nat_dec i n); subst; auto;
+            apply H1; omega.
+  Qed.
+
    (*
 
   ---* ienum 0 = 3
@@ -191,17 +247,23 @@ Section infinite_enum.
       apply g_enum_fun with 0.
       * constructor; auto; intros; omega.
       * apply ienum_spec.
-    + simpl; intros H.
-      destruct (Pdec n) as [ H1 | H1 ].
-      * rewrite IHn in H1; auto.
-        generalize (ienum_next (ienum_inv n)).
-        intros (H2 & H3).
+    + intros H.
+      destruct (find_max (S n)) as [ (m & H1 & H2 & H3) | H1 ].
+      * rewrite <- (ienum_inv_prop _ _ H1 H3); auto.
+        simpl.  
+        destruct (Pdec m) as [ _ | H4 ].
+        2: tauto.
+        rewrite IHn in H2; auto.
+        generalize (ienum_next (ienum_inv m)).
+        intros (H5 & H6).
         apply le_antisym.
-        - rewrite H1 at 1; apply H2.
-        - apply H3; auto.
-          rewrite <- H1; auto.
-      * admit.
-  Admitted.
+        2: apply H6; auto; rewrite <- H2; auto.
+        apply ienum_S_le; right.
+        rewrite <- H2; auto.
+      * rewrite <- (ienum_inv_prop 0 (S n)); try omega.
+        2: intros; apply H1; omega.
+        simpl; apply ienum_0_prop; auto.
+  Qed.
 
   Hint Resolve ienum_smono ienum_prop.
 
@@ -248,8 +310,14 @@ Section enum_infinite_dec.
 
 End enum_infinite_dec.
 
+(* Infinite (unbounded) and decidable predicates are exactly
+   the direct images of strictly monotonic maps nat -> nat *)
+
 Check infinite_dec_enum.
 Check enum_infinite_dec.
+
+Print Assumptions infinite_dec_enum.
+Print Assumptions enum_infinite_dec.
 
 Fact infinite_smono (P : _ -> Prop) f : infinite P 
                                     -> smono f 
