@@ -11,13 +11,43 @@ Section nat_rev_ind.
 End nat_rev_ind.
 
 Definition decidable (P : nat -> Prop) := forall n, { P n } + { ~ P n }.
+Definition sinc (f : nat -> nat) := forall n, f n < f (S n).
 Definition smono (f : nat -> nat) := forall i j, i < j -> f i < f j.
+
+Fact decidable_bounded P : decidable P -> decidable (fun n => exists k, k < n /\ P k).
+Proof.
+  intros H n.
+  induction n as [ | n IHn ].
+  + right; intros (? & ? & _); omega.
+  + destruct (H n) as [ H1 | H1 ].
+    * left; exists n; split; auto.
+    * destruct IHn as [ IHn | IHn ].
+      - left; destruct IHn as (k & H2 & H3).
+        exists k; split; auto.
+      - right; intros (k & H2 & H3).
+        destruct (eq_nat_dec k n).
+        ++ subst; tauto.
+        ++ apply IHn; exists k; split; auto; omega.
+Qed.   
 
 Fact smono_inc f : smono f -> forall n, n <= f n.
 Proof.
   intros H.
   induction n as [ | n IHn ]; try omega.
   generalize (H n (S n)); intros; omega.
+Qed.
+
+Fact sinc_mono f : sinc f -> forall n m, n <= m -> f n <= f m.
+Proof.
+  intros H n m; induction 1 as [ | m H1 IH1 ]; auto.
+  generalize (H m); intros; omega.
+Qed.
+
+Fact sinc_smono f : sinc f -> smono f.
+Proof.
+  intros H n m H1.
+  apply lt_le_trans with (1 := H n).
+  apply sinc_mono; auto.
 Qed.
 
 Section umin_dec.
@@ -131,20 +161,95 @@ Section infinite_enum.
 
   Theorem ienum_smono : smono ienum.
   Proof.
-  Admitted.
+    apply sinc_smono; red.
+    apply ienum_next.
+  Qed.
 
-  Theorem ienum_prop n : P n <-> exists k, n = ienum k.
+  Fixpoint ienum_inv n := 
+    match n with 
+      | 0   => 0
+      | S n => if Pdec n then S (ienum_inv n) else ienum_inv n
+    end.
+
+ 
+   (*
+
+  ---* ienum 0 = 3
+       ienum_inv 2 = 0
+       ienum_inv 3 = 0
+       ienum_inv 4 = 1 
+
+   *)
+
+  Theorem ienum_prop n : P n <-> n = ienum (ienum_inv n).
   Proof.
+    induction n as [ n IHn ] using (well_founded_induction lt_wf); simpl.
     split.
-    2: intros (k & ?); subst; apply ienum_P.
+    2: intros H; rewrite H; apply ienum_P.
+    destruct n as [ | n ].
+    + intros H.
+      apply g_enum_fun with 0.
+      * constructor; auto; intros; omega.
+      * apply ienum_spec.
+    + simpl; intros H.
+      destruct (Pdec n) as [ H1 | H1 ].
+      * rewrite IHn in H1; auto.
+        generalize (ienum_next (ienum_inv n)).
+        intros (H2 & H3).
+        apply le_antisym.
+        - rewrite H1 at 1; apply H2.
+        - apply H3; auto.
+          rewrite <- H1; auto.
+      * admit.
   Admitted.
 
-End infinite_enum.
+  Hint Resolve ienum_smono ienum_prop.
+
+  Theorem infinite_dec_enum : { f | smono f /\ forall n, P n <-> exists k, n = f k }.
+  Proof.
+    exists ienum; split; auto.
+    intros n; split.
+    * exists (ienum_inv n); apply ienum_prop; auto.
+    * intros (k & ?); subst; apply ienum_P.
+  Qed.
     
+End infinite_enum.
+
 Fact infinite_mono (P Q : _ -> Prop) : (forall n, P n -> Q n) -> infinite P -> infinite Q.
 Proof.
   intros H H1 n; destruct (H1 n) as (m & ?); firstorder.
 Qed.
+
+Section enum_infinite_dec.
+
+  Variable (P : nat -> Prop) (f : nat -> nat) (Hf1 : smono f)
+           (Hf2 : forall n, P n <-> exists k, n = f k).
+
+  Theorem enum_infinite_dec : infinite P * decidable P.
+  Proof.
+    split.
+    * apply infinite_mono with (P := fun n => exists k, n = f k).
+      + intro; apply Hf2.
+      + intros n; exists (f n); split.
+        - apply smono_inc; auto.
+        - exists n; auto.
+    * intros n.
+      destruct (decidable_bounded (fun k => n = f k)) with (n0 := S n)
+        as [ H | H ].
+      + intro; apply eq_nat_dec.
+      + left; apply Hf2.
+        destruct H as (k & _ & ?); exists k; auto.
+      + right; contradict H.
+        apply Hf2 in H.
+        destruct H as (k & ?); subst.
+        exists k; split; auto.
+        apply le_n_S, smono_inc; auto.
+  Qed.
+
+End enum_infinite_dec.
+
+Check infinite_dec_enum.
+Check enum_infinite_dec.
 
 Fact infinite_smono (P : _ -> Prop) f : infinite P 
                                     -> smono f 
