@@ -97,13 +97,13 @@ Tactic Notation "induction" "on" hyp(x) "as" ident(IH) "with" "measure" uconstr(
      define mes of x as (f : nat);
      set (rel x y := mes x < mes y);
      pattern x; match goal with
-       |- ?T _ => refine ((fix loop u (Hu : Acc rel u) { struct Hu } : T u := _) x _)
-     end;
-     [ pattern u;
-       match goal with |- ?t _ => assert (forall v, rel v u -> t v) as IH end;
-       [ intros v Hv; apply (loop v), (Acc_inv Hu), Hv 
-       | unfold rel, mes in *; clear mes rel Hu loop x; rename u into x ]
-     | unfold rel; apply wf_inverse_image, lt_wf ].
+       |- ?T _ => 
+       refine ((fix loop u (Hu : Acc rel u) { struct Hu } : T u := _) x _);
+       [ assert (forall v, rel v u -> T v) as IH;
+         [ intros v Hv; apply (loop v), (Acc_inv Hu), Hv 
+         | unfold rel, mes in *; clear mes rel Hu loop x; rename u into x ]
+       | unfold rel; apply wf_inverse_image, lt_wf ]
+     end.
 
 Tactic Notation "induction" "on" hyp(x) hyp(y) "as" ident(IH) "with" "measure" uconstr(f) :=
   generalize I; intro IH;

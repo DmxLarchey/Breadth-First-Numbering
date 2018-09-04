@@ -194,25 +194,8 @@ Section fifo_two_lazy_lists.
       exists (lfin_rotate _ _ (@lfin_lnil _) E), (@lfin_lnil _).
       rewrite llist_rotate_length.
       generalize (llist_rotate_length _ _ (@lfin_lnil _) E); intros H.
- 
- , lnil,0
-    refine (match n with 
-      | 0 => fun E => 
-    intros ((l,r),H).
-
-    
-
-  Definition fifo_2q_enq (q : Q) (x : X) : Q.
-  Proof.
-    destruct q as ((l,r),H); simpl in H.
-    
-    refine (match q with exist _ q Hq => _ end).
+  Admitted.
 
 End fifo_two_lazy_lists.
 
- 
-  
-
-
-End fifo_two_lazy_lists.
 
