@@ -25,7 +25,7 @@ Section seq_an.
 
   (* seq_an a n = [a;a+1;...;a+(n-1)] *)
 
-  Fixpoint seq_an a n: list nat :=
+  Fixpoint seq_an a n : list nat :=
     match n with
       | 0    => nil
       | S n  => a::seq_an (S a) n
@@ -43,7 +43,7 @@ Section seq_an.
   Fixpoint is_seq_from n (l : list nat) { struct l }: Prop :=
     match l with  
       | nil  => True
-      | x::l => n=x /\ is_seq_from (S n) l
+      | x::l => n = x /\ is_seq_from (S n) l
     end.
 
   Theorem is_seq_from_spec a l : is_seq_from a l <-> exists n, l = seq_an a n.
@@ -59,9 +59,9 @@ Section seq_an.
 
 End seq_an.
 
-Definition fifo_2l_sum { X } (q : fifo_2l (bt X)) := lsum (fifo_2l_list q). 
-
 Section bfn.
+
+  Let fifo_2l_sum { X } (q : fifo_2l (bt X)) := lsum (fifo_2l_list q). 
 
   Variable (X : Type).
 
@@ -171,6 +171,9 @@ Section bfn.
   End bfn.
 
 End bfn.
+
+(* Notice that fifo_2l_deq is extracted to a function that loops forever
+   if the input is the empty queue, ie does not following the spec *)
 
 Recursive Extraction bfn_2l.
 

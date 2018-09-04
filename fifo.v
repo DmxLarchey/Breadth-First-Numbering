@@ -33,12 +33,12 @@ Section fifo_props.
 End fifo_props.
 
 Record fifo (X : Type) := {
-  Q :> Type;
-  fifo_list : Q -> list X; 
-  fifo_nil : Q; 
-  fifo_enq : Q -> X -> Q;
-  fifo_deq : forall q, fifo_list q <> nil -> X * Q;
-  fifo_void : Q -> bool;
+  queue :> Type;
+  fifo_list : queue -> list X; 
+  fifo_nil : queue; 
+  fifo_enq : queue -> X -> queue;
+  fifo_deq : forall q, fifo_list q <> nil -> X * queue;
+  fifo_void : queue -> bool;
   fifo_nil_spec : fifo_nil_prop fifo_list fifo_nil;
   fifo_enq_spec : fifo_enq_prop fifo_list fifo_enq;
   fifo_deq_spec : fifo_deq_prop fifo_list fifo_deq;
@@ -84,24 +84,23 @@ Section rev_linear.
   Variable (X : Type).
   Implicit Type (l m : list X).
 
-  Let rev_aux : list X -> list X -> list X :=
-    fix loop l m { struct m } :=
-      match m with
-        | nil  => l
-        | x::m => loop (x::l) m
-      end.
+  Fixpoint rev' l m :=
+    match m with
+      | nil  => l
+      | x::m => rev' (x::l) m
+    end.
 
-  Let rev_aux_spec l m : rev_aux l m = rev m ++ l.
+  Let rev'_spec l m : rev' l m = rev m ++ l.
   Proof.
     revert l; induction m as [ | x m IHm ]; simpl; intros l; auto.
     rewrite IHm, app_ass; auto.
   Qed.
 
-  Definition rev_linear l: list X := rev_aux nil l.
+  Definition rev_linear l: list X := rev' nil l.
 
   Fact rev_linear_spec l : rev_linear l = rev l.
   Proof.
-    unfold rev_linear; rewrite rev_aux_spec, <- app_nil_end; auto.
+    unfold rev_linear; rewrite rev'_spec, <- app_nil_end; auto.
   Qed.
 
 End rev_linear.
@@ -171,13 +170,45 @@ End fifo_two_lists.
 
 Arguments fifo_2l_nil {X}.
 
-Recursive Extraction fifo_two_lists.
-
 Section fifo_two_lazy_lists.
 
   (** From "Simple and Efficient Purely Functional Queues and Deques" by Chris Okasaki *)
 
   Variable X : Type.
+
+  Implicit Types (l r : llist X).
+
+  Let Q_spec (c : llist X * llist X * nat) :=
+    match c with (l,r,n) => exists Hl Hr, n + lfin_length r Hr = lfin_length l Hl end.
+
+  Definition fifo_2q_nil : sig Q_spec.
+  Proof. 
+    exists (lnil,lnil,0), (lfin_lnil _), (lfin_lnil _); simpl.
+    rewrite lfin_length_fix_0; auto.
+  Defined.
+
+  Definition fifo_2q_make l r (Hl : lfin l) (Hr : lfin r) n : n + lfin_length r Hr = 1 + lfin_length l Hl -> sig Q_spec.
+  Proof.
+    destruct n as [ | n ]; intros E.
+    + exists (llist_rotate (@lfin_lnil _) E, lnil,0); simpl.
+      exists (lfin_rotate _ _ (@lfin_lnil _) E), (@lfin_lnil _).
+      rewrite llist_rotate_length.
+      generalize (llist_rotate_length _ _ (@lfin_lnil _) E); intros H.
+ 
+ , lnil,0
+    refine (match n with 
+      | 0 => fun E => 
+    intros ((l,r),H).
+
+    
+
+  Definition fifo_2q_enq (q : Q) (x : X) : Q.
+  Proof.
+    destruct q as ((l,r),H); simpl in H.
+    
+    refine (match q with exist _ q Hq => _ end).
+
+End fifo_two_lazy_lists.
 
  
   
