@@ -76,9 +76,9 @@ Section bfn.
      its breadth first traversal yields [n;n+1;....;m[ for some m
    *)
 
-  Definition is_bfn_from n l := is_seq_from n (bft_f l).
+  Definition is_bfn_from n l: Prop := is_seq_from n (bft_f l).
 
-  (* Breath First Numbering: maps a forest X to a forest nat such that
+  (* Breadth First Numbering: maps a forest X to a forest nat such that
           1) the two forests are of the same shape
           2) the result is a breadth first numbering from n  
    *)
