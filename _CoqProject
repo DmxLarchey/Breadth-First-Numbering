@@ -12,3 +12,5 @@ wf_utils.v
 zip.v
 sorted.v
 increase.v
+llist.v
+bfn_fifo_2l.v
