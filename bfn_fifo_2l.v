@@ -79,7 +79,9 @@ Section bfn.
 
   (* Breath First Numbering: maps a forest X to a forest nat such that
           1) the two forests are of the same shape
-          2) the result is a breadth first numbering from n  
+          2) the result is a breadth first numbering from n
+
+     Beware that the output is a reversed queue compared to the input
    *)
 
   Definition bfn_2l_f n (p : fX) : { q : fN | fifo_2l_list p ~lt rev (fifo_2l_list q) /\ is_bfn_from n (rev (fifo_2l_list q)) }.

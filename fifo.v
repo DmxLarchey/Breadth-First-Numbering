@@ -115,41 +115,51 @@ Section fifo_two_lists.
   Implicit Type q : Q.
 
   Definition fifo_2l_list q := let (l,r) := q in l++rev r.
+
   Definition fifo_2l_nil : Q := (nil,nil).
-  Definition fifo_2l_enq q x := let (l,r) := q in (l,x::r).
-
-  Let fifo_2l_deq_rec q (Hq : fifo_2l_list q <> nil) : { c : X * Q | let (x,q') := c in fifo_2l_list q = x::fifo_2l_list q' }.
-  Proof.
-    revert Hq; induction on q as fifo_deq with measure (length (fst q)+2*length (snd q)); intros Hq.
-    refine (match q as q' return q = q' -> _ with 
-      | (nil,r)   => fun E  => let (res,Hres) := fifo_deq (rev_linear r,nil) _ _ in exist _ res _
-      | (x::l,r)  => fun _  => exist _ (x,(l,r)) _
-    end eq_refl).
-    + subst; simpl.
-      rewrite rev_linear_spec, rev_length.
-      simpl in Hq; destruct r; simpl; try omega; destruct Hq; trivial.
-    + subst; simpl in Hq |- *.
-      rewrite rev_linear_spec, <- app_nil_end; auto.
-    + subst; destruct res as (x,q').
-      rewrite <- Hres; simpl.
-      rewrite rev_linear_spec, <- app_nil_end; trivial.
-    + subst; trivial.
-  Qed.
-
-  Definition fifo_2l_deq q Hq := proj1_sig (fifo_2l_deq_rec q Hq).
-  
-  Definition fifo_2l_void q: bool :=
-    match q with (nil,nil) => true | _ => false end.
-
   Definition fifo_2l_nil_spec : fifo_nil_prop fifo_2l_list fifo_2l_nil.
   Proof. red; auto. Qed.
 
+  Definition fifo_2l_enq q x := let (l,r) := q in (l,x::r).
   Definition fifo_2l_enq_spec : fifo_enq_prop fifo_2l_list fifo_2l_enq.
   Proof. intros (l,r) x; simpl; rewrite app_ass; auto. Qed.
 
-  Definition fifo_2l_deq_spec : fifo_deq_prop fifo_2l_list fifo_2l_deq.
-  Proof. intros q Hq; apply (proj2_sig (fifo_2l_deq_rec q Hq)). Qed.
+  Section deq.
 
+    (* Beware that the extracted code loops forever if q = (nil,nil) 
+       which is not problematic with the guard fifo_2l_list q <> nil
+       but this is an interesting example of extraction of a partial
+       function ... 
+
+       let rec deq = function (l,r) -> 
+         match l with 
+           | nil  => deq (rev r,nil)
+           | x::l => (x,(l,r)
+         end
+
+       *)
+
+    Let fifo_2l_deq_rec q : fifo_2l_list q <> nil -> { c : X * Q | let (x,q') := c in fifo_2l_list q = x::fifo_2l_list q' }.
+    Proof.
+      induction on q as fifo_deq with measure (length (fst q)+2*length (snd q)); intros Hq.
+      refine (match q as q' return q = q' -> _ with 
+        | (nil,r)   => fun E  => let (res,Hres) := fifo_deq (rev_linear r,nil) _ _ in exist _ res _
+        | (x::l,r)  => fun _  => exist _ (x,(l,r)) _
+      end eq_refl); subst; simpl in * |- *; trivial.
+      + rewrite rev_linear_spec, rev_length.
+        destruct r; simpl; try omega; destruct Hq; trivial.
+      + rewrite rev_linear_spec, <- app_nil_end; trivial.
+      + destruct res; rewrite <- Hres, rev_linear_spec, <- app_nil_end; trivial.
+    Qed.
+
+    Definition fifo_2l_deq q Hq := proj1_sig (fifo_2l_deq_rec q Hq).
+    Definition fifo_2l_deq_spec : fifo_deq_prop fifo_2l_list fifo_2l_deq.
+    Proof. intros q Hq; apply (proj2_sig (fifo_2l_deq_rec q Hq)). Qed.
+
+  End deq.
+  
+  Definition fifo_2l_void q: bool :=
+    match q with (nil,nil) => true | _ => false end.
   Definition fifo_2l_void_spec : fifo_void_prop fifo_2l_list fifo_2l_void.
   Proof.
     intros ([ | x l],[ | y r]); simpl; split; auto; try discriminate.
