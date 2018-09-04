@@ -73,7 +73,8 @@ Section bfn.
 
   (* Breadth First Numbering: maps a forest X to a forest nat such that
           1) the two forests are of the same shape
-          2) the result is a breadth first numbering from n  
+          2) the result is a breadth first numbering from n 
+     For this, the resulting forest is interpreted as a snoc list (in the spec., it is reversed as a list).
    *)
 
   Definition bfn_f_gen n (p : fX) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
