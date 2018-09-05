@@ -114,12 +114,12 @@ Tactic Notation "induction" "on" hyp(x) hyp(y) "as" ident(IH) "with" "measure" u
      define mes of x y as (f : nat);
      set (rel u v := mes (fst u) (snd u) < mes (fst v) (snd v)); unfold fst, snd in rel;
      pattern x, y; match goal with
-       |- ?T _ _ => refine ((fix loop u v (Hu : Acc rel (u,v)) { struct Hu } : T u v := _) x y _)
-     end;
-     [ pattern u, v;
-       match goal with |- ?t _ _ => assert (forall u' v', rel (u',v') (u,v) -> t u' v') as IH end;
-       [ intros u' v' Hv; apply (loop u' v'), (Acc_inv Hu), Hv 
-       | unfold rel, mes in *; clear mes rel Hu loop x y; rename u into x; rename v into y ]
-     | unfold rel; apply wf_inverse_image, lt_wf ].
+       |- ?T _ _ => 
+       refine ((fix loop u v (Hu : Acc rel (u,v)) { struct Hu } : T u v := _) x y _);
+       [ assert (forall u' v', rel (u',v') (u,v) -> T u' v') as IH;
+         [ intros u' v' Hv; apply (loop u' v'), (Acc_inv Hu), Hv 
+         | unfold rel, mes in *; clear mes rel Hu loop x y; rename u into x; rename v into y ]
+       | unfold rel; apply wf_inverse_image, lt_wf ]
+     end.
 
 
