@@ -32,6 +32,21 @@ Section fifo_props.
 
 End fifo_props.
 
+Module Type Fifo.
+ 
+  Parameter  (X Q : Type) (fifo_list : Q -> list X) 
+                          (fifo_nil : Q)
+                          (fifo_enq : Q -> X -> Q)
+                          (fifo_deq : forall q, fifo_list q <> nil -> X * Q)
+                          (fifo_void : Q -> bool).
+
+  Axioms (fifo_nil_spec : fifo_nil_prop fifo_list fifo_nil)
+         (fifo_enq_spec : fifo_enq_prop fifo_list fifo_enq)
+         (fifo_deq_spec : fifo_deq_prop fifo_list fifo_deq)
+         (fifo_void_spec : fifo_void_prop fifo_list fifo_void).
+
+End Fifo.
+
 Record fifo (X : Type) := {
   queue :> Type;
   fifo_list : queue -> list X; 
