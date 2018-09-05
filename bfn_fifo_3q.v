@@ -177,6 +177,9 @@ End bfn.
 (* Notice that fifo_3q_deq is extracted to a function that loops forever
    if the input is the empty queue, ie does not following the spec *)
 
+Extract Inductive bool => "bool" [ "true" "false" ].
+Extract Inductive prod => "(*)"  [ "(,)" ].
+Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
 
 Recursive Extraction bfn_3q.
 
