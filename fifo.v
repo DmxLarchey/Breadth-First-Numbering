@@ -327,4 +327,166 @@ End fifo_two_lazy_lists.
 
 Recursive Extraction fifo_2q_nil fifo_2q_enq fifo_2q_deq fifo_2q_void.
 
+Section fifo_three_lazy_lists.
+
+  (** From "Simple and Efficient Purely Functional Queues and Deques" by Chris Okasaki 
+
+      this implements and prove the spec from page 587 with lazy lists (llist)
+      with invariant (l,r,l') : llength l' + llength r = llength l
+
+
+      let rec llist_rotate l r a := match r with
+        | lcons y r -> match l with
+          | lnil      -> lcons y a
+          | lcons x l -> lcons x (llist_rotate l' r' (lcons y a))
+
+      let fifo_3q_nil = (lnil,lnil,lnil)
+
+      let fifo_3q_make l r l' = match l' with
+        | lnil       -> let l' = llist_rotate l r lnil in (l',lnil,l')
+        | lcons _ l' -> (l, r, l')
+
+      let fifo_3q_enq (l,r,l') x = fifo_3q_make l (lcons x r) l'
+
+      let fifo_3q_deq (lcons x l,r,l') = (x,fifo_3q_make l r l')
+
+      let fifo_3q_void (l,r,n) = l = lnil
+
+    *)
+
+  Variable X : Type.
+
+  Implicit Types (l r : llist X).
+
+  Let Q_spec (c : llist X * llist X * llist X) :=
+    match c with (l,r,l') => exists Hl Hr Hl', lfin_length l' Hl' + lfin_length r Hr = lfin_length l Hl end.
+
+  Definition fifo_3q := sig Q_spec.
+
+  Implicit Types (q : fifo_3q) (x : X).
+
+  Definition fifo_3q_list : fifo_3q -> list X.
+  Proof.
+    intros (((l,r),l') & H).
+    refine (llist_list l _ ++ rev (llist_list r _));
+    destruct H as (? & ? & _); assumption.
+  Defined.
+
+  Definition fifo_3q_nil : fifo_3q.
+  Proof. 
+    exists (lnil,lnil,lnil), (lfin_lnil _), (lfin_lnil _), (lfin_lnil _); simpl.
+    rewrite lfin_length_fix_0; auto.
+  Defined.
+
+  Fact fifo_3q_nil_spec : fifo_nil_prop fifo_3q_list fifo_3q_nil.
+  Proof. 
+    unfold fifo_nil_prop, fifo_3q_list, fifo_3q_nil.
+    repeat rewrite lfin_length_fix_0; trivial.
+  Qed.
+
+  Definition fifo_3q_make l r l' : (exists Hl Hr Hl', lfin_length l' Hl' + lfin_length r Hr = 1 + lfin_length l Hl) -> fifo_3q.
+  Proof.
+    destruct l' as [ | x l' ]; intros E.
+    + assert (Hl1 : lfin l) by (destruct E as (? & ? & _); assumption).
+      assert (Hr1 : lfin r) by (destruct E as (? & ? & _); assumption).
+      assert (E1 : lfin_length r Hr1 = 1 + lfin_length l Hl1).
+      { destruct E as (Hl & Hr & Hl' & E).
+        rewrite lfin_length_fix_0 in E.
+        rewrite (lfin_length_eq _ Hr), (lfin_length_eq _ Hl); auto. }
+      refine (let l' := @llist_rotate _ l r lnil Hl1 Hr1 (@lfin_lnil _) E1 
+              in exist _ (l',lnil,l') _).
+      exists (lfin_rotate _ _ (@lfin_lnil _) E1), 
+             (@lfin_lnil _),
+             (lfin_rotate _ _ (@lfin_lnil _) E1).
+      unfold l'; rewrite llist_rotate_length; auto.
+    + exists (l,r,l').
+      destruct E as (Hl & Hr & Hl' & E).
+      exists Hl, Hr, (lfin_inv Hl').
+      rewrite lfin_length_fix_1 in E; omega.
+  Defined.
+
+  Hint Resolve llist_list_eq.
+
+  Fact fifo_3q_make_spec l r l' Hl Hr H : llist_list l Hl ++ rev (llist_list r Hr) = fifo_3q_list (@fifo_3q_make l r l' H).
+  Proof.
+    destruct H as (Hl1 & Hr1 & Hl' & E).
+    unfold fifo_3q_list, fifo_3q_make; destruct l' as [ | x l' ].
+    + rewrite (llist_rotate_eq _ _ (@lfin_lnil _) _).
+      repeat rewrite llist_list_fix_0; simpl.
+      repeat rewrite <- app_nil_end; repeat (f_equal; auto).
+    + repeat (f_equal; auto).
+  Qed.
+
+  Definition fifo_3q_enq q x : fifo_3q.
+  Proof.
+    destruct q as (((l,r),l') & H).
+    apply (@fifo_3q_make l (lcons x r) l').
+    destruct H as (Hl & Hr & Hl' & E).
+    exists Hl, (lfin_lcons _ Hr), Hl'.
+    rewrite lfin_length_fix_1, (lfin_length_eq _ Hr); omega.
+  Defined.
+
+  Fact fifo_3q_enq_spec : fifo_enq_prop fifo_3q_list fifo_3q_enq.
+  Proof.
+    unfold fifo_enq_prop, fifo_3q_enq.
+    intros  (((l,r),l') & Hl & Hr & Hl' & E) x.
+    rewrite <- (@fifo_3q_make_spec _ _ _ Hl (lfin_lcons _ Hr)).
+    unfold fifo_3q_list. 
+    rewrite llist_list_fix_1, app_ass; trivial.
+  Qed.
+
+  Definition fifo_3q_deq q : fifo_3q_list q <> nil -> X * fifo_3q.
+  Proof.
+    destruct q as (((l,r),l') & H); revert H.
+    refine (match l with 
+      | lnil      => fun H1 H2 => _
+      | lcons x l => fun H1 H2 => (x,@fifo_3q_make l r l' _)
+    end); [ exfalso | ]; destruct H1 as (Hl & Hr & Hl' & E).
+    + unfold fifo_3q_list in H2.
+      destruct r.
+      * do 2 rewrite llist_list_fix_0 in H2; destruct H2; trivial.
+      * rewrite lfin_length_fix_1, lfin_length_fix_0 in E; omega.
+    + exists (lfin_inv Hl), Hr, Hl'.
+      rewrite E, lfin_length_fix_1; auto.
+  Defined.
+
+  Fact fifo_3q_deq_spec : fifo_deq_prop fifo_3q_list fifo_3q_deq.
+  Proof.
+    unfold fifo_deq_prop, fifo_3q_deq.
+    intros  ((([ | x l],r),n) & Hl & Hr & Hl' & E) Hq.
+    + exfalso.
+      unfold fifo_3q_list in Hq.
+      destruct r.
+      * do 2 rewrite llist_list_fix_0 in Hq; destruct Hq; trivial.
+      * rewrite lfin_length_fix_1, lfin_length_fix_0 in E; omega.
+    + rewrite <- (@fifo_3q_make_spec _ _ _ (lfin_inv Hl) Hr).
+      unfold fifo_3q_list.
+      rewrite llist_list_fix_1; auto.
+  Qed.
+
+  Definition fifo_3q_void : fifo_3q -> bool.
+  Proof.
+    intros ((([ | x l],_),_) & _).
+    + exact true.
+    + exact false.
+  Defined.
+  
+  Fact fifo_3q_void_spec : fifo_void_prop fifo_3q_list fifo_3q_void.
+  Proof.
+    unfold fifo_void_prop, fifo_3q_list, fifo_3q_void.
+    intros ((([ | x l],r),n) & Hl & Hr & Hl' & E).
+    + split; auto; intros _. 
+      rewrite llist_list_fix_0.
+      destruct r.
+      * rewrite llist_list_fix_0; auto.
+      * rewrite lfin_length_fix_0, lfin_length_fix_1 in E; omega.
+    + split; try discriminate.
+      rewrite llist_list_fix_1; discriminate.
+  Qed.
+
+End fifo_three_lazy_lists.
+
+Recursive Extraction fifo_3q_nil fifo_3q_enq fifo_3q_deq fifo_3q_void.
+
+
 
