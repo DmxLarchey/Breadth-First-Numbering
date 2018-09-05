@@ -177,6 +177,7 @@ End bfn.
 (* Notice that fifo_3q_deq is extracted to a function that loops forever
    if the input is the empty queue, ie does not following the spec *)
 
+
 Recursive Extraction bfn_3q.
 
 Check bfn_3q.
