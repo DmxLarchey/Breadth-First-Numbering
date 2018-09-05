@@ -82,10 +82,10 @@ Extraction Inline measure_rect measure_double_rect.
     by using measure_rect ...
 *)
 
-Local Tactic Notation "define" ident(f) "of" hyp(n) "as" uconstr(t)  :=
+Tactic Notation "define" ident(f) "of" hyp(n) "as" uconstr(t)  :=
   match type of n with ?N => pose (f (n : N) := t) end.
 
-Local Tactic Notation "define" ident(f) "of" hyp(n) hyp(m) "as" uconstr(t)  :=
+Tactic Notation "define" ident(f) "of" hyp(n) hyp(m) "as" uconstr(t)  :=
   match type of n with ?N =>  
     match type of m with ?M  => pose (f (n:N) (m:M) := t) end end.
 
@@ -96,12 +96,14 @@ Tactic Notation "induction" "on" hyp(x) "as" ident(IH) "with" "measure" uconstr(
   in clear IH;
      define mes of x as (f : nat);
      set (rel x y := mes x < mes y);
-     refine ((fix loop u (Hu : Acc rel u) { struct Hu } := _) x _);
-     [ pattern u;
-       match goal with |- ?t _ => assert (forall v, rel v u -> t v) as IH end;
-       [ intros v Hv; apply (loop v), (Acc_inv Hu), Hv 
-       | unfold rel, mes in *; clear mes rel Hu loop x; rename u into x ]
-     | unfold rel; apply wf_inverse_image, lt_wf ].
+     pattern x; match goal with
+       |- ?T _ => 
+       refine ((fix loop u (Hu : Acc rel u) { struct Hu } : T u := _) x _);
+       [ assert (forall v, rel v u -> T v) as IH;
+         [ intros v Hv; apply (loop v), (Acc_inv Hu), Hv 
+         | unfold rel, mes in *; clear mes rel Hu loop x; rename u into x ]
+       | unfold rel; apply wf_inverse_image, lt_wf ]
+     end.
 
 Tactic Notation "induction" "on" hyp(x) hyp(y) "as" ident(IH) "with" "measure" uconstr(f) :=
   generalize I; intro IH;
@@ -111,7 +113,9 @@ Tactic Notation "induction" "on" hyp(x) hyp(y) "as" ident(IH) "with" "measure" u
   in clear IH; 
      define mes of x y as (f : nat);
      set (rel u v := mes (fst u) (snd u) < mes (fst v) (snd v)); unfold fst, snd in rel;
-     refine ((fix loop u v (Hu : Acc rel (u,v)) { struct Hu } := _) x y _);
+     pattern x, y; match goal with
+       |- ?T _ _ => refine ((fix loop u v (Hu : Acc rel (u,v)) { struct Hu } : T u v := _) x y _)
+     end;
      [ pattern u, v;
        match goal with |- ?t _ _ => assert (forall u' v', rel (u',v') (u,v) -> t u' v') as IH end;
        [ intros u' v' Hv; apply (loop u' v'), (Acc_inv Hu), Hv 
