@@ -61,19 +61,28 @@ End seq_an.
 
 Section bfn.
 
-  Let fifo_3q_sum { X } (q : fifo_3q (bt X)) := lsum (fifo_3q_list q). 
+  Let fifo := fifo_3q.
+  Let fifo_list := fifo_3q_list.
+  Let fifo_nil := @fifo_3q_nil.
+  Let fifo_enq := fifo_3q_enq.
+  Let fifo_deq := fifo_3q_deq.
+  Let fifo_void := fifo_3q_void.
+
+  Let fifo_nil_spec : forall X, fifo_nil_prop (@fifo_list X) (fifo_nil X) := fifo_3q_nil_spec.
+  Let fifo_enq_spec : forall X, fifo_enq_prop (@fifo_list X) (@fifo_enq X) := fifo_3q_enq_spec.
+  Let fifo_deq_spec : forall X, fifo_deq_prop (@fifo_list X) (@fifo_deq X) := fifo_3q_deq_spec.
+  Let fifo_void_spec : forall X, fifo_void_prop (@fifo_list X) (@fifo_void X) := fifo_3q_void_spec.
+
+  Let fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
 
   Variable (X : Type).
 
-  Notation fX := (fifo_3q (bt X)). 
-  Notation fN := (fifo_3q (bt nat)).
+  Notation fX := (fifo (bt X)). 
+  Notation fN := (fifo (bt nat)).
 
   (* the forest (list of bt nat) is a breadth first numbering from n if
      its breadth first traversal yields [n;n+1;....;m[ for some m
    *)
-
-  Let fX_spec := fifo_3q_spec (bt X).
-  Let fN_spec := fifo_3q_spec (bt nat).
 
   Definition is_bfn_from n l := is_seq_from n (bft_f l).
 
@@ -84,52 +93,52 @@ Section bfn.
      Beware that the output is a reversed queue compared to the input
    *)
 
-  Definition bfn_3q_f n (p : fX) : { q : fN | fifo_3q_list p ~lt rev (fifo_3q_list q) /\ is_bfn_from n (rev (fifo_3q_list q)) }.
+  Definition bfn_gen_f n (p : fX) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
   Proof.
-    induction on n p as bfn_3q_f with measure (fifo_3q_sum p).
-    refine (match fifo_3q_void p as b return fifo_3q_void p = b -> _ with
-      | true  => fun H1 => exist _ fifo_3q_nil _
+    induction on n p as bfn_gen_f with measure (fifo_sum p).
+    refine (match fifo_void p as b return fifo_void p = b -> _ with
+      | true  => fun H1 => exist _ (@fifo_nil _) _
       | false => fun H1 => _
     end eq_refl).
-    { apply fifo_3q_void_spec in H1.
-      rewrite H1, fifo_3q_nil_spec; split; simpl; auto.
+    { apply fifo_void_spec in H1.
+      rewrite H1, fifo_nil_spec; split; simpl; auto.
       red; rewrite bft_f_fix_0; simpl; auto. }
-    assert (fifo_3q_list p <> nil) as H2.
-    { intro E; apply fifo_3q_void_spec in E; rewrite E in H1; discriminate. }
-    refine (match fifo_3q_deq p H2 as k return fifo_3q_deq p H2 = k -> _ with
+    assert (fifo_list p <> nil) as H2.
+    { intro E; apply fifo_void_spec in E; rewrite E in H1; discriminate. }
+    refine (match fifo_deq _ H2 as k return fifo_deq _ H2 = k -> _ with
       | (leaf x ,p') => _
       | (node a x b, p') => _
     end eq_refl); intros H3.
-    + generalize (fifo_3q_deq_spec _ H2); rewrite H3; intros H4.
-      refine (let (q,Hq) := bfn_3q_f (S n) p' _ in exist _ (fifo_3q_enq q (leaf n)) _).
-      { unfold fifo_3q_sum; rewrite H4; simpl; omega. }
+    + generalize (fifo_deq_spec _ H2); rewrite H3; intros H4.
+      refine (let (q,Hq) := bfn_gen_f (S n) p' _ in exist _ (fifo_enq q (leaf n)) _).
+      { unfold fifo_sum; rewrite H4; simpl; omega. }
       destruct Hq as (H5 & H6).
-      rewrite H4, fifo_3q_enq_spec.
+      rewrite H4, fifo_enq_spec.
       subst; split; auto.
       rewrite rev_app_distr; simpl; auto.
       rewrite rev_app_distr; simpl; red.
       rewrite bft_f_fix_3; simpl; rewrite <- app_nil_end; auto.
-    + generalize (fifo_3q_deq_spec _ H2); rewrite H3; intros H4.
-      refine (let (q,Hq) := bfn_3q_f (S n) (fifo_3q_enq (fifo_3q_enq p' a) b) _ in _).
-      { unfold fifo_3q_sum. 
-        rewrite fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass; simpl.
+    + generalize (fifo_deq_spec _ H2); rewrite H3; intros H4.
+      refine (let (q,Hq) := bfn_gen_f (S n) (fifo_enq (fifo_enq p' a) b) _ in _).
+      { unfold fifo_sum. 
+        rewrite fifo_enq_spec, fifo_enq_spec, app_ass; simpl.
         rewrite lsum_app, H4; simpl; omega. }
       destruct Hq as (H5 & H6).
-      rewrite fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass in H5; simpl in H5.
-      assert (2 <= length (fifo_3q_list q)) as H7.
+      rewrite fifo_enq_spec, fifo_enq_spec, app_ass in H5; simpl in H5.
+      assert (2 <= length (fifo_list q)) as H7.
       { apply Forall2_length in H5.
         rewrite app_length, rev_length in H5.
         simpl in H5; omega. }
-      assert (fifo_3q_list q <> nil) as H8.
-      { revert H7; destruct (fifo_3q_list q); simpl; try discriminate; intro; omega. } 
-      generalize (fifo_3q_deq_spec _ H8).
-      refine (match fifo_3q_deq _ H8 with (u,q') => _ end); intros H9.
-      assert (fifo_3q_list q' <> nil) as H10.
-      { revert H7; rewrite H9; destruct (fifo_3q_list q'); simpl; try discriminate; intro; omega. }
-      generalize (fifo_3q_deq_spec _ H10).
-      refine (match fifo_3q_deq _ H10 with (v,q'') => _ end); intros H11.
-      exists (fifo_3q_enq q'' (node v n u)).
-      rewrite H4, fifo_3q_enq_spec, rev_app_distr; simpl.
+      assert (fifo_list q <> nil) as H8.
+      { revert H7; destruct (fifo_list q); simpl; try discriminate; intro; omega. } 
+      generalize (fifo_deq_spec _ H8).
+      refine (match fifo_deq _ H8 with (u,q') => _ end); intros H9.
+      assert (fifo_list q' <> nil) as H10.
+      { revert H7; rewrite H9; destruct (fifo_list q'); simpl; try discriminate; intro; omega. }
+      generalize (fifo_deq_spec _ H10).
+      refine (match fifo_deq _ H10 with (v,q'') => _ end); intros H11.
+      exists (fifo_enq q'' (node v n u)).
+      rewrite H4, fifo_enq_spec, rev_app_distr; simpl.
       rewrite H9, H11 in H5; simpl in H5; rewrite app_ass in H5; simpl in H5.
       rewrite H9, H11 in H6; simpl in H6; rewrite app_ass in H6; simpl in H6.
       unfold is_bfn_from in H6 |- *.
@@ -140,16 +149,16 @@ Section bfn.
 
   Section bfn.
 
-    Let bfn_3q_full (t : bt X) : { t' | t ~t t' /\ is_seq_from 0 (bft_std t') }.
+    Let bfn_full (t : bt X) : { t' | t ~t t' /\ is_seq_from 0 (bft_std t') }.
     Proof.
-      refine (match @bfn_3q_f 0 (fifo_3q_enq fifo_3q_nil t) with exist _ q Hq => _ end).
-      rewrite fifo_3q_enq_spec, fifo_3q_nil_spec in Hq; simpl in Hq.
+      refine (match @bfn_gen_f 0 (fifo_enq (@fifo_nil _) t) with exist _ q Hq => _ end).
+      rewrite fifo_enq_spec, fifo_nil_spec in Hq; simpl in Hq.
       destruct Hq as (H1 & H2).
-      assert (fifo_3q_list q <> nil) as H3.
+      assert (fifo_list q <> nil) as H3.
       { apply Forall2_length in H1; rewrite rev_length in H1.
-        destruct (fifo_3q_list q); discriminate. }
-      generalize (fifo_3q_deq_spec _ H3).
-      refine (match fifo_3q_deq _ H3 with (x,q') => _ end); intros H4.
+        destruct (fifo_list q); discriminate. }
+      generalize (fifo_deq_spec _ H3).
+      refine (match fifo_deq _ H3 with (x,q') => _ end); intros H4.
       exists x.
       rewrite <- bft_std_eq_bft.
       rewrite H4 in H1; simpl in H1.
@@ -162,29 +171,28 @@ Section bfn.
       auto.
     Qed.
 
-    Definition bfn_3q t := proj1_sig (bfn_3q_full t).
+    Definition bfn_gen t := proj1_sig (bfn_full t).
 
-    Fact bfn_3q_spec_1 t : t ~t bfn_3q t.
-    Proof. apply (proj2_sig (bfn_3q_full t)). Qed.
+    Fact bfn_gen_spec_1 t : t ~t bfn_gen t.
+    Proof. apply (proj2_sig (bfn_full t)). Qed.
 
-    Fact bfn_3q_spec_2 t : exists n, bft_std (bfn_3q t) = seq_an 0 n.
-    Proof. apply is_seq_from_spec, (proj2_sig (bfn_3q_full t)). Qed.
+    Fact bfn_gen_spec_2 t : exists n, bft_std (bfn_gen t) = seq_an 0 n.
+    Proof. apply is_seq_from_spec, (proj2_sig (bfn_full t)). Qed.
 
   End bfn.
 
 End bfn.
 
-(* Notice that fifo_3q_deq is extracted to a function that loops forever
-   if the input is the empty queue, ie does not following the spec *)
+(* The problem is that the lets at the begining of section bfn 
+   are not inlined in the extracted term *)
 
-Extract Inductive bool => "bool" [ "true" "false" ].
-Extract Inductive prod => "(*)"  [ "(,)" ].
-Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
+Extraction Language Haskell.
 
-Recursive Extraction bfn_3q.
+Print Extraction Inline.
 
-Check bfn_3q.
-Check bfn_3q_spec_1.
-Check bfn_3q_spec_2.
-             
+Recursive Extraction bfn_gen.
+
+Check bfn_gen.
+Check bfn_gen_spec_1.
+Check bfn_gen_spec_2.
 

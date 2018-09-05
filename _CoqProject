@@ -16,3 +16,5 @@ llist.v
 bfn_fifo_2l.v
 bfn_fifo_gen.v
 bfn_fifo_3q.v
+bfn_fifo_module.v
+bfn_fifo_param.v

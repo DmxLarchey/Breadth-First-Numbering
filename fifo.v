@@ -32,9 +32,17 @@ Section fifo_props.
 
 End fifo_props.
 
-Module Type Fifo.
- 
-  Parameter  (X Q : Type) (fifo_list : Q -> list X) 
+Module Type Base.
+
+  Parameter X : Type.
+
+End Base.
+
+Module Type Fifo (B : Base).
+
+  Notation X := B.X. 
+
+  Parameter  (Q : Type)   (fifo_list : Q -> list X) 
                           (fifo_nil : Q)
                           (fifo_enq : Q -> X -> Q)
                           (fifo_deq : forall q, fifo_list q <> nil -> X * Q)
@@ -509,6 +517,24 @@ End fifo_three_lazy_lists.
 Arguments fifo_3q_nil {X}.
 
 Recursive Extraction fifo_3q_nil fifo_3q_enq fifo_3q_deq fifo_3q_void.
+
+Module fifo_3q (B : Base) : Fifo B.
+
+  Definition Q := fifo_3q B.X.
+
+  Definition fifo_list := @fifo_3q_list B.X.
+  Definition fifo_nil := @fifo_3q_nil B.X.
+  Definition fifo_enq := @fifo_3q_enq B.X.
+  Definition fifo_deq := @fifo_3q_deq B.X.
+  Definition fifo_void := @fifo_3q_void B.X.
+
+  Definition fifo_nil_spec := @fifo_3q_nil_spec B.X.
+  Definition fifo_enq_spec := @fifo_3q_enq_spec B.X.
+  Definition fifo_deq_spec := @fifo_3q_deq_spec B.X.
+  Definition fifo_void_spec := @fifo_3q_void_spec B.X.
+
+End fifo_3q.
+  
 
 
 

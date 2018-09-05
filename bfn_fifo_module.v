@@ -59,21 +59,34 @@ Section seq_an.
 
 End seq_an.
 
-Section bfn.
+Module Type Bfn (B : Base).
+
+  Parameter bfn : bt B.X -> bt nat.
+  
+  Axioms bfn_spec_1 : forall t, t ~t bfn t.
+  Axioms bfn_spec_2 : forall t, exists n, bft_std (bfn t) = seq_an 0 n.
+
+End Bfn.
+
+Module N : Base. Definition X:= nat. End N.
+Module T (B : Base) : Base. Definition X := bt B.X. End T. 
+
+Module bfn (B : Base) : Bfn B.
 
   Let fifo_3q_sum { X } (q : fifo_3q (bt X)) := lsum (fifo_3q_list q). 
 
-  Variable (X : Type).
+  Module tX := T B.
+  Module tN := T N.
+  Module fX := fifo_3q tX.
+  Module fN := fifo_3q tN.
 
-  Notation fX := (fifo_3q (bt X)). 
-  Notation fN := (fifo_3q (bt nat)).
+  (* Seems complicated to work with modules ... *)
+
+  Notation X := B.X.
 
   (* the forest (list of bt nat) is a breadth first numbering from n if
      its breadth first traversal yields [n;n+1;....;m[ for some m
    *)
-
-  Let fX_spec := fifo_3q_spec (bt X).
-  Let fN_spec := fifo_3q_spec (bt nat).
 
   Definition is_bfn_from n l := is_seq_from n (bft_f l).
 
@@ -84,7 +97,7 @@ Section bfn.
      Beware that the output is a reversed queue compared to the input
    *)
 
-  Definition bfn_3q_f n (p : fX) : { q : fN | fifo_3q_list p ~lt rev (fifo_3q_list q) /\ is_bfn_from n (rev (fifo_3q_list q)) }.
+  Definition bfn_3q_f n (p : fX.Q) : { q : fN.Q | fX.fifo_list p ~lt rev (fN.fifo_list q) /\ is_bfn_from n (rev (fN.fifo_list q)) }.
   Proof.
     induction on n p as bfn_3q_f with measure (fifo_3q_sum p).
     refine (match fifo_3q_void p as b return fifo_3q_void p = b -> _ with
@@ -176,10 +189,6 @@ End bfn.
 
 (* Notice that fifo_3q_deq is extracted to a function that loops forever
    if the input is the empty queue, ie does not following the spec *)
-
-Extract Inductive bool => "bool" [ "true" "false" ].
-Extract Inductive prod => "(*)"  [ "(,)" ].
-Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
 
 Recursive Extraction bfn_3q.
 
