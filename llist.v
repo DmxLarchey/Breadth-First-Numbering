@@ -129,6 +129,9 @@ Section llist.
   Definition lfin_length l Hl := length (llist_list l Hl).
 
   Arguments lfin_length : clear implicits.
+
+  Fact lfin_length_eq l H1 H2 : lfin_length l H1 = lfin_length l H2.
+  Proof. unfold lfin_length; f_equal; apply llist_list_eq. Qed.
   
   Fact lfin_length_fix_0 H : lfin_length lnil H = 0.
   Proof. unfold lfin_length; rewrite llist_list_fix_0; auto. Qed.
