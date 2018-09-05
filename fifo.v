@@ -484,7 +484,14 @@ Section fifo_three_lazy_lists.
       rewrite llist_list_fix_1; discriminate.
   Qed.
 
+  Hint Resolve fifo_3q_nil_spec fifo_3q_enq_spec fifo_3q_deq_spec fifo_3q_void_spec.
+
+  Theorem fifo_3q_spec : fifo_props fifo_3q_list fifo_3q_nil fifo_3q_enq fifo_3q_deq fifo_3q_void.
+  Proof. red; auto. Qed.
+
 End fifo_three_lazy_lists.
+
+Arguments fifo_3q_nil {X}.
 
 Recursive Extraction fifo_3q_nil fifo_3q_enq fifo_3q_deq fifo_3q_void.
 
