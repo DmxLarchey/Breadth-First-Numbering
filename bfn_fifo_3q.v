@@ -183,6 +183,8 @@ Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () e
 
 Recursive Extraction bfn_3q.
 
+Extraction "bfn.ml" bfn_3q.
+
 Check bfn_3q.
 Check bfn_3q_spec_1.
 Check bfn_3q_spec_2.
