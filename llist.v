@@ -52,9 +52,9 @@ Section llist.
   Lemma lunfold_many_eq: forall n (l:llist), l = lunfold_many l n.
   Proof.
     induction n as [ | n IHn ].
-    + trivial.
+    + reflexivity.
     + intros [ | x l ].
-      * trivial.
+      * reflexivity.
       * simpl; f_equal; auto.
   Qed.
 
