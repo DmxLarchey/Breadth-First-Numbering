@@ -60,7 +60,7 @@ Section llist.
 
   (* Every finite list can be transformed into a lazy list. *)
 
-  Fixpoint list_llist l : llist :=
+  Fixpoint list_llist (l: list X) : llist :=
     match l with
       | nil  => lnil
       | a::l => lcons a (list_llist l)
@@ -94,18 +94,18 @@ Section llist.
       inversion H; trivial.
     Qed.
   
-    Definition llist_list l Hl := proj1_sig (@llist_list_rec l Hl).
+    Definition llist_list l (Hl: lfin l): list X := proj1_sig (@llist_list_rec l Hl).
   
-    Fact llist_list_spec l Hl : l = list_llist (@llist_list l Hl).
+    Fact llist_list_spec l (Hl: lfin l) : l = list_llist (@llist_list l Hl).
     Proof. apply (proj2_sig (@llist_list_rec l Hl)). Qed.
 
   End llist_list.
   
   Arguments llist_list : clear implicits.
 
-  Fact llist_list_eq l H1 H2 : @llist_list l H1 = @llist_list l H2.
+  Fact llist_list_eq l (H1 H2: lfin l) : @llist_list l H1 = @llist_list l H2.
   Proof.
-    apply list_llist_inj; repeat rewrite <- llist_list_spec; trivial.
+    apply list_llist_inj; do 2 rewrite <- llist_list_spec; reflexivity.
   Qed.
 
   Fact llist_list_fix_0 H : llist_list lnil H = nil.
@@ -126,11 +126,11 @@ Section llist.
     apply llist_list_spec.
   Qed.
 
-  Definition lfin_length l Hl := length (llist_list l Hl).
+  Definition lfin_length l (Hl: lfin l) := length (llist_list l Hl).
 
   Arguments lfin_length : clear implicits.
 
-  Fact lfin_length_eq l H1 H2 : lfin_length l H1 = lfin_length l H2.
+  Fact lfin_length_eq l (H1 H2: lfin l) : lfin_length l H1 = lfin_length l H2.
   Proof. unfold lfin_length; f_equal; apply llist_list_eq. Qed.
   
   Fact lfin_length_fix_0 H : lfin_length lnil H = 0.
@@ -161,10 +161,10 @@ Section Append.
         | lcons x l => fun Hl => let (r,Hr) := loop l m (lfin_inv Hl) Hm in exist _ (lcons x r) _
       end).
       + rewrite llist_list_fix_0; simpl; apply llist_list_spec.
-      + rewrite llist_list_fix_1; simpl; f_equal; trivial.
+      + rewrite llist_list_fix_1; simpl; f_equal; assumption.
     Qed.
 
-    Definition llist_app l m Hl Hm := proj1_sig (@llist_app_rec l m Hl Hm).
+    Definition llist_app l m Hl Hm: llist X := proj1_sig (@llist_app_rec l m Hl Hm).
 
     Fact llist_app_spec l m Hl Hm : @llist_app l m Hl Hm = list_llist (llist_list _ Hl ++ llist_list _ Hm).
     Proof. apply (proj2_sig (@llist_app_rec l m Hl Hm)). Qed.
@@ -187,8 +187,8 @@ Section Rotate.
   
   Section def.
 
-    Let prec  l Hl r Hr := lfin_length r Hr = 1 + lfin_length l Hl.
-    Let rspec l Hl r Hr a Ha m := m = list_llist (llist_list l Hl++rev (llist_list r Hr)++llist_list a Ha).
+    Let prec  l Hl r Hr: Prop := lfin_length r Hr = 1 + lfin_length l Hl.
+    Let rspec l Hl r Hr a Ha m: Prop := m = list_llist (llist_list l Hl++rev (llist_list r Hr)++llist_list a Ha).
   
     Let llist_rotate_rec : forall l r a Hl Hr Ha, @prec l Hl r Hr -> sig (@rspec l Hl r Hr a Ha).
     Proof.
@@ -216,10 +216,10 @@ Section Rotate.
           repeat rewrite lfin_length_fix_1; intros; omega.
         * red in Hro |- *; revert Hro.
           repeat rewrite llist_list_fix_1; intros; subst.
-          simpl; rewrite app_ass; simpl; auto.
+          simpl; rewrite app_ass; simpl; reflexivity.
     Qed.
 
-    Definition llist_rotate f r a Hf Hr Ha H := proj1_sig (@llist_rotate_rec f r a Hf Hr Ha H).
+    Definition llist_rotate f r a Hf Hr Ha H: llist X := proj1_sig (@llist_rotate_rec f r a Hf Hr Ha H).
 
     Fact llist_rotate_spec f r a Hf Hr Ha H : @rspec f Hf r Hr a Ha (@llist_rotate f r a Hf Hr Ha H).
     Proof. apply (proj2_sig (@llist_rotate_rec f r a Hf Hr Ha H)). Qed.
@@ -246,7 +246,7 @@ Section Rotate.
   Proof.
     unfold lfin_length.
     rewrite llist_rotate_eq.
-    repeat rewrite app_length.
+    do 2 rewrite app_length.
     rewrite rev_length; omega.
   Qed.
  
