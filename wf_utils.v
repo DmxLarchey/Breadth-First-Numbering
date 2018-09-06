@@ -15,7 +15,7 @@ Section measure_rect.
 
   Variable (X : Type) (m : X -> nat) (P : X -> Type).
 
-  Let R x y := m x < m y.
+  Let R (x y: X): Prop := m x < m y.
 
   Fact Acc_measure : well_founded R.
   Proof. unfold R; apply wf_inverse_image, lt_wf. Qed.
@@ -37,7 +37,7 @@ Section measure_double_rect.
 
   Variable (X Y : Type) (m : X -> Y -> nat) (P : X -> Y -> Type).
 
-  Let R c d := m (fst c) (snd c) < m (fst d) (snd d).
+  Let R (c d: X * Y): Prop := m (fst c) (snd c) < m (fst d) (snd d).
 
   Theorem measure_double_rect : 
         (forall x y, (forall x' y', m x' y' < m x y -> P x' y') -> P x y)
@@ -47,7 +47,7 @@ Section measure_double_rect.
     cut (Acc R (x,y)).
     + revert x y.
       refine (fix loop x y H { struct H } := @HP x y (fun x' y' H' => loop x' y' (Acc_inv H _))).
-      apply H'.
+      exact H'.
     + unfold R; apply wf_inverse_image, lt_wf.
   Defined.
 
