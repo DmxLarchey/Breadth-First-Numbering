@@ -398,22 +398,22 @@ Section fifo_three_lazy_lists.
 
   Definition fifo_3q_make l r l' : (exists Hl Hr Hl', lfin_length l' Hl' + lfin_length r Hr = 1 + lfin_length l Hl) -> fifo_3q.
   Proof.
-    destruct l' as [ | x l' ]; intros E.
+    destruct l' as [ | x l'' ]; intros E.
     + assert (Hl1 : lfin l) by (destruct E as (? & ? & _); assumption).
       assert (Hr1 : lfin r) by (destruct E as (? & ? & _); assumption).
       assert (E1 : lfin_length r Hr1 = 1 + lfin_length l Hl1).
       { destruct E as (Hl & Hr & Hl' & E).
         rewrite lfin_length_fix_0 in E.
         rewrite (lfin_length_eq _ Hr), (lfin_length_eq _ Hl); auto. }
-      refine (let l' := @llist_rotate _ l r lnil Hl1 Hr1 (@lfin_lnil _) E1 
-              in exist _ (l',lnil,l') _).
+      refine (let l'' := @llist_rotate _ l r lnil Hl1 Hr1 (@lfin_lnil _) E1 
+              in exist _ (l'',lnil,l'') _).
       exists (lfin_rotate _ _ (@lfin_lnil _) E1), 
              (@lfin_lnil _),
              (lfin_rotate _ _ (@lfin_lnil _) E1).
-      unfold l'; rewrite llist_rotate_length; auto.
-    + exists (l,r,l').
-      destruct E as (Hl & Hr & Hl' & E).
-      exists Hl, Hr, (lfin_inv Hl').
+      unfold l''; rewrite llist_rotate_length; auto.
+    + exists (l,r,l'').
+      destruct E as (Hl & Hr & Hl'' & E).
+      exists Hl, Hr, (lfin_inv Hl'').
       rewrite lfin_length_fix_1 in E; omega.
   Defined.
 
