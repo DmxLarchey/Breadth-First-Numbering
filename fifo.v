@@ -88,8 +88,8 @@ Section fifo_trivial.
   Definition fifo_trivial : fifo X.
   Proof.
     exists Q fifo_list fifo_nil fifo_enq fifo_deq fifo_void; red; auto.
-    intros [ | ] Hq; simpl; auto; destruct Hq; reflexivity.
-    intros [ | ]; simpl; split; auto; discriminate.
+    - intros [ | ] Hq; simpl; auto; destruct Hq; reflexivity.
+    - intros [ | ]; simpl; split; auto; discriminate.
   Defined.
 
 End fifo_trivial.
@@ -148,8 +148,8 @@ Section fifo_two_lists.
 
        let rec deq = function (l,r) -> 
          match l with 
-           | nil  => deq (rev r,nil)
-           | x::l => (x,(l,r)
+           | nil  => deq (rev_linear r,nil)
+           | x::l => (x,(l,r))
          end
 
        *)
@@ -162,12 +162,12 @@ Section fifo_two_lists.
         | (x::l,r)  => fun _  => exist _ (x,(l,r)) _
       end eq_refl); subst; simpl in * |- *; trivial.
       + rewrite rev_linear_spec, rev_length.
-        destruct r; simpl; try omega; destruct Hq; trivial.
+        destruct r; simpl; try omega; destruct Hq; reflexivity.
       + rewrite rev_linear_spec, <- app_nil_end; trivial.
-      + destruct res; rewrite <- Hres, rev_linear_spec, <- app_nil_end; trivial.
+      + destruct res; rewrite <- Hres, rev_linear_spec, <- app_nil_end; reflexivity.
     Qed.
 
-    Definition fifo_2l_deq q Hq := proj1_sig (fifo_2l_deq_rec q Hq).
+    Definition fifo_2l_deq q Hq: X * Q := proj1_sig (fifo_2l_deq_rec q Hq).
     Definition fifo_2l_deq_spec : fifo_deq_prop fifo_2l_list fifo_2l_deq.
     Proof. intros q Hq; apply (proj2_sig (fifo_2l_deq_rec q Hq)). Qed.
 
@@ -199,7 +199,7 @@ Section fifo_two_lazy_lists.
 
   (** From "Simple and Efficient Purely Functional Queues and Deques" by Chris Okasaki 
 
-      this implements and prove the spec from page 587 with lazy lists (llist)
+      this implements and proves the spec from page 587 with lazy lists (llist)
       with invariant (l,r,n) : n + llength r = llength l
 
       let fifo_2q_nil = (lnil,lnil,0)
@@ -233,14 +233,11 @@ Section fifo_two_lazy_lists.
   Definition fifo_2q_nil : sig Q_spec.
   Proof. 
     exists (lnil,lnil,0), (lfin_lnil _), (lfin_lnil _); simpl.
-    rewrite lfin_length_fix_0; auto.
+    reflexivity.
   Defined.
 
   Fact fifo_2q_nil_spec : fifo_nil_prop fifo_2q_list fifo_2q_nil.
-  Proof. 
-    unfold fifo_nil_prop, fifo_2q_list, fifo_2q_nil.
-    repeat rewrite lfin_length_fix_0; trivial.
-  Qed.
+  Proof. reflexivity. Qed.
 
   Definition fifo_2q_make l r n : (exists Hl Hr, n + lfin_length r Hr = 1 + lfin_length l Hl) -> sig Q_spec.
   Proof.
@@ -510,5 +507,6 @@ Arguments fifo_3q_nil {X}.
 
 Recursive Extraction fifo_3q_nil fifo_3q_enq fifo_3q_deq fifo_3q_void.
 
-
-
+(*
+Recursive Extraction fifo_2l_deq.
+ *)
