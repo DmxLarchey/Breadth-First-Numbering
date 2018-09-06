@@ -501,11 +501,25 @@ Section fifo_three_lazy_lists.
   Theorem fifo_3q_spec : fifo_props fifo_3q_list fifo_3q_nil fifo_3q_enq fifo_3q_deq fifo_3q_void.
   Proof. red; auto. Qed.
 
+  Definition fifo_3q_nil_full : { q | fifo_3q_list q = nil }.
+  Proof. exists fifo_3q_nil; auto. Defined.
+
+  Definition fifo_3q_enq_full q x : { q' | fifo_3q_list q' = fifo_3q_list q ++ x :: nil }.
+  Proof. exists (fifo_3q_enq q x); auto. Defined.
+
+  Definition fifo_3q_deq_full q : fifo_3q_list q <> nil -> { c : X*fifo_3q | let (x,q') := c in fifo_3q_list q = x::fifo_3q_list q' }.
+  Proof. intros Hq; exists (fifo_3q_deq _ Hq); apply fifo_3q_deq_spec. Defined.
+
+  Definition fifo_3q_void_full q : { b | b = true <-> fifo_3q_list q = nil }.
+  Proof. exists (fifo_3q_void q); auto. Defined. 
+
 End fifo_three_lazy_lists.
 
 Arguments fifo_3q_nil {X}.
 
 Recursive Extraction fifo_3q_nil fifo_3q_enq fifo_3q_deq fifo_3q_void.
+
+Extraction Inline fifo_3q_nil_full fifo_3q_enq_full fifo_3q_deq_full fifo_3q_void_full.
 
 (*
 Recursive Extraction fifo_2l_deq.
