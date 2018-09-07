@@ -89,21 +89,23 @@ Section bfn.
 
   (** The structure of this proof is the following:
 
-      We use refine to specify the computational content and
-      proof obligations are solved inside { }.
+      We use a series of refine to specify the computational content 
+      and proof obligations postponed after the full CC is given
+      using cycle tactics.
 
       At some point, we need pattern matching to decompose 
       term in hypotheses as well as in the conclusion. The
       simplest way to do it is to revert the hypothesis in 
       the conclusion before the match and intro it in the
       different match branches. This corresponds to dependent
-      pattern matching but hand-writting it in refines is
-      much more complicated than
+      pattern matching but hand-writting dependent pattern
+      matching in refines is much more complicated/verbose 
+      than just
 
       revert Hq; refine (match q with ... => ... end); intros Hq
 
-      By solving proof obligations in {}, we let the computational 
-      content to develop itself in the main branch
+      By postponing proof obligations, we let the computational 
+      content to develop itself in the first branch
 
       Also, using fully specified terms fifo_3q_*_full also
       use to avoid generalizing fifo_3q_*_spec before the
@@ -115,16 +117,12 @@ Section bfn.
   Proof.
     induction on n p as bfn_3q_f with measure (fifo_3q_sum p).
 
-    refine (let (b,Hb) := fifo_3q_void_full p in _);
+    refine (let (b,Hb) := fifo_3q_void_full p in _).
     revert Hb; refine (match b with 
       | true  => fun Hp => exist _ fifo_3q_nil _
       | false => fun Hp => let (d1,Hd1) := fifo_3q_deq_full p _ in _
-    end).
- 
-    { apply proj1 in Hp; rewrite Hp, fifo_3q_nil_spec; split; simpl; auto.
-      red; rewrite bft_f_fix_0; simpl; auto. }
-    { intros H; apply Hp in H; discriminate. }
-
+    end). 
+    all: cycle 2. (* We queue two proof obligations *)
     revert Hd1; refine (match d1 with
       | (leaf x    , p1) => fun Hp1 => let (q,Hq) := bfn_3q_f (S n) p1 _ 
                                        in  exist _ (fifo_3q_enq q (leaf n)) _
@@ -132,43 +130,48 @@ Section bfn.
                                        let (d2,Hd2) := fifo_3q_deq_full q _ 
                                        in  _
     end); simpl in Hp1.
-
-    { unfold fifo_3q_sum; rewrite Hp1; simpl; omega. }
-    { destruct Hq as (H5 & H6).
-      rewrite Hp1, fifo_3q_enq_spec.
-      subst; split; auto.
-      + rewrite rev_app_distr; simpl; auto.
-      + rewrite rev_app_distr; simpl; red.
-        rewrite bft_f_fix_3; simpl; rewrite <- app_nil_end; auto. }
-    { unfold fifo_3q_sum. 
-      rewrite fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass; simpl.
-      rewrite lsum_app, Hp1; simpl; omega. }
-    { apply proj1, Forall2_rev in Hq; intros H; revert Hq.
-      rewrite H, fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass; simpl.
-      rewrite rev_app_distr; inversion 1. }
-
-    revert Hd2; refine (match d2 with (u,q1) => _ end); intros Hq1;
+    all: cycle 4. (* We queue 4 proof obligations *)
+    revert Hd2; refine (match d2 with (u,q1) => _ end); intros Hq1.
     refine (let (d3,Hd3) := fifo_3q_deq_full q1 _ in _).
-
-    { apply proj1, Forall2_rev in Hq; intros H; revert Hq.
-      rewrite Hq1, H, fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass; simpl.
-      rewrite rev_app_distr; simpl. 
-      inversion 1; inversion H6. }
-
+    all: cycle 1. (* We queue 1 proof obligation *) 
     revert Hd3; refine (match d3 with 
       | (v,q2) => fun Hq2 => let (q3,Hq3) := fifo_3q_enq_full q2 (node v n u)
                              in  exist _ q3 _
     end); simpl in Hq2, Hq3.
+    all: cycle 1. (* We queue 1 proof obligation *) 
 
-    { destruct Hq as (H5,H6).
+    (* And now, we show proof obligations *)
+   
+    * apply proj1 in Hp; rewrite Hp, fifo_3q_nil_spec; split; simpl; auto.
+      red; rewrite bft_f_fix_0; simpl; auto.
+    * intros H; apply Hp in H; discriminate.
+    * unfold fifo_3q_sum; rewrite Hp1; simpl; omega.
+    * destruct Hq as (H5 & H6).
+      rewrite Hp1, fifo_3q_enq_spec.
+      subst; split; auto.
+      + rewrite rev_app_distr; simpl; auto.
+      + rewrite rev_app_distr; simpl; red.
+        rewrite bft_f_fix_3; simpl; rewrite <- app_nil_end; auto.
+    * unfold fifo_3q_sum. 
+      rewrite fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass; simpl.
+      rewrite lsum_app, Hp1; simpl; omega.
+    * apply proj1, Forall2_rev in Hq; intros H; revert Hq.
+      rewrite H, fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass; simpl.
+      rewrite rev_app_distr; simpl.
+      intros G; apply Forall2_length in G; discriminate.
+    * apply proj1, Forall2_rev in Hq; intros H; revert Hq.
+      rewrite Hq1, H, fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass; simpl.
+      rewrite rev_app_distr; simpl.
+      intros G; apply Forall2_length in G; discriminate.
+    * destruct Hq as (H5,H6).
       rewrite fifo_3q_enq_spec, fifo_3q_enq_spec, Hq1, Hq2 in H5. 
       repeat (rewrite app_ass in H5; simpl in H5).
       apply Forall2_2snoc_inv in H5.
       destruct H5 as (G1 & G2 & H5).
       rewrite Hq1, Hq2 in H6; simpl in H6; rewrite app_ass in H6; simpl in H6.
       unfold is_bfn_from in H6 |- *.
-      rewrite Hp1, Hq3, rev_app_distr; simpl.  
-      rewrite bft_f_fix_3; simpl; split; auto. }
+      rewrite Hp1, Hq3, rev_app_distr; simpl.
+      rewrite bft_f_fix_3; simpl; split; auto.
   Defined.
 
   Section bfn.
