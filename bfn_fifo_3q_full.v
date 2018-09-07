@@ -87,29 +87,75 @@ Section bfn.
      Beware that the output is a reversed queue compared to the input
    *)
 
-  (** The structure of this proof is the following:
+  (** We decompose the proof into Computational Content (CC) and 
+      Proof Obligations (PO) using the handy refine tactic leaving 
+      holes for PO which are thus postponed after CC.
 
-      We use a series of refine to specify the computational content 
-      and proof obligations postponed after the full CC is given
-      using cycle tactics.
+      The intended extraction is:
+
+      let rec bfn_f n p =
+        if q_void p then q_nil
+        else let c,p1 = fifo_3q_deq p 
+             in match c with
+               | Leaf _
+              -> q_enq (bfn_f (1+n) p1) (Leaf u)
+               | Node (a, _, b)
+              -> let u,q1 = q_deq (bfn_f (1+n) (q_enq (q_enq p1 a) b))     in
+                 let v,q2 = q_deq q1 
+                 in q_enq q2 (Node (v, n, u))
+
+      Hence the CC should be something like 
+
+      refine (
+        let (b,Hb) := fifo_3q_void_full p 
+        in match b with 
+          | true  
+          => exist _ fifo_3q_nil _
+          | false 
+          => let (d1,Hd1) := fifo_3q_deq_full p _ 
+             in match d1 with
+               | (leaf x    , p1) 
+               => let (q,Hq) := bfn_3q_f (S n) p1 _ 
+                  in  exist _ (fifo_3q_enq q (leaf n)) _
+               | (node a x b, p1) => fun Hp1 
+               => let (q,Hq)   := bfn_3q_f (S n) (fifo_3q_enq (fifo_3q_enq p1 a) b) _ in 
+                  let (d2,Hd2) := fifo_3q_deq_full q _ 
+                  in match d3 with 
+                    | (v,q2) 
+                    => let (q3,Hq3) := fifo_3q_enq_full q2 (node v n u)
+                       in  exist _ q3 _
+                  end
+             end
+        end)
+
+      But this does not work well because for instance the b in Hb is
+      not decomposed into either true or false with the subsequent 
+      match b with ... end. We need to implement some kind of dependent
+      pattern matching which involves a more subtle approach
+
+      The structure of this proof is the following:
+
+      We use a series of refine to specify the CC and PO postponed
+      after the full CC is given using cycle tactics.
 
       At some point, we need pattern matching to decompose 
       term in hypotheses as well as in the conclusion. The
       simplest way to do it is to revert the hypothesis in 
       the conclusion before the match and intro it in the
       different match branches. This corresponds to dependent
-      pattern matching but hand-writting dependent pattern
+      pattern-matching but hand-writting dependent pattern-
       matching in refines is much more complicated/verbose 
       than just
 
       revert Hq; refine (match q with ... => ... end); intros Hq
 
-      By postponing proof obligations, we let the computational 
-      content to develop itself in the first branch
+      By postponing PO, we let the CC to develop itself in the 
+      first branch
 
-      Also, using fully specified terms fifo_3q_*_full also
-      use to avoid generalizing fifo_3q_*_spec before the
-      next pattern matching
+      Also, using fully specified terms like fifo_3q_enq_full 
+      instead of the pair fifo_3q_enq/fifo_3q_enq_spec allows
+      use to avoid generalizing fifo_3q_enq_spec before the
+      next pattern matching.
 
     *)
 
@@ -119,28 +165,34 @@ Section bfn.
 
     refine (let (b,Hb) := fifo_3q_void_full p in _).
     revert Hb; refine (match b with 
-      | true  => fun Hp => exist _ fifo_3q_nil _
-      | false => fun Hp => let (d1,Hd1) := fifo_3q_deq_full p _ in _
+      | true  => fun Hp 
+      => exist _ fifo_3q_nil _
+      | false => fun Hp 
+      => let (d1,Hd1) := fifo_3q_deq_full p _ 
+         in _
     end). 
-    all: cycle 2. (* We queue two proof obligations *)
+    all: cycle 2. (* We queue 2 POs *)
     revert Hd1; refine (match d1 with
-      | (leaf x    , p1) => fun Hp1 => let (q,Hq) := bfn_3q_f (S n) p1 _ 
-                                       in  exist _ (fifo_3q_enq q (leaf n)) _
-      | (node a x b, p1) => fun Hp1 => let (q,Hq) := bfn_3q_f (S n) (fifo_3q_enq (fifo_3q_enq p1 a) b) _ in 
-                                       let (d2,Hd2) := fifo_3q_deq_full q _ 
-                                       in  _
+      | (leaf x    , p1) => fun Hp1 
+      => let (q,Hq) := bfn_3q_f (S n) p1 _ 
+         in  exist _ (fifo_3q_enq q (leaf n)) _
+      | (node a x b, p1) => fun Hp1 
+      => let (q,Hq)   := bfn_3q_f (S n) (fifo_3q_enq (fifo_3q_enq p1 a) b) _ in 
+         let (d2,Hd2) := fifo_3q_deq_full q _ 
+         in  _
     end); simpl in Hp1.
-    all: cycle 4. (* We queue 4 proof obligations *)
+    all: cycle 4. (* We queue 4 POs *)
     revert Hd2; refine (match d2 with (u,q1) => _ end); intros Hq1.
     refine (let (d3,Hd3) := fifo_3q_deq_full q1 _ in _).
-    all: cycle 1. (* We queue 1 proof obligation *) 
+    all: cycle 1. (* We queue 1 PO *) 
     revert Hd3; refine (match d3 with 
-      | (v,q2) => fun Hq2 => let (q3,Hq3) := fifo_3q_enq_full q2 (node v n u)
-                             in  exist _ q3 _
+      | (v,q2) => fun Hq2 
+      => let (q3,Hq3) := fifo_3q_enq_full q2 (node v n u)
+         in  exist _ q3 _
     end); simpl in Hq2, Hq3.
-    all: cycle 1. (* We queue 1 proof obligation *) 
+    all: cycle 1. (* We queue 1 PO *) 
 
-    (* And now, we show proof obligations *)
+    (* And now, we show POs *)
    
     * apply proj1 in Hp; rewrite Hp, fifo_3q_nil_spec; split; simpl; auto.
       red; rewrite bft_f_fix_0; simpl; auto.
@@ -181,13 +233,14 @@ Section bfn.
       refine (match @bfn_3q_f 0 (fifo_3q_enq fifo_3q_nil t) with 
         | exist _ q Hq => let (d1,Hd1) := fifo_3q_deq_full q _ in _ 
       end).
-
-      { intros H; rewrite fifo_3q_enq_spec, fifo_3q_nil_spec, H in Hq.
-        apply proj1 in Hq; inversion Hq. }
-
+      all: cycle 1. (* We queue 1 PO *) 
       revert Hd1; refine (match d1 with (x,q1) => fun Hq1 => exist _ x _ end); simpl in Hq1.
+      all: cycle 1. (* We queue 1 PO *) 
 
-      { rewrite fifo_3q_enq_spec, fifo_3q_nil_spec in Hq; destruct Hq as (H1 & H2).
+      + intros H; rewrite fifo_3q_enq_spec, fifo_3q_nil_spec, H in Hq.
+        apply proj1 in Hq; inversion Hq.
+
+      + rewrite fifo_3q_enq_spec, fifo_3q_nil_spec in Hq; destruct Hq as (H1 & H2).
         rewrite <- bft_std_eq_bft.
         rewrite Hq1 in H1; simpl in H1.
         apply Forall2_snoc_inv with (l := nil) in H1.
@@ -196,7 +249,7 @@ Section bfn.
         apply f_equal with (f := @rev _) in H1.
         rewrite rev_involutive in H1; simpl in H1.
         rewrite Hq1, H1 in H2; simpl in H2.
-        auto. }
+        auto.
     Qed.
 
     Definition bfn_3q t := proj1_sig (bfn_3q_full t).
