@@ -63,14 +63,10 @@ Section bfn.
 
   Variable (fifo      : Type -> Type) 
            (fifo_list : forall X, fifo X -> list X)
-           (fifo_nil  : forall X, fifo X)
-           (fifo_enq  : forall X, fifo X -> X -> fifo X)
-           (fifo_deq  : forall X q, @fifo_list X q <> nil -> X * fifo X)
-           (fifo_void : forall X, fifo X -> bool)
-           (fifo_nil_spec  : forall X, fifo_nil_prop (@fifo_list X) (fifo_nil X))
-           (fifo_enq_spec  : forall X, fifo_enq_prop (@fifo_list X) (@fifo_enq X)) 
-           (fifo_deq_spec  : forall X, fifo_deq_prop (@fifo_list X) (@fifo_deq X)) 
-           (fifo_void_spec : forall X, fifo_void_prop (@fifo_list X) (@fifo_void X)).
+           (fifo_nil  : forall X, { q : fifo X | fifo_list q = nil })
+           (fifo_enq  : forall X q x, { q' : fifo X | fifo_list q' = fifo_list q ++ x :: nil })
+           (fifo_deq  : forall X q, @fifo_list X q <> nil -> { c : X * fifo X | let (x,q') := c in fifo_list q = x::fifo_list q' })
+           (fifo_void : forall X q, { b : bool | b = true <-> @fifo_list X q = nil }).   
 
   Let fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
 
@@ -95,54 +91,70 @@ Section bfn.
   Definition bfn_gen_f n (p : fX) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
   Proof.
     induction on n p as bfn_gen_f with measure (fifo_sum p).
-    refine (match fifo_void p as b return fifo_void p = b -> _ with
-      | true  => fun H1 => exist _ (@fifo_nil _) _
-      | false => fun H1 => _
-    end eq_refl).
-    { apply fifo_void_spec in H1.
-      rewrite H1, fifo_nil_spec; split; simpl; auto.
-      red; rewrite bft_f_fix_0; simpl; auto. }
-    assert (fifo_list p <> nil) as H2.
-    { intro E; apply fifo_void_spec in E; rewrite E in H1; discriminate. }
-    refine (match fifo_deq H2 as k return fifo_deq H2 = k -> _ with
-      | (leaf x ,p') => _
-      | (node a x b, p') => _
-    end eq_refl); intros H3.
-    + generalize (fifo_deq_spec H2); rewrite H3; intros H4.
-      refine (let (q,Hq) := bfn_gen_f (S n) p' _ in exist _ (fifo_enq q (leaf n)) _).
-      { unfold fifo_sum; rewrite H4; simpl; omega. }
-      destruct Hq as (H5 & H6).
-      rewrite H4, fifo_enq_spec.
-      subst; split; auto.
-      rewrite rev_app_distr; simpl; auto.
-      rewrite rev_app_distr; simpl; red.
-      rewrite bft_f_fix_3; simpl; rewrite <- app_nil_end; auto.
-    + generalize (fifo_deq_spec H2); rewrite H3; intros H4.
-      refine (let (q,Hq) := bfn_gen_f (S n) (fifo_enq (fifo_enq p' a) b) _ in _).
-      { unfold fifo_sum. 
-        rewrite fifo_enq_spec, fifo_enq_spec, app_ass; simpl.
-        rewrite lsum_app, H4; simpl; omega. }
-      destruct Hq as (H5 & H6).
-      rewrite fifo_enq_spec, fifo_enq_spec, app_ass in H5; simpl in H5.
-      assert (2 <= length (fifo_list q)) as H7.
-      { apply Forall2_length in H5.
-        rewrite app_length, rev_length in H5.
-        simpl in H5; omega. }
-      assert (fifo_list q <> nil) as H8.
-      { revert H7; destruct (fifo_list q); simpl; try discriminate; intro; omega. } 
-      generalize (fifo_deq_spec H8).
-      refine (match fifo_deq H8 with (u,q') => _ end); intros H9.
-      assert (fifo_list q' <> nil) as H10.
-      { revert H7; rewrite H9; destruct (fifo_list q'); simpl; try discriminate; intro; omega. }
-      generalize (fifo_deq_spec H10).
-      refine (match fifo_deq H10 with (v,q'') => _ end); intros H11.
-      exists (fifo_enq q'' (node v n u)).
-      rewrite H4, fifo_enq_spec, rev_app_distr; simpl.
-      rewrite H9, H11 in H5; simpl in H5; rewrite app_ass in H5; simpl in H5.
-      rewrite H9, H11 in H6; simpl in H6; rewrite app_ass in H6; simpl in H6.
-      unfold is_bfn_from in H6 |- *.
+
+    refine (let (b,Hb) := fifo_void p in _).
+    revert Hb; refine (match b with 
+      | true  => fun Hp 
+      => let (q,Hq) := @fifo_nil _ 
+         in exist _ q _
+      | false => fun Hp 
+      => let (d1,Hd1) := @fifo_deq _ p _ 
+         in _
+    end). 
+    all: cycle 2. (* We queue 2 POs *)
+    revert Hd1; refine (match d1 with
+      | (leaf x    , p1) => fun Hp1 
+      => let (q,Hq)   := bfn_gen_f (S n) p1 _           in
+         let (q1,Hq1) := fifo_enq q (leaf n) 
+         in  exist _ q1 _
+      | (node a x b, p1) => fun Hp1 
+      => let (p2,Hp2) := fifo_enq p1 a                  in
+         let (p3,Hp3) := fifo_enq p2 b                  in
+         let (q,Hq)   := bfn_gen_f (S n) p3 _           in 
+         let (d2,Hd2) := @fifo_deq _ q _ 
+         in  _
+    end); simpl in Hp1.
+    all: cycle 4. (* We queue 4 POs *)
+    revert Hd2; refine (match d2 with (u,q1) => _ end); intros Hq1.
+    refine (let (d3,Hd3) := @fifo_deq _ q1 _ in _).
+    all: cycle 1. (* We queue 1 PO *) 
+    revert Hd3; refine (match d3 with 
+      | (v,q2) => fun Hq2 
+      => let (q3,Hq3) := fifo_enq q2 (node v n u)
+         in  exist _ q3 _
+    end); simpl in Hq2, Hq3.
+    all: cycle 1. (* We queue 1 PO *) 
+
+    (* And now, we show POs *)
+   
+    * apply proj1 in Hp; rewrite Hp, Hq; split; simpl; auto.
+      red; rewrite bft_f_fix_0; simpl; auto.
+    * intros H; apply Hp in H; discriminate.
+    * unfold fifo_sum; rewrite Hp1; simpl; omega.
+    * destruct Hq as (H5 & H6).
+      rewrite Hp1, Hq1; split; auto.
+      + rewrite rev_app_distr; simpl; auto.
+      + rewrite rev_app_distr; simpl; red.
+        rewrite bft_f_fix_3; simpl; rewrite <- app_nil_end; auto.
+    * unfold fifo_sum. 
+      rewrite Hp3, Hp2, app_ass; simpl.
+      rewrite lsum_app, Hp1; simpl; omega.
+    * apply proj1, Forall2_rev in Hq; intros H; revert Hq.
+      rewrite H, Hp3, Hp2, app_ass; simpl.
+      rewrite rev_app_distr; simpl.
+      intros G; apply Forall2_length in G; discriminate.
+    * apply proj1, Forall2_rev in Hq; intros H; revert Hq.
+      rewrite Hq1, H, Hp3, Hp2, app_ass; simpl.
+      rewrite rev_app_distr; simpl.
+      intros G; apply Forall2_length in G; discriminate.
+    * destruct Hq as (H5,H6).
+      rewrite Hp3, Hp2, Hq1, Hq2 in H5. 
+      repeat (rewrite app_ass in H5; simpl in H5).
       apply Forall2_2snoc_inv in H5.
       destruct H5 as (G1 & G2 & H5).
+      rewrite Hq1, Hq2 in H6; simpl in H6; rewrite app_ass in H6; simpl in H6.
+      unfold is_bfn_from in H6 |- *.
+      rewrite Hp1, Hq3, rev_app_distr; simpl.
       rewrite bft_f_fix_3; simpl; split; auto.
   Defined.
 
@@ -150,24 +162,29 @@ Section bfn.
 
     Let bfn_full (t : bt X) : { t' | t ~t t' /\ is_seq_from 0 (bft_std t') }.
     Proof.
-      refine (match @bfn_gen_f 0 (fifo_enq (@fifo_nil _) t) with exist _ q Hq => _ end).
-      rewrite fifo_enq_spec, fifo_nil_spec in Hq; simpl in Hq.
-      destruct Hq as (H1 & H2).
-      assert (fifo_list q <> nil) as H3.
-      { apply Forall2_length in H1; rewrite rev_length in H1.
-        destruct (fifo_list q); discriminate. }
-      generalize (fifo_deq_spec H3).
-      refine (match fifo_deq H3 with (x,q') => _ end); intros H4.
-      exists x.
-      rewrite <- bft_std_eq_bft.
-      rewrite H4 in H1; simpl in H1.
-      apply Forall2_snoc_inv with (l := nil) in H1.
-      destruct H1 as (G1 & H1).
-      apply Forall2_nil_inv_right in H1.
-      apply f_equal with (f := @rev _) in H1.
-      rewrite rev_involutive in H1; simpl in H1.
-      rewrite H4, H1 in H2; simpl in H2.
-      auto.
+      refine (let (p,Hp) := @fifo_nil _   in
+              let (q,Hq) := fifo_enq p t  in 
+              let (r,Hr) := bfn_gen_f 0 q in
+              let (d1,Hd1) := @fifo_deq _ r _ 
+              in _).
+      all: cycle 1. (* We queue 1 PO *) 
+      revert Hd1; refine (match d1 with (x,q1) => fun Hq1 => exist _ x _ end); simpl in Hq1.
+      all: cycle 1. (* We queue 1 PO *) 
+
+      + intros H; rewrite Hq, Hp, H in Hr.
+        apply proj1 in Hr; inversion Hr.
+
+      + rewrite Hq, Hp in Hr. 
+        destruct Hr as (H1 & H2).
+        rewrite <- bft_std_eq_bft.
+        rewrite Hq1 in H1; simpl in H1.
+        apply Forall2_snoc_inv with (l := nil) in H1.
+        destruct H1 as (G1 & H1).
+        apply Forall2_nil_inv_right in H1.
+        apply f_equal with (f := @rev _) in H1.
+        rewrite rev_involutive in H1; simpl in H1.
+        rewrite Hq1, H1 in H2; simpl in H2.
+        auto.
     Qed.
 
     Definition bfn_gen t := proj1_sig (bfn_full t).
@@ -195,21 +212,21 @@ Section bfn_2q.
 
   Variable X : Type.
 
-  Definition bfn_2q := @bfn_gen _ _ _ _ _ _ fifo_2q_nil_spec fifo_2q_enq_spec fifo_2q_deq_spec fifo_2q_void_spec X.
+  Definition bfn_3q := @bfn_gen _ _ fifo_3q_nil_full fifo_3q_enq_full fifo_3q_deq_full fifo_3q_void_full X.
 
-  Definition bfn_2q_spec_1 t : t ~t bfn_2q t.
+  Definition bfn_3q_spec_1 t : t ~t bfn_3q t.
   Proof. apply bfn_gen_spec_1. Qed.
 
-  Definition bfn_2q_spec_2 t : exists n, bft_std (bfn_2q t) = seq_an 0 n.
+  Definition bfn_3q_spec_2 t : exists n, bft_std (bfn_3q t) = seq_an 0 n.
   Proof. apply bfn_gen_spec_2. Qed.
 
 End bfn_2q.
 
 Extraction Inline bfn_gen.
-Recursive Extraction bfn_2q.
+Recursive Extraction bfn_3q.
 
-Check bfn_2q.
-Check bfn_2q_spec_1.
-Check bfn_2q_spec_2.
+Check bfn_3q.
+Check bfn_3q_spec_1.
+Check bfn_3q_spec_2.
 
 
