@@ -385,8 +385,9 @@ Section fifo_three_lazy_lists.
   Defined.
 
   Definition fifo_3q_nil : fifo_3q.
-  Proof. 
-    exists (lnil,lnil,lnil), (lfin_lnil _), (lfin_lnil _), (lfin_lnil _); simpl.
+  Proof.
+    refine (exist _ (lnil,lnil,lnil) _).
+    exists (lfin_lnil _), (lfin_lnil _), (lfin_lnil _); simpl.
     rewrite lfin_length_fix_0; auto.
   Defined.
 
@@ -399,19 +400,24 @@ Section fifo_three_lazy_lists.
   Definition fifo_3q_make l r l' : (exists Hl Hr Hl', lfin_length l' Hl' + lfin_length r Hr = 1 + lfin_length l Hl) -> fifo_3q.
   Proof.
     destruct l' as [ | x l'' ]; intros E.
-    + assert (Hl1 : lfin l) by (destruct E as (? & ? & _); assumption).
-      assert (Hr1 : lfin r) by (destruct E as (? & ? & _); assumption).
-      assert (E1 : lfin_length r Hr1 = 1 + lfin_length l Hl1).
-      { destruct E as (Hl & Hr & Hl' & E).
-        rewrite lfin_length_fix_0 in E.
-        rewrite (lfin_length_eq _ Hr), (lfin_length_eq _ Hl); auto. }
+    + cut (lfin l); [ intros Hl1 | ].
+      cut (lfin r); [ intros Hr1 | ].
+      2-3 : cycle 1.
+      cut (lfin_length r Hr1 = 1 + lfin_length l Hl1); [ intros E1 | ].
+      2-4 : cycle 1.
       refine (let l'' := @llist_rotate _ l r lnil Hl1 Hr1 (@lfin_lnil _) E1 
               in exist _ (l'',lnil,l'') _).
-      exists (lfin_rotate _ _ (@lfin_lnil _) E1), 
+      all: cycle 1.
+      * destruct E as (? & ? & _); assumption.
+      * destruct E as (? & ? & _); assumption.
+      * destruct E as (Hl & Hr & Hl' & E).
+        rewrite lfin_length_fix_0 in E.
+        rewrite (lfin_length_eq _ Hr), (lfin_length_eq _ Hl); auto.
+      * exists (lfin_rotate _ _ (@lfin_lnil _) E1), 
              (@lfin_lnil _),
              (lfin_rotate _ _ (@lfin_lnil _) E1).
-      unfold l''; rewrite llist_rotate_length; auto.
-    + exists (l,r,l'').
+        unfold l''; rewrite llist_rotate_length; auto.
+    + refine (exist _ (l,r,l'') _).
       destruct E as (Hl & Hr & Hl'' & E).
       exists Hl, Hr, (lfin_inv Hl'').
       rewrite lfin_length_fix_1 in E; omega.
@@ -432,7 +438,7 @@ Section fifo_three_lazy_lists.
   Definition fifo_3q_enq q x : fifo_3q.
   Proof.
     destruct q as (((l,r),l') & H).
-    apply (@fifo_3q_make l (lcons x r) l').
+    refine (@fifo_3q_make l (lcons x r) l' _).
     destruct H as (Hl & Hr & Hl' & E).
     exists Hl, (lfin_lcons _ Hr), Hl'.
     rewrite lfin_length_fix_1, (lfin_length_eq _ Hr); omega.
@@ -465,7 +471,7 @@ Section fifo_three_lazy_lists.
   Fact fifo_3q_deq_spec : fifo_deq_prop fifo_3q_list fifo_3q_deq.
   Proof.
     unfold fifo_deq_prop, fifo_3q_deq.
-    intros  ((([ | x l],r),n) & Hl & Hr & Hl' & E) Hq.
+    intros ((([ | x l],r),n) & Hl & Hr & Hl' & E) Hq.
     + exfalso.
       unfold fifo_3q_list in Hq.
       destruct r.
