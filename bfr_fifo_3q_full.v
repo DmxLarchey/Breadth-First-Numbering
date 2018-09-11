@@ -30,42 +30,35 @@ Section bfr_3q.
   Notation fX := (fifo_3q (bt X)).
   Notation fY := (fifo_3q (bt Y)).
 
-  Definition bfr_3q_f (p : fX) (ll : list Y) : 
+  Fixpoint bfr_3q_f (p : fX) (ll : list Y) { struct ll } : 
             fifo_3q_sum p = length ll
          -> { q : fY | fifo_3q_list p ~lt rev (fifo_3q_list q) 
                     /\ bft_f (rev (fifo_3q_list q)) = ll }.
   Proof.
-    induction on p ll as bfr_3q_f with measure (fifo_3q_sum p).
-
-    refine (let (b,Hb) := fifo_3q_void_full p in _).
-    revert b Hb; intros [|] Hb Hll.
+    intros Hll.
+    unfold fifo_3q_sum in Hll. 
+    destruct ll as [ | y ll ].
     { refine(let (q,Hq) := @fifo_3q_nil_full _ in exist _ q _).
-      apply proj1 in Hb; rewrite Hq.
-      unfold fifo_3q_sum in Hll.
-      rewrite Hb in Hll |- *; auto.
-      destruct ll; simpl; try discriminate.
+      revert Hll; rewrite Hq; simpl.
+      generalize (fifo_3q_list p).
+      intros [ | [] ? ]; simpl; try discriminate.
+      split; auto.
       rewrite bft_f_fix_0; auto. }
     refine (let (d1,Hd1) := fifo_3q_deq_full p _ in _).
-    { red; rewrite <- Hb; discriminate. }
+    { intros E; rewrite E in Hll; discriminate. }
     revert d1 Hd1; intros (x,p1) Hp1.
-    unfold fifo_3q_sum in Hll; rewrite Hp1 in Hll.
-    revert ll Hll; intros [ | y ll ] Hll.
-    { exfalso; simpl in Hll; generalize (m_bt_ge_1 x); omega. }
-    simpl in Hll.
+    rewrite Hp1 in Hll; simpl in Hll.
     destruct x as [ x | a x b ]. 
-    + refine (let (q,Hq) := bfr_3q_f p1 ll _ _ in _); auto.
-      { unfold fifo_3q_sum; rewrite Hp1; simpl; omega. }
+    + refine (let (q,Hq) := bfr_3q_f p1 ll _ in _); auto.
       destruct Hq as (Hq1 & Hq2).
       refine (let (q1,Hq1) := fifo_3q_enq_full q (leaf y) in exist _ q1 _).
       rewrite Hp1, Hq1, rev_app_distr; split; simpl; auto.
       rewrite bft_f_fix_3, <-app_nil_end, Hq2; auto.
     + refine (let (p2,Hp2) := fifo_3q_enq_full p1 a    in
               let (p3,Hp3) := fifo_3q_enq_full p2 b    in
-              let (q,Hq)   := bfr_3q_f p3 ll _ _
+              let (q,Hq)   := bfr_3q_f p3 ll _
               in _).
-      { unfold fifo_3q_sum; rewrite Hp3, Hp2, Hp1.
-        repeat rewrite lsum_app; simpl; omega. }
-      { unfold fifo_3q_sum; rewrite Hp3, Hp2.
+      { unfold fifo_3q_sum. rewrite Hp3, Hp2.
         repeat rewrite lsum_app; simpl in Hll |- *; omega. }
       destruct Hq as (Hq_1 & Hq_2).
       apply Forall2_rev in Hq_1.
