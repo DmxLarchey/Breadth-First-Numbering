@@ -96,7 +96,10 @@ let random_log_bench gc frm bfn s a b n =
 (** random test of bfn_[2l,3q] on trees of size between 101 and 600001 nodes, 
     with full GC sweep between each measurement *)
 
-(*random_log_bench true output_stat bfn_2l 10 50 300000 2000;; *)
-random_log_bench true output_stat bfn_3q 10 50 300000 2000;; 
+(*
+random_log_bench true output_stat bfn_2l 10 50 300000 2000;; 
+random_log_bench true output_stat bfn_3q 10 50 300000 2000;;
+*)
+random_log_bench true output_stat bfn_2l 10 2000 600000 1000;; 
 
 

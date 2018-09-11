@@ -110,21 +110,23 @@ Section bfn.
         let (b,Hb) := fifo_3q_void_full p 
         in match b with 
           | true  
-          => exist _ fifo_3q_nil _
+          => let (q,Hq) := @fifo_3q_nil _
+             in exist _ q _
           | false 
           => let (d1,Hd1) := fifo_3q_deq_full p _ 
              in match d1 with
                | (leaf x    , p1) 
-               => let (q,Hq) := bfn_3q_f (S n) p1 _ 
-                  in  exist _ (fifo_3q_enq q (leaf n)) _
+               => let (q,Hq) := bfn_3q_f (S n) p1 _          in
+                  let (q1,Hq1) := fifo_3q_enq_full q (leaf n) 
+                  in exist _ q1 _
                | (node a x b, p1) => fun Hp1 
-               => let (q,Hq)   := bfn_3q_f (S n) (fifo_3q_enq (fifo_3q_enq p1 a) b) _ in 
-                  let (d2,Hd2) := fifo_3q_deq_full q _ 
-                  in match d3 with 
-                    | (v,q2) 
-                    => let (q3,Hq3) := fifo_3q_enq_full q2 (node v n u)
-                       in  exist _ q3 _
-                  end
+               => let (p2,Hp2)     := fifo_3q_enq_full p1 a    in
+                  let (p3,Hp3)     := fifo_3q_enq_full p2 b    in
+                  let (q,Hq)       := bfn_3q_f (S n) p3 _      in
+                  let ((u,q1),Hq1) := fifo_3q_deq_full q _     in
+                  let ((v,q2),Hq2) := fifo_3q_deq_full q1 _    in
+                  let (q3,Hq3)     := fifo_3q_enq_full q2 (node v n u)
+                  in  exist _ q3 _
              end
         end)
 
@@ -166,7 +168,8 @@ Section bfn.
     refine (let (b,Hb) := fifo_3q_void_full p in _).
     revert Hb; refine (match b with 
       | true  => fun Hp 
-      => exist _ fifo_3q_nil _
+      => let (q,Hq) := @fifo_3q_nil_full _ 
+         in exist _ q _
       | false => fun Hp 
       => let (d1,Hd1) := fifo_3q_deq_full p _ 
          in _
@@ -174,10 +177,13 @@ Section bfn.
     all: cycle 2. (* We queue 2 POs *)
     revert Hd1; refine (match d1 with
       | (leaf x    , p1) => fun Hp1 
-      => let (q,Hq) := bfn_3q_f (S n) p1 _ 
-         in  exist _ (fifo_3q_enq q (leaf n)) _
+      => let (q,Hq)   := bfn_3q_f (S n) p1 _ in  
+         let (q1,Hq1) := fifo_3q_enq_full q (leaf n) 
+         in exist _ q1 _
       | (node a x b, p1) => fun Hp1 
-      => let (q,Hq)   := bfn_3q_f (S n) (fifo_3q_enq (fifo_3q_enq p1 a) b) _ in 
+      => let (p2,Hp2) := fifo_3q_enq_full p1 a    in
+         let (p3,Hp3) := fifo_3q_enq_full p2 b    in
+         let (q,Hq)   := bfn_3q_f (S n) p3 _ in
          let (d2,Hd2) := fifo_3q_deq_full q _ 
          in  _
     end); simpl in Hp1.
@@ -194,29 +200,29 @@ Section bfn.
 
     (* And now, we show POs *)
    
-    * apply proj1 in Hp; rewrite Hp, fifo_3q_nil_spec; split; simpl; auto.
+    * apply proj1 in Hp; rewrite Hp, Hq; split; simpl; auto.
       red; rewrite bft_f_fix_0; simpl; auto.
     * intros H; apply Hp in H; discriminate.
     * unfold fifo_3q_sum; rewrite Hp1; simpl; omega.
     * destruct Hq as (H5 & H6).
-      rewrite Hp1, fifo_3q_enq_spec.
+      rewrite Hp1, Hq1.
       subst; split; auto.
       + rewrite rev_app_distr; simpl; auto.
       + rewrite rev_app_distr; simpl; red.
         rewrite bft_f_fix_3; simpl; rewrite <- app_nil_end; auto.
     * unfold fifo_3q_sum. 
-      rewrite fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass; simpl.
+      rewrite Hp3, Hp2, app_ass; simpl.
       rewrite lsum_app, Hp1; simpl; omega.
     * apply proj1, Forall2_rev in Hq; intros H; revert Hq.
-      rewrite H, fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass; simpl.
+      rewrite H, Hp3, Hp2, app_ass; simpl.
       rewrite rev_app_distr; simpl.
       intros G; apply Forall2_length in G; discriminate.
     * apply proj1, Forall2_rev in Hq; intros H; revert Hq.
-      rewrite Hq1, H, fifo_3q_enq_spec, fifo_3q_enq_spec, app_ass; simpl.
+      rewrite Hq1, H, Hp3, Hp2, app_ass; simpl.
       rewrite rev_app_distr; simpl.
       intros G; apply Forall2_length in G; discriminate.
     * destruct Hq as (H5,H6).
-      rewrite fifo_3q_enq_spec, fifo_3q_enq_spec, Hq1, Hq2 in H5. 
+      rewrite Hp3, Hp2, Hq1, Hq2 in H5. 
       repeat (rewrite app_ass in H5; simpl in H5).
       apply Forall2_2snoc_inv in H5.
       destruct H5 as (G1 & G2 & H5).
