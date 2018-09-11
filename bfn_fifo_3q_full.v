@@ -137,14 +137,16 @@ Section bfn.
 
       The structure of this proof is the following:
 
-      We use a series of refine to specify the CC and PO postponed
-      after the full CC is given using cycle tactics.
+      We use a series of refine to specify the CC and PO is  
+      postponed after the full CC is given using cycle tactics
+      to reorder goals and to keep CC goals upfront.
 
       At some point, we need pattern matching to decompose 
       term in hypotheses as well as in the conclusion. The
       simplest way to do it is to revert the hypothesis in 
-      the conclusion before the match and intro it in the
-      different match branches. This corresponds to dependent
+      the conclusion before the match and then intro it in 
+      the different match branches where the matched term 
+      has been decomposed. This corresponds to dependent
       pattern-matching but hand-writting dependent pattern-
       matching in refines is much more complicated/verbose 
       than just
