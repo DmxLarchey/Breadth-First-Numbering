@@ -33,6 +33,9 @@ Section bt.
       | node a _ b => 1 + m_bt a + m_bt b
     end.
 
+  Fact m_bt_ge_1 t : 1 <= m_bt t.
+  Proof. destruct t; simpl; omega. Qed.
+
   (* A branch is a list of left/right Boolean choices *)
 
   (* The branches that correspond to a node in a binary tree *)
