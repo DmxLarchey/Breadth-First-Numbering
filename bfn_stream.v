@@ -79,18 +79,25 @@ Section bfn_stream.
 
   CoFixpoint cst (x : X) := in_stream x (cst x).
 
-  Fixpoint bfn t s : bt nat * stream nat :=
-    match t, s with 
-      | leaf x,     in_stream k s 
-      => (leaf k, in_stream (S k) s)
-      | node a x b, in_stream k s 
-      => let (a',s')  := bfn a s  in
-         let (b',s'') := bfn b s' 
-         in  (node a' k b',in_stream (S k) s'')
+  Fixpoint bfn t s { struct t } : bt nat * stream nat :=
+    match s with
+      | in_stream k s =>
+      match t with 
+        | leaf x     => (leaf k, in_stream (S k) s)
+        | node a x b => let (a',s')  := bfn a s  in
+                        let (b',s'') := bfn b s' 
+                        in  (node a' k b',in_stream (S k) s'')
+      end
     end.
+
+  Section test.
+    
+    Variable t : bt X.
+
+    CoFixpoint s := snd (bfn t (in_stream 1 s)).
   
   Definition label t :=
-    
+    cofix s := snd (bfn t (in_stream 1 s)).
     let (t',s) := bfn t (in_stream 1 s) in t'.
         prefix (first_available (shead s) t) s
     ->  { c : 
