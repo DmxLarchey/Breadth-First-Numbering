@@ -17,7 +17,7 @@
 *)
 
 Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils bt bft fifo.
+Require Import list_utils wf_utils bt bft bft_spec bft_inj fifo bfn_fifo_3q.
 
 Set Implicit Arguments.
 
@@ -125,6 +125,18 @@ Section bfr_3q.
 
 End bfr_3q.
 
+(** BFN (Breadth-First Numbering) is a particular instance of 
+    BFR (Breadth-First Reconstruction)   *)
+
+Theorem bfr_bfn_3q X (t : bt X) : bfn_3q t = bfr_3q t (seq_an 0 (m_bt t)) (eq_sym (seq_an_length _ _)).
+Proof.
+  apply bft_std_inj.
+  * apply bt_eq_trans with (s := t).
+    + apply bt_eq_sym, bfn_3q_spec_1.
+    + apply bfr_3q_spec_1.
+  * rewrite bfr_3q_spec_2, bfn_3q_spec_3; trivial.
+Qed.
+
 (* Notice that fifo_3q_deq is extracted to a function that loops forever
    if the input is the empty queue, ie does not following the spec *)
 
@@ -137,5 +149,6 @@ Recursive Extraction bfr_3q.
 Check bfr_3q.
 Check bfr_3q_spec_1.
 Check bfr_3q_spec_2.
+Check bfr_bfn_3q.
              
 

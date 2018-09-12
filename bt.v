@@ -200,6 +200,9 @@ Section bt_eq.
   Fact bt_eq_m t1 t2 : t1 ~t t2 -> m_bt t1 = m_bt t2.
   Proof. induction 1; simpl; f_equal; auto. Qed.
 
+  Fact bt_eq_node_inv a x b c y d : node a x b ~t node c y d -> a ~t c /\ b ~t d.
+  Proof. inversion 1; auto. Qed.
+
 End bt_eq.
 
 Arguments bt_eq {X Y}.
@@ -209,4 +212,12 @@ Notation "l ~lt m" := (Forall2 bt_eq l m).
 
 Hint Constructors bt_eq.
 
+Fact bt_eq_refl X (t : bt X) : t ~t t.
+Proof. induction t; constructor; auto. Qed.
+
+Fact bt_eq_sym X Y (s : bt X) (t : bt Y) : s ~t t -> t ~t s.
+Proof. induction 1; constructor; auto. Qed.
+
+Fact bt_eq_trans X Y Z (r : bt X) (s : bt Y) (t : bt Z) : r ~t s -> s ~t t -> r ~t t.
+Proof. intros H; revert H t; induction 1; inversion 1; auto. Qed.
 

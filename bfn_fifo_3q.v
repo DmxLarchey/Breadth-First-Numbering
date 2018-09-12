@@ -17,7 +17,7 @@
 *)
 
 Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils bt bft fifo.
+Require Import list_utils wf_utils bt bft bft_spec fifo.
 
 Set Implicit Arguments.
 
@@ -170,6 +170,17 @@ Section bfn.
     Fact bfn_3q_spec_2 t : exists n, bft_std (bfn_3q t) = seq_an 0 n.
     Proof. apply is_seq_from_spec, (proj2_sig (bfn_3q_full t)). Qed.
 
+    Corollary bfn_3q_spec_3 t : bft_std (bfn_3q t) = seq_an 0 (m_bt t).
+    Proof.
+      destruct (bfn_3q_spec_2 t) as (n & Hn).
+      rewrite Hn.
+      apply f_equal with (f := @length _) in Hn.
+      rewrite seq_an_length, bft_std_length in Hn.
+      generalize (bfn_3q_spec_1 t); intros E.
+      apply bt_eq_m in E.
+      rewrite <- Hn, <- E; trivial.
+    Qed.
+
   End bfn.
 
 End bfn.
@@ -188,5 +199,6 @@ Extraction "bfn.ml" bfn_3q.
 Check bfn_3q.
 Check bfn_3q_spec_1.
 Check bfn_3q_spec_2.
+Check bfn_3q_spec_3.
              
 
