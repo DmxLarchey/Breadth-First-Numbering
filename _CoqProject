@@ -20,3 +20,4 @@ benchmarks.v
 bfn_fifo_3q_full.v
 bfr_fifo_3q_full.v
 bft_inj.v
+bfn_stream.v
