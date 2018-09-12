@@ -11,6 +11,8 @@
 
 Require Import Arith Omega List.
 
+Require Import list_utils.
+
 Set Implicit Arguments.
 
 Section bt.
@@ -109,6 +111,8 @@ Section branch_orders.
     | in_lb_2 : forall b l m, l <l m -> b::l <l b::m
   where "x <l y" := (lb_lex x y).
 
+  Hint Constructors lb_lex.
+
   Fact lb_lex_irrefl l : ~ l <l l.
   Proof. 
     assert (forall l m, l <l m -> l <> m) as H.
@@ -121,6 +125,18 @@ Section branch_orders.
     intros H; revert H k.
     induction 1; inversion 1; constructor; auto.
   Qed. 
+
+  Fact lb_lex_inv x l m : x::l <l x::m -> l <l m.
+  Proof. inversion 1; auto. Qed.
+
+  Fact lb_lex_mono x l m : l <l m <-> x::l <l x::m.
+  Proof. split; auto; apply lb_lex_inv. Qed.
+
+  Fact lb_lex_nil x m : nil <l x::m.
+  Proof. constructor. Qed.
+
+  Fact lb_lex_cons l m : false::l <l true::m.
+  Proof. constructor. Qed.
 
   Definition lb_lex_dec l m : { l <l m } + { l = m } + { m <l l }.
   Proof.
@@ -167,7 +183,25 @@ Section branch_orders.
     right; split; try omega.
     apply lb_lex_trans with m; assumption.
   Qed.
- 
+
+  Fact bft_order_mono x l m : l <b m <-> x::l <b x::m.
+  Proof.
+    split.
+    + intros [ H | (H1 & H2) ].
+      * left; simpl; omega.
+      * right; split; simpl; auto.
+    + intros [ H | (H1 & H2) ].
+      * left; simpl in *; omega.
+      * right; split; simpl in *; try omega.
+        revert H2; apply lb_lex_inv.
+  Qed.
+
+  Fact bft_order_lt m1 m2 : length m1 < length m2 -> m1 <b m2.
+  Proof. left; auto. Qed.
+
+  Fact bft_order_eq m1 m2 : length m1 = length m2 -> false::m1 <b true::m2.
+  Proof. right; simpl; split; auto. Qed.
+
   Definition bft_order_dec l m : { l <b m } + { l = m } + { m <b l }.
   Proof.
     destruct (le_lt_dec (length l) (length m)).
@@ -181,6 +215,127 @@ Section branch_orders.
   Qed.
 
 End branch_orders.
+
+Definition is_dft_order R := 
+             (forall l, ~ R l l)
+          /\ (forall l m k, R l m -> R m k -> R l k)
+          /\ (forall x l m, R l m <-> R (x::l) (x::m))
+          /\ (forall x m, R nil (x::m))
+          /\ (forall m1 m2, R (false::m1) (true::m2)).
+
+Section dft_order_characterization.
+
+  (* dft_order (ie lb_lex) satisfies and is characterized by the following axioms *)
+
+  Hint Resolve lb_lex_irrefl lb_lex_trans lb_lex_mono lb_lex_nil lb_lex_cons.
+
+  Theorem lb_lex_is_dft_order : is_dft_order lb_lex.
+  Proof. repeat (split; auto); apply lb_lex_trans. Qed. 
+
+  Variables (R : list bool -> list bool -> Prop) (HR : is_dft_order R).
+      
+  Let R_irrefl : forall l, ~ R l l.                        Proof. apply HR. Qed.
+  Let R_trans : forall l m k, R l m -> R m k -> R l k.     Proof. apply HR. Qed.
+  Let R_mono : forall x l m, R l m <-> R (x::l) (x::m).    Proof. apply HR. Qed.
+  Let R_nil : forall x m, R nil (x::m).                    Proof. apply HR. Qed.
+  Let R_cons : forall m1 m2, R (false::m1) (true::m2).     Proof. apply HR. Qed.
+
+  Hint Constructors lb_lex.
+
+  Let HR3 x m : ~ R (x::m) nil.
+  Proof. 
+    intros H; apply (@R_irrefl nil).
+    revert H; apply R_trans, R_nil.
+  Qed. 
+
+  Let HR4 m1 m2 : ~ R (true::m1) (false::m2).
+  Proof. 
+    intros H; apply (@R_irrefl (false::m2)).
+    revert H; apply R_trans, R_cons.
+  Qed. 
+
+  Theorem dft_order_charac l m : R l m <-> lb_lex l m.
+  Proof.
+    split.
+    + revert m; induction l as [ | x l ]; intros [ | y m ]; auto.
+      * intros H; apply R_irrefl in H; tauto.
+      * intros H; apply HR3 in H; tauto.
+      * destruct x; destruct y; intros H; auto.
+        - apply R_mono in H; constructor; auto.
+        - apply HR4 in H; tauto.
+        - apply R_mono in H; constructor; auto. 
+    + induction 1; auto; apply R_mono; auto.
+  Qed.
+
+End dft_order_characterization.
+
+Check lb_lex_is_dft_order.
+Check dft_order_charac.
+
+Definition is_bft_order R := 
+             (forall l, ~ R l l)
+          /\ (forall l m k, R l m -> R m k -> R l k)
+          /\ (forall x l m, R l m <-> R (x::l) (x::m))
+          /\ (forall m1 m2, length m1 < length m2 -> R m1 m2)
+          /\ (forall m1 m2, length m1 = length m2 -> R (false::m1) (true::m2)).
+
+Section bft_order.
+
+  (* bft_order satisfies and is characterized by the following axioms *)
+
+  Hint Resolve bft_order_irrefl bft_order_trans bft_order_mono bft_order_lt bft_order_eq.
+
+  Theorem bft_order_checks : is_bft_order bft_order.
+  Proof. repeat (split; auto); apply bft_order_trans. Qed. 
+
+  Variables (R : list bool -> list bool -> Prop) (HR : is_bft_order R).
+
+  Let R_irrefl : forall l, ~ R l l.                                            Proof. apply HR. Qed.
+  Let R_trans : forall l m k, R l m -> R m k -> R l k.                         Proof. apply HR. Qed.
+  Let R_mono : forall x l m, R l m <-> R (x::l) (x::m).                        Proof. apply HR. Qed.
+  Let R_lt : forall m1 m2, length m1 < length m2 -> R m1 m2.                   Proof. apply HR. Qed.
+  Let R_eq : forall m1 m2, length m1 = length m2 -> R (false::m1) (true::m2).  Proof. apply HR. Qed.
+
+  Let HR3 m1 m2 : length m2 < length m1 -> ~ R m1 m2.
+  Proof. 
+    intros H1 H2.
+    apply (@R_irrefl m2); revert H2.
+    apply R_trans, R_lt; auto.
+  Qed.
+
+  Let HR4 m1 m2 : length m1 = length m2 -> ~ R (true::m1) (false::m2).
+  Proof. 
+    intros H1 H2; apply (@R_irrefl (false::m2)).
+    revert H2; apply R_trans, R_eq; omega.
+  Qed. 
+
+  Theorem bft_order_charac l m : R l m <-> bft_order l m.
+  Proof.
+    split.
+    + destruct (lt_eq_lt_dec (length l) (length m)) as [ [ H | H ] | H ].
+      all: cycle 2.
+      { intros E; apply HR3 in E; tauto. }
+      { intros; apply bft_order_lt; auto. }
+      pattern l, m.
+      revert l m H; apply list_length_eq_ind.
+      * intros H; apply R_irrefl in H; tauto.
+      * intros [|] [|] l m H1 IH H2.
+        - revert H2; rewrite <- bft_order_mono, <- R_mono; auto.
+        - apply HR4 in H2; tauto.
+        - apply bft_order_eq; auto.
+        - revert H2; rewrite <- bft_order_mono, <- R_mono; auto.
+    + intros [ H | [ H1 H2 ] ].
+      * apply R_lt; auto.
+      * revert H1; induction H2.
+        - intros; apply R_lt; simpl; omega.
+        - simpl; intros; apply R_eq; omega.
+        - simpl; intros; apply R_mono; auto.
+  Qed.
+
+End bft_order.
+
+Check bft_order_checks.
+Check bft_order_charac.
 
 (** Equivalence between trees and forests, same structure,
     only the values of nodes differ *)
