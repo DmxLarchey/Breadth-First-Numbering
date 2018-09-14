@@ -95,7 +95,7 @@ Section bfn.
 
       let rec bfn_f n p =
         if q_void p then q_nil
-        else let c,p1 = fifo_3q_deq p 
+        else let c,p1 = q_deq p 
              in match c with
                | Leaf _
               -> q_enq (bfn_f (1+n) p1) (Leaf u)
