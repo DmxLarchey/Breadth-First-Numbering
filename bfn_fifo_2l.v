@@ -177,6 +177,8 @@ End bfn.
 (* Notice that fifo_2l_deq is extracted to a function that loops forever
    if the input is the empty queue, ie does not following the spec *)
 
+Extraction Language Haskell.
+
 Recursive Extraction bfn_2l.
 
 Check bfn_2l.
