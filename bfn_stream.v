@@ -81,7 +81,7 @@ Section bfn_stream.
 
   Fixpoint bfn t s { struct t } : bt nat * stream nat :=
     match s with
-      | in_stream k s =>
+      | in_stream k s => 
       match t with 
         | leaf x     => (leaf k, in_stream (S k) s)
         | node a x b => let (a',s')  := bfn a s  in
@@ -90,11 +90,26 @@ Section bfn_stream.
       end
     end.
 
+  Definition sfst s := match s with in_stream x _ => x end.
+  Definition ssnd s := match s with in_stream _ s => s end.
+
+  (* I should be able to write this but Coq does not type-check the
+     nested co-recursive call *)
+
+  CoFixpoint bfn_2 t s : stream nat := in_stream (S (sfst s)) (match t with 
+        | leaf _     => s
+        | node a _ b => bfn_2 b (bfn_2 a s)
+      end).
+
+  
+
   Section test.
     
     Variable t : bt X.
 
-    CoFixpoint s := snd (bfn t (in_stream 1 s)).
+    
+
+    CoFixpoint s := bfn_2 t (in_stream 1 s).
   
   Definition label t :=
     cofix s := snd (bfn t (in_stream 1 s)).
