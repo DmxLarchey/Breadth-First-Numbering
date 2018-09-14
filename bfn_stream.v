@@ -71,6 +71,10 @@ Section streams.
 
 End streams.
 
+CoInductive lbt X :=
+  | lleaf : X -> lbt X
+  | lnode : lbt X -> X -> lbt X -> lbt X.
+
 Section bfn_stream.
 
   Variable X : Type.
@@ -78,6 +82,40 @@ Section bfn_stream.
   Implicit Type (t : bt X) (s : stream nat).
 
   CoFixpoint cst (x : X) := in_stream x (cst x).
+ 
+  CoFixpoint  bfn2 t s :=
+    match s with
+      | in_stream k s =>
+      match t with 
+        | leaf _     => in_stream (S k) s
+        | node a _ b => let s'  := bfn2 a s in
+                        let s'' := bfn2 b s'
+                        in  in_stream (S k) s''
+      end
+    end.
+
+
+  CoFixpoint bfn1 t s :=
+     match s with
+      | in_stream k s =>
+      match t with 
+        | lleaf x     => lleaf k
+        | lnode a x b => let (a',s')  := (bfn1 a s, bfn2 a s) in
+                         let (b',s'') := (bfn1 b s', bfn2 b s')
+                         in  lnode a' k b'
+      end
+    end
+  with bfn2 t s :=
+    match s with
+      | in_stream k s =>
+      match t with 
+        | lleaf x     => in_stream (S k) s
+        | lnode a x b => let s'  := bfn2 a s in
+                         let s'' := bfn2 b s'
+                         in  in_stream (S k) s''
+      end
+    end.
+.
 
   Fixpoint bfn t s { struct t } : bt nat * stream nat :=
     match s with
