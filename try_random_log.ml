@@ -1,15 +1,22 @@
 open List;;
+open Gc;;
 
 #use "bfn.ml";;
 (* open Bfn;; *)
 
 
 let mytime () = Sys.time ();;
+let mygcstats () =
+  let st = Gc.quick_stat ()      
+  in (st.minor_collections,st.major_collections);;
+
 let measure f =
-  let t1 = mytime ()             in
-  let r =  f ()                  in
-  let t2 = mytime ()             
-  in  (t2 -.t1,r);;
+  let (mi1,ma1) = mygcstats ()    in
+  let t1  = mytime ()             in
+  let r =  f ()                   in
+  let t2 = mytime ()              in
+  let (mi2,ma2) = mygcstats ()
+  in  (t2 -.t1,r,mi2-mi1,ma2-ma1);;
  
 (** Compute a random int value within [a,b] with log scale distribution *) 
 
@@ -63,13 +70,13 @@ let random_bt r =
                         in  (1+max h1 h2,Node (t1,(),t2))
   in loop;;
 
-let output_all num size height mes =
+let output_all num size height mes min_col maj_col =
   let avg = mes *. 1000000. /. (float_of_int size) 
-  in Printf.printf "%06d size=%-6d height=%-5d avg=%fµs time=%fs\n" num size height avg mes;;
+  in Printf.printf "%06d size=%-6d height=%-5d avg=%fµs time=%fs gc_minor=%d gc_major=%d\n" num size height avg mes min_col maj_col;;
 
-let output_stat num size height mes =
+let output_stat num size height mes min_col maj_col =
   let avg = mes *. 1000000. /. (float_of_int size) 
-  in Printf.printf "%06d %-6d %f\n" num size avg;;
+  in Printf.printf "%06d %-6d %f %d\n" num size avg min_col;;
 
 (** loop measuring the node-average time of bfn 
     for random binary tree of size between a and b
@@ -78,8 +85,9 @@ let output_stat num size height mes =
     A full GC is performed inbetween every measure
 *)
 
-let random_log_bench gc frm bfn s a b n =
-  let _ = Random.init s              in
+let random_log_bench ?(gc=true) ?(frm=output_stat) 
+    ?(bfn=bfn_2l) ?(seed=10) a b n =
+  let _ = Random.init seed           in
   let rsze = random_log              in
   let rbt  = random_bt random_split  in
   let rec loop i = 
@@ -87,8 +95,8 @@ let random_log_bench gc frm bfn s a b n =
     else begin 
           (let sze   = rsze a b                 in
            let (h,t) = rbt sze                  in
-           let (m,_) = measure (fun _ -> bfn t) 
-           in  frm i (2*sze+1) h m); 
+           let (m,_,mi_col,ma_col) = measure (fun _ -> bfn t) 
+           in  frm i (2*sze+1) h m mi_col ma_col); 
            flush_all ();
            if gc then Gc.compact () else ();
            loop (i+1)
@@ -102,6 +110,7 @@ let random_log_bench gc frm bfn s a b n =
 random_log_bench true output_stat bfn_2l 10 50 300000 2000;; 
 random_log_bench true output_stat bfn_3q 10 50 300000 2000;;
 *)
-random_log_bench true output_stat bfn_2l 10 16 600000 1000;; 
+
+random_log_bench ~frm:output_stat ~bfn:bfn_2l 16 600000 1000;; 
 
 
