@@ -1,7 +1,7 @@
 open List;;
 
-(*#use "bfn.ml";; *)
-open Bfn;;
+#use "bfn.ml";;
+(* open Bfn;; *)
 
 
 let mytime () = Sys.time ();;
@@ -102,6 +102,6 @@ let random_log_bench gc frm bfn s a b n =
 random_log_bench true output_stat bfn_2l 10 50 300000 2000;; 
 random_log_bench true output_stat bfn_3q 10 50 300000 2000;;
 *)
-random_log_bench true output_stat bfn_2l 10 16 600000 2000;; 
+random_log_bench true output_stat bfn_2l 10 16 600000 1000;; 
 
 
