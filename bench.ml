@@ -170,12 +170,19 @@ let t3 = t bfn_3q;;
    We should run the benchs over and over again to average noise
 *)
 
+
+
 let sizes = [10;100;1000;5000;10000;15000;25000;40000;50000;70000;100000;
              200000; 300000; 450000; 600000; 800000];;
-map (t2 10) sizes;; 
-map (t3 10) sizes;; 
+Gc.set { (Gc.get ()) with Gc.verbose = 0x01 };;
 
+(* Gc.full_major (); *)
+map (t2 10) sizes;;
 
+(* Gc.full_major (); *)
+map (t3 10) sizes;;
 
+Gc.print_stat stdout;;
 
+(* at_exit Gc.full_major;; *)
 
