@@ -111,6 +111,6 @@ random_log_bench true output_stat bfn_2l 10 50 300000 2000;;
 random_log_bench true output_stat bfn_3q 10 50 300000 2000;;
 *)
 
-random_log_bench ~frm:output_stat ~bfn:bfn_2l 16 600000 1000;; 
+random_log_bench ~frm:output_stat ~bfn:bfn_3q 16 600000 1000;; 
 
 
