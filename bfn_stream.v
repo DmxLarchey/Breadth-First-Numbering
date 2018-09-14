@@ -96,10 +96,12 @@ Section bfn_stream.
   (* I should be able to write this but Coq does not type-check the
      nested co-recursive call *)
 
-  CoFixpoint bfn_2 t s : stream nat := in_stream (S (sfst s)) (match t with 
+  Fixpoint bfn_2 t s : stream nat := in_stream (S (sfst s)) (match t with 
         | leaf _     => s
         | node a _ b => bfn_2 b (bfn_2 a s)
       end).
+
+  CoFixpoint s t := bfn_2 t (in_stream 1 (s t)).
 
   
 
@@ -109,7 +111,7 @@ Section bfn_stream.
 
     
 
-    CoFixpoint s := bfn_2 t (in_stream 1 s).
+   
   
   Definition label t :=
     cofix s := snd (bfn t (in_stream 1 s)).
