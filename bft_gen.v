@@ -8,20 +8,13 @@
 (**************************************************************)
 
 Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils bt bft.
+Require Import list_utils wf_utils bt bft fifo_axm.
 
 Set Implicit Arguments.
 
-Parameters (fifo      : Type -> Type) 
-           (fifo_list : forall X, fifo X -> list X)
-           (fifo_nil  : forall X, { q : fifo X | fifo_list q = nil })
-           (fifo_enq  : forall X q x, { q' : fifo X | fifo_list q' = fifo_list q ++ x :: nil })
-           (fifo_deq  : forall X q, @fifo_list X q <> nil -> { c : X * fifo X | let (x,q') := c in fifo_list q = x::fifo_list q' })
-           (fifo_void : forall X q, { b : bool | b = true <-> @fifo_list X q = nil }).
+Local Definition fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
 
 Section bft_gen.
-
-  Let fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
 
   Variable (X : Type).
 

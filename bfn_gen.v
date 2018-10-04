@@ -17,59 +17,13 @@
 *)
 
 Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils bt bft fifo.
+Require Import list_utils wf_utils bt bft fifo_axm.
 
 Set Implicit Arguments.
 
-Section seq_an.
-
-  (* seq_an a n = [a;a+1;...;a+(n-1)] *)
-
-  Fixpoint seq_an a n : list nat :=
-    match n with
-      | 0    => nil
-      | S n  => a::seq_an (S a) n
-    end.
-
-  Fact seq_an_length a n : length (seq_an a n) = n.
-  Proof. revert a; induction n; simpl; intros; f_equal; auto. Qed.
-
-  Fact seq_an_spec a n x : In x (seq_an a n) <-> a <= x < a+n.
-  Proof. 
-    revert x a; induction n as [ | n IHn ]; intros x a; simpl;
-      [ | rewrite IHn ]; omega.
-  Qed.
-
-  Fixpoint is_seq_from n (l : list nat) { struct l }: Prop :=
-    match l with  
-      | nil  => True
-      | x::l => n = x /\ is_seq_from (S n) l
-    end.
-
-  Theorem is_seq_from_spec a l : is_seq_from a l <-> exists n, l = seq_an a n.
-  Proof.
-    revert a; induction l as [ | x l IH ]; intros a; simpl.
-    + split; auto; exists 0; auto.
-    + rewrite IH; split.
-      * intros (? & n & Hn); subst x; exists (S n); subst; auto.
-      * intros ([ | n ] & ?); subst; try discriminate.
-        simpl in H; inversion H; subst; split; auto.
-        exists n; auto.
-  Qed.
-
-End seq_an.
+Local Definition fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
 
 Section bfn.
-
-  Variable (fifo      : Type -> Type) 
-           (fifo_list : forall X, fifo X -> list X)
-           (fifo_nil  : forall X, { q : fifo X | fifo_list q = nil })
-           (fifo_enq  : forall X q x, { q' : fifo X | fifo_list q' = fifo_list q ++ x :: nil })
-           (fifo_deq  : forall X q, @fifo_list X q <> nil -> { c : X * fifo X | let (x,q') := c in fifo_list q = x::fifo_list q' })
-           (fifo_void : forall X q, { b : bool | b = true <-> @fifo_list X q = nil }).   
-
-
-  Let fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
 
   Variable (X : Type).
 
@@ -200,35 +154,8 @@ Section bfn.
 
 End bfn.
 
-(* Notice that fifo_2l_deq is extracted to a function that loops forever
-   if the input is the empty queue, ie does not following the spec *)
-
 Recursive Extraction bfn_gen.
 
 Check bfn_gen.
 Check bfn_gen_spec_1.
 Check bfn_gen_spec_2.
-
-Section bfn_2q.
-
-  Variable X : Type.
-
-  Definition bfn_3q := @bfn_gen _ _ fifo_3q_nil_full fifo_3q_enq_full fifo_3q_deq_full fifo_3q_void_full X.
-
-  Definition bfn_3q_spec_1 t : t ~t bfn_3q t.
-  Proof. apply bfn_gen_spec_1. Qed.
-
-  Definition bfn_3q_spec_2 t : exists n, bft_std (bfn_3q t) = seq_an 0 n.
-  Proof. apply bfn_gen_spec_2. Qed.
-
-End bfn_2q.
-
-(* Extraction Language Haskell. *)
-Extraction Inline bfn_gen.
-Recursive Extraction bfn_3q bfn_gen.
-
-Check bfn_3q.
-Check bfn_3q_spec_1.
-Check bfn_3q_spec_2.
-
-
