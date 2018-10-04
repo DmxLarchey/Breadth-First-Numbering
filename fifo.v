@@ -391,13 +391,13 @@ Section fifo_three_lazy_lists.
   Proof.
     refine (exist _ (lnil,lnil,lnil) _).
     exists (lfin_lnil _), (lfin_lnil _), (lfin_lnil _); simpl.
-    rewrite lfin_length_fix_0; auto.
+    reflexivity.
   Defined.
 
   Fact fifo_3q_nil_spec : fifo_nil_prop fifo_3q_list fifo_3q_nil.
   Proof. 
-    unfold fifo_nil_prop, fifo_3q_list, fifo_3q_nil.
-    repeat rewrite lfin_length_fix_0; trivial.
+    red; unfold fifo_3q_list, fifo_3q_nil.
+    trivial.
   Qed.
 
   Definition fifo_3q_make l r l' : (exists Hl Hr Hl', lfin_length l' Hl' + lfin_length r Hr = 1 + lfin_length l Hl) -> fifo_3q.
@@ -417,8 +417,8 @@ Section fifo_three_lazy_lists.
         rewrite lfin_length_fix_0 in E.
         rewrite (lfin_length_eq _ Hr), (lfin_length_eq _ Hl); auto.
       * exists (lfin_rotate _ _ (@lfin_lnil _) E1), 
-             (@lfin_lnil _),
-             (lfin_rotate _ _ (@lfin_lnil _) E1).
+          (@lfin_lnil _),
+          (lfin_rotate _ _ (@lfin_lnil _) E1).
         unfold l''; rewrite llist_rotate_length; auto.
     + refine (exist _ (l,r,l'') _).
       destruct E as (Hl & Hr & Hl'' & E).
@@ -433,9 +433,9 @@ Section fifo_three_lazy_lists.
     destruct H as (Hl1 & Hr1 & Hl' & E).
     unfold fifo_3q_list, fifo_3q_make; destruct l' as [ | x l' ].
     + rewrite (llist_rotate_eq _ _ (@lfin_lnil _) _).
-      repeat rewrite llist_list_fix_0; simpl.
-      repeat rewrite <- app_nil_end; repeat (f_equal; auto).
-    + repeat (f_equal; auto).
+      rewrite llist_list_fix_0; simpl.
+      do 2 rewrite <- app_nil_end; do 2 (f_equal; auto).
+    + do 2 (f_equal; auto).
   Qed.
 
   Definition fifo_3q_enq q x : fifo_3q.
@@ -449,7 +449,7 @@ Section fifo_three_lazy_lists.
 
   Fact fifo_3q_enq_spec : fifo_enq_prop fifo_3q_list fifo_3q_enq.
   Proof.
-    unfold fifo_enq_prop, fifo_3q_enq.
+    red; unfold fifo_3q_enq.
     intros  (((l,r),l') & Hl & Hr & Hl' & E) x.
     rewrite <- (@fifo_3q_make_spec _ _ _ Hl (lfin_lcons _ Hr)).
     unfold fifo_3q_list. 
@@ -465,15 +465,15 @@ Section fifo_three_lazy_lists.
     end); [ exfalso | ]; destruct H1 as (Hl & Hr & Hl' & E).
     + unfold fifo_3q_list in H2.
       destruct r.
-      * do 2 rewrite llist_list_fix_0 in H2; destruct H2; trivial.
+      * do 2 rewrite llist_list_fix_0 in H2; destruct H2; reflexivity.
       * rewrite lfin_length_fix_1, lfin_length_fix_0 in E; omega.
     + exists (lfin_inv Hl), Hr, Hl'.
-      rewrite E, lfin_length_fix_1; auto.
+      rewrite E, lfin_length_fix_1; reflexivity.
   Defined.
 
   Fact fifo_3q_deq_spec : fifo_deq_prop fifo_3q_list fifo_3q_deq.
   Proof.
-    unfold fifo_deq_prop, fifo_3q_deq.
+    red; unfold fifo_3q_deq.
     intros ((([ | x l],r),n) & Hl & Hr & Hl' & E) Hq.
     + exfalso.
       unfold fifo_3q_list in Hq.
@@ -494,12 +494,12 @@ Section fifo_three_lazy_lists.
   
   Fact fifo_3q_void_spec : fifo_void_prop fifo_3q_list fifo_3q_void.
   Proof.
-    unfold fifo_void_prop, fifo_3q_list, fifo_3q_void.
+    red; unfold fifo_3q_list, fifo_3q_void.
     intros ((([ | x l],r),n) & Hl & Hr & Hl' & E).
     + split; auto; intros _. 
       rewrite llist_list_fix_0.
       destruct r.
-      * rewrite llist_list_fix_0; auto.
+      * rewrite llist_list_fix_0; reflexivity.
       * rewrite lfin_length_fix_0, lfin_length_fix_1 in E; omega.
     + split; try discriminate.
       rewrite llist_list_fix_1; discriminate.
@@ -516,7 +516,7 @@ Section fifo_three_lazy_lists.
   Definition fifo_3q_enq_full q x : { q' | fifo_3q_list q' = fifo_3q_list q ++ x :: nil }.
   Proof. exists (fifo_3q_enq q x); auto. Defined.
 
-  Definition fifo_3q_deq_full q : fifo_3q_list q <> nil -> { c : X*fifo_3q | let (x,q') := c in fifo_3q_list q = x::fifo_3q_list q' }.
+  Definition fifo_3q_deq_full q : fifo_3q_list q <> nil -> { c : X * fifo_3q | let (x,q') := c in fifo_3q_list q = x::fifo_3q_list q' }.
   Proof. intros Hq; exists (fifo_3q_deq _ Hq); apply fifo_3q_deq_spec. Defined.
 
   Definition fifo_3q_void_full q : { b | b = true <-> fifo_3q_list q = nil }.
