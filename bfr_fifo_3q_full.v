@@ -157,7 +157,7 @@ Proof.
 Qed.
 
 (* Notice that fifo_3q_deq is extracted to a function that loops forever
-   if the input is the empty queue, ie does not following the spec *)
+   if the input is the empty queue, i.e., does not follow the spec *)
 
 Extract Inductive bool => "bool" [ "true" "false" ].
 Extract Inductive prod => "(*)"  [ "(,)" ].

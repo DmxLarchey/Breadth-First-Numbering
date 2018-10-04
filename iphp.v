@@ -8,7 +8,7 @@
 (**************************************************************)
 
 (** This is an exercise about the infinite PHP, three versions
-    which are constructivelly equivalent: bPHP, dPHP and iPHP
+    which are constructively equivalent: bPHP, dPHP and iPHP
 
     for a predicate P : nat -> Prop, infinite means unbounded here
 
