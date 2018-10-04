@@ -13,6 +13,8 @@ Require Import List Arith Omega.
 
 Require Import wf_utils llist.
 
+(* Is becomming obsolete --> replaced by fifo_{axm,triv,2lists,3llists}.v *)
+
 Set Implicit Arguments.
 
 Section fifo_props.

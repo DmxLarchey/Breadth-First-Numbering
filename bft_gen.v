@@ -18,9 +18,11 @@ Section bft_gen.
 
   Variable (X : Type).
 
-  Notation fX := (fifo (bt X)). 
+  Notation fifo_X := (fifo (bt X)).
 
-  Definition bft_gen_f (p : fX) : { l : list X | l = bft_f (fifo_list p) }.
+  Implicit Type (p : fifo_X). 
+
+  Definition bft_gen_f p : { l | l = bft_f (fifo_list p) }.
   Proof.
     induction on p as bft_gen_f with measure (fifo_sum p).
 
