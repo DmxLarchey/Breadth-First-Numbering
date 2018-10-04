@@ -16,17 +16,18 @@ Section bft_inj.
 
   Variable X : Type.
 
-  Implicit Types (l : list (bt X)) (t : bt X).
+  Implicit Types (l m : list (bt X)) (t : bt X).
 
+  (** injectivity of [bft_f] given that the arguments are structurally equal *)
   Theorem bft_f_inj l m : l ~lt m -> bft_f l = bft_f m -> l = m.
   Proof.
     induction on l m as IH with measure (lsum (l++m)).
     revert l m IH; intros [ | t1 l ] [ | t2 m ] IH H; try (inversion H; fail); auto.
     Forall2 inv H as H12.
-    repeat rewrite bft_f_fix_3.
+    do 2 rewrite bft_f_fix_3.
     destruct t1 as [ x | a1 x b1 ]; destruct t2 as [ y | a2 y b2 ]; try (inversion H12; fail); simpl.
     + intros E; inversion E; f_equal.
-      repeat rewrite <- app_nil_end in *.
+      do 2 rewrite <- app_nil_end in *.
       apply IH; auto.
       repeat rewrite lsum_app; simpl; omega.
     + apply bt_eq_node_inv in H12; destruct H12 as [ Ha Hb ].
@@ -36,7 +37,7 @@ Section bft_inj.
         repeat rewrite rev_app_distr in E; simpl in E.
         inversion E; subst; f_equal.
         rewrite <- (rev_involutive l), <- (rev_involutive m).
-        f_equal; trivial.
+        f_equal; assumption.
       * repeat rewrite lsum_app; simpl; omega.
       * apply Forall2_app; auto.
   Qed.
