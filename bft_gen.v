@@ -29,7 +29,7 @@ Section bft_gen.
 
   Definition bft_gen_f (p : fX) : { l : list X | l = bft_f (fifo_list p) }.
   Proof.
-    induction on p as bff_gen_f with measure (fifo_sum p).
+    induction on p as bft_gen_f with measure (fifo_sum p).
 
     refine (let (b,Hb) := fifo_void p in _).
     revert Hb; refine (match b with 
@@ -42,130 +42,52 @@ Section bft_gen.
     all: cycle 2. (* We queue 2 POs *)
     revert Hd1; refine (match d1 with
       | (leaf x    , p1) => fun Hp1 
-      => let (q,Hq)   := bfn_gen_f (S n) p1 _           in
-         let (q1,Hq1) := fifo_enq q (leaf n) 
-         in  exist _ q1 _
+      => let (q1,Hq1) := bft_gen_f p1 _ 
+         in  exist _ (x::q1) _
       | (node a x b, p1) => fun Hp1 
       => let (p2,Hp2) := fifo_enq p1 a                  in
          let (p3,Hp3) := fifo_enq p2 b                  in
-         let (q,Hq)   := bfn_gen_f (S n) p3 _           in 
-         let (d2,Hd2) := @fifo_deq _ q _ 
-         in  _
+         let (q,Hq)   := bft_gen_f p3 _  
+         in  exist _ (x::q) _
     end); simpl in Hp1.
     all: cycle 4. (* We queue 4 POs *)
-    revert Hd2; refine (match d2 with (u,q1) => _ end); intros Hq1.
-    refine (let (d3,Hd3) := @fifo_deq _ q1 _ in _).
-    all: cycle 1. (* We queue 1 PO *) 
-    revert Hd3; refine (match d3 with 
-      | (v,q2) => fun Hq2 
-      => let (q3,Hq3) := fifo_enq q2 (node v n u)
-         in  exist _ q3 _
-    end); simpl in Hq2, Hq3.
-    all: cycle 1. (* We queue 1 PO *) 
 
     (* And now, we show POs *)
    
-    * apply proj1 in Hp; rewrite Hp, Hq; split; simpl; auto.
-      red; rewrite bft_f_fix_0; simpl; auto.
+    * rewrite (proj1 Hp); auto.
+      rewrite bft_f_fix_0; auto.
     * intros H; apply Hp in H; discriminate.
-    * unfold fifo_sum; rewrite Hp1; simpl; omega.
-    * destruct Hq as (H5 & H6).
-      rewrite Hp1, Hq1; split; auto.
-      + rewrite rev_app_distr; simpl; auto.
-      + rewrite rev_app_distr; simpl; red.
-        rewrite bft_f_fix_3; simpl; rewrite <- app_nil_end; auto.
+    * unfold fifo_sum; rewrite Hp1; simpl; auto.
+    * rewrite Hq1, Hp1.
+      rewrite bft_f_fix_3; simpl.
+      do 2 f_equal; apply app_nil_end.
     * unfold fifo_sum. 
-      rewrite Hp3, Hp2, app_ass; simpl.
-      rewrite lsum_app, Hp1; simpl; omega.
-    * apply proj1, Forall2_rev in Hq; intros H; revert Hq.
-      rewrite H, Hp3, Hp2, app_ass; simpl.
-      rewrite rev_app_distr; simpl.
-      intros G; apply Forall2_length in G; discriminate.
-    * apply proj1, Forall2_rev in Hq; intros H; revert Hq.
-      rewrite Hq1, H, Hp3, Hp2, app_ass; simpl.
-      rewrite rev_app_distr; simpl.
-      intros G; apply Forall2_length in G; discriminate.
-    * destruct Hq as (H5,H6).
-      rewrite Hp3, Hp2, Hq1, Hq2 in H5. 
-      repeat (rewrite app_ass in H5; simpl in H5).
-      apply Forall2_2snoc_inv in H5.
-      destruct H5 as (G1 & G2 & H5).
-      rewrite Hq1, Hq2 in H6; simpl in H6; rewrite app_ass in H6; simpl in H6.
-      unfold is_bfn_from in H6 |- *.
-      rewrite Hp1, Hq3, rev_app_distr; simpl.
-      rewrite bft_f_fix_3; simpl; split; auto.
+      rewrite Hp3, Hp2, Hp1; simpl.
+      repeat rewrite lsum_app; simpl; omega.
+    * rewrite Hq, Hp3, Hp2, Hp1.
+      rewrite app_ass; simpl.
+      rewrite bft_f_fix_3, bft_f_fix_1; simpl.
+      rewrite bft_f_fix_1; auto.
   Defined.
 
-  Section bfn.
+  Let bft_gen_full t : { l : list X | l = bft t }.
+  Proof.
+    refine (
+      let (q0,H0) := @fifo_nil _   in
+      let (q1,H1) := fifo_enq q0 t in
+      let (l,Hl)  := bft_gen_f q1   
+      in  exist _ l _).
+    rewrite Hl, H1, H0; auto.
+  Qed. 
 
-    Let bfn_full (t : bt X) : { t' | t ~t t' /\ is_seq_from 0 (bft_std t') }.
-    Proof.
-      refine (let (p,Hp) := @fifo_nil _   in
-              let (q,Hq) := fifo_enq p t  in 
-              let (r,Hr) := bfn_gen_f 0 q in
-              let (d1,Hd1) := @fifo_deq _ r _ 
-              in _).
-      all: cycle 1. (* We queue 1 PO *) 
-      revert Hd1; refine (match d1 with (x,q1) => fun Hq1 => exist _ x _ end); simpl in Hq1.
-      all: cycle 1. (* We queue 1 PO *) 
+  Definition bft_gen t := proj1_sig (bft_gen_full t).
 
-      + intros H; rewrite Hq, Hp, H in Hr.
-        apply proj1 in Hr; inversion Hr.
+  Fact bft_gen_spec t : bft_gen t = bft t.
+  Proof. apply (proj2_sig (bft_gen_full t)). Qed.
 
-      + rewrite Hq, Hp in Hr. 
-        destruct Hr as (H1 & H2).
-        rewrite <- bft_std_eq_bft.
-        rewrite Hq1 in H1; simpl in H1.
-        apply Forall2_snoc_inv with (l := nil) in H1.
-        destruct H1 as (G1 & H1).
-        apply Forall2_nil_inv_right in H1.
-        apply f_equal with (f := @rev _) in H1.
-        rewrite rev_involutive in H1; simpl in H1.
-        rewrite Hq1, H1 in H2; simpl in H2.
-        auto.
-    Qed.
+End bft_gen.
 
-    Definition bfn_gen t := proj1_sig (bfn_full t).
+Recursive Extraction bft_gen.
 
-    Fact bfn_gen_spec_1 t : t ~t bfn_gen t.
-    Proof. apply (proj2_sig (bfn_full t)). Qed.
-
-    Fact bfn_gen_spec_2 t : exists n, bft_std (bfn_gen t) = seq_an 0 n.
-    Proof. apply is_seq_from_spec, (proj2_sig (bfn_full t)). Qed.
-
-  End bfn.
-
-End bfn.
-
-(* Notice that fifo_2l_deq is extracted to a function that loops forever
-   if the input is the empty queue, ie does not following the spec *)
-
-Recursive Extraction bfn_gen.
-
-Check bfn_gen.
-Check bfn_gen_spec_1.
-Check bfn_gen_spec_2.
-
-Section bfn_2q.
-
-  Variable X : Type.
-
-  Definition bfn_3q := @bfn_gen _ _ fifo_3q_nil_full fifo_3q_enq_full fifo_3q_deq_full fifo_3q_void_full X.
-
-  Definition bfn_3q_spec_1 t : t ~t bfn_3q t.
-  Proof. apply bfn_gen_spec_1. Qed.
-
-  Definition bfn_3q_spec_2 t : exists n, bft_std (bfn_3q t) = seq_an 0 n.
-  Proof. apply bfn_gen_spec_2. Qed.
-
-End bfn_2q.
-
-(* Extraction Language Haskell. *)
-Extraction Inline bfn_gen.
-Recursive Extraction bfn_3q bfn_gen.
-
-Check bfn_3q.
-Check bfn_3q_spec_1.
-Check bfn_3q_spec_2.
-
-
+Check bft_gen.
+Check bft_gen_spec.
