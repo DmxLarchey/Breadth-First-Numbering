@@ -25,3 +25,4 @@ fifo_2lists.v
 fifo_triv.v
 fifo_3llists.v
 bfr_gen.v
+bft_inj.v

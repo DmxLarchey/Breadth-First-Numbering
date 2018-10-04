@@ -200,6 +200,13 @@ Section bt_branches.
   Corollary bft_br_length t : length (bft_br t) = m_bt t.
   Proof. rewrite <- (Permutation_length (bft_br_dft_br t)); apply dft_br_length. Qed. 
 
+  Corollary bft_std_length t : length (bft_std t) = @m_bt X t.
+  Proof.
+    generalize (bft_br_std t); intros H.
+    apply Forall2_length in H.
+    rewrite <- H, bft_br_length; trivial.
+  Qed.
+
 End bt_branches.
 
 Check dft_br_spec.

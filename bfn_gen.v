@@ -17,7 +17,7 @@
 *)
 
 Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils bt bft fifo_axm.
+Require Import list_utils wf_utils bt bft bft_spec fifo_axm.
 
 Set Implicit Arguments.
 
@@ -123,7 +123,7 @@ Section bfn.
     refine (let (b,Hb) := fifo_void p in _).
     revert Hb; refine (match b with 
       | true  => fun Hp 
-      => let (q,Hq) := @fifo_nil _ 
+      => let (q,Hq) := fifo_nil 
          in exist _ q _
       | false => fun Hp 
       => let (d1,Hd1) := @fifo_deq _ p _ 
@@ -223,6 +223,17 @@ Section bfn.
 
     Fact bfn_gen_spec_2 t : exists n, bft_std (bfn_gen t) = seq_an 0 n.
     Proof. apply is_seq_from_spec, (proj2_sig (bfn_full t)). Qed.
+
+    Corollary bfn_gen_spec_3 t : bft_std (bfn_gen t) = seq_an 0 (m_bt t).
+    Proof.
+      destruct (bfn_gen_spec_2 t) as (n & Hn).
+      rewrite Hn.
+      apply f_equal with (f := @length _) in Hn.
+      rewrite seq_an_length, bft_std_length in Hn.
+      generalize (bfn_gen_spec_1 t); intros E.
+      apply bt_eq_m in E.
+      rewrite <- Hn, <- E; trivial.
+    Qed.
 
   End bfn.
 
