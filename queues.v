@@ -13,6 +13,8 @@ Require Import List Arith Omega Wellfounded Extraction.
 
 Set Implicit Arguments.
 
+(* This is largely obsolete and replaced by llist.v and fifo.v *)
+
 Section llist.
 
   (* G54DTP Dependently Typed Programming.
