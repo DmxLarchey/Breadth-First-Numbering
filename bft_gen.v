@@ -7,96 +7,34 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-(** Extraction of breadth-first numbering algorithm from Coq to Ocaml 
-
-       see http://okasaki.blogspot.com/2008/07/breadth-first-numbering-algorithm-in.html
-       and https://www.westpoint.edu/eecs/SiteAssets/SitePages/Faculty%20Publication%20Documents/Okasaki/jfp95queue.pdf
-       and https://www.cs.cmu.edu/~rwh/theses/okasaki.pdf
-       and https://www.westpoint.edu/eecs/SiteAssets/SitePages/Faculty%20Publication%20Documents/Okasaki/icfp00bfn.pdf
-
-*)
-
 Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils bt bft fifo.
+Require Import list_utils wf_utils bt bft.
 
 Set Implicit Arguments.
 
-Section seq_an.
-
-  (* seq_an a n = [a;a+1;...;a+(n-1)] *)
-
-  Fixpoint seq_an a n : list nat :=
-    match n with
-      | 0    => nil
-      | S n  => a::seq_an (S a) n
-    end.
-
-  Fact seq_an_length a n : length (seq_an a n) = n.
-  Proof. revert a; induction n; simpl; intros; f_equal; auto. Qed.
-
-  Fact seq_an_spec a n x : In x (seq_an a n) <-> a <= x < a+n.
-  Proof. 
-    revert x a; induction n as [ | n IHn ]; intros x a; simpl;
-      [ | rewrite IHn ]; omega.
-  Qed.
-
-  Fixpoint is_seq_from n (l : list nat) { struct l }: Prop :=
-    match l with  
-      | nil  => True
-      | x::l => n = x /\ is_seq_from (S n) l
-    end.
-
-  Theorem is_seq_from_spec a l : is_seq_from a l <-> exists n, l = seq_an a n.
-  Proof.
-    revert a; induction l as [ | x l IH ]; intros a; simpl.
-    + split; auto; exists 0; auto.
-    + rewrite IH; split.
-      * intros (? & n & Hn); subst x; exists (S n); subst; auto.
-      * intros ([ | n ] & ?); subst; try discriminate.
-        simpl in H; inversion H; subst; split; auto.
-        exists n; auto.
-  Qed.
-
-End seq_an.
-
-Section bfn.
-
-  Variable (fifo      : Type -> Type) 
+Parameters (fifo      : Type -> Type) 
            (fifo_list : forall X, fifo X -> list X)
            (fifo_nil  : forall X, { q : fifo X | fifo_list q = nil })
            (fifo_enq  : forall X q x, { q' : fifo X | fifo_list q' = fifo_list q ++ x :: nil })
            (fifo_deq  : forall X q, @fifo_list X q <> nil -> { c : X * fifo X | let (x,q') := c in fifo_list q = x::fifo_list q' })
-           (fifo_void : forall X q, { b : bool | b = true <-> @fifo_list X q = nil }).   
+           (fifo_void : forall X q, { b : bool | b = true <-> @fifo_list X q = nil }).
+
+Section bft_gen.
 
   Let fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
 
   Variable (X : Type).
 
   Notation fX := (fifo (bt X)). 
-  Notation fN := (fifo (bt nat)).
 
-  (* the forest (list of bt nat) is a breadth first numbering from n if
-     its breadth first traversal yields [n;n+1;....;m[ for some m
-   *)
-
-  Definition is_bfn_from n l := is_seq_from n (bft_f l).
-
-  (* Breath First Numbering: maps a forest X to a forest nat such that
-          1) the two forests are of the same shape
-          2) the result is a breadth first numbering from n
-
-     Beware that the output is a reversed queue compared to the input
-   *)
-
-  Definition bfn_gen_f n (p : fX) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
+  Definition bft_gen_f (p : fX) : { l : list X | l = bft_f (fifo_list p) }.
   Proof.
-    induction on n p as bfn_gen_f with measure (fifo_sum p).
+    induction on p as bff_gen_f with measure (fifo_sum p).
 
     refine (let (b,Hb) := fifo_void p in _).
     revert Hb; refine (match b with 
       | true  => fun Hp 
-      => let (q,Hq) := @fifo_nil _ 
-         in exist _ q _
+      => exist _ nil _
       | false => fun Hp 
       => let (d1,Hd1) := @fifo_deq _ p _ 
          in _
