@@ -21,7 +21,7 @@ Section bt.
 
   Inductive bt := leaf : X -> bt | node : bt -> X -> bt -> bt.
 
-  Definition root t :=
+  Definition root (t: bt): X :=
     match t with 
       | leaf x     => x
       | node _ x _ => x
@@ -29,7 +29,7 @@ Section bt.
 
   (** measure: number of constructors *)
 
-  Fixpoint m_bt t :=
+  Fixpoint m_bt (t: bt): nat :=
     match t with 
       | leaf _     => 1
       | node a _ b => 1 + m_bt a + m_bt b
@@ -69,7 +69,7 @@ Section bt.
 
   (* A branch has a value through bt_path_node iff it is a branch of the tree *)
 
-  Fact btb_spec l t : btb t l <-> exists x, bt_path_node t l x.
+  Fact btb_spec (l: list bool) (t: bt) : btb t l <-> exists (x: X), bt_path_node t l x.
   Proof.
     split.
     + induction 1 as [ t | l u x v _ (y & Hy) | l u x v _ (y & Hy) ].
@@ -112,33 +112,32 @@ Section branch_orders.
   where "x <l y" := (lb_lex x y).
 
   Hint Constructors lb_lex.
-
-  Fact lb_lex_irrefl l : ~ l <l l.
+  Fact lb_lex_irrefl (l: list bool) : ~ l <l l.
   Proof. 
     assert (forall l m, l <l m -> l <> m) as H.
     { induction 1; try discriminate; inversion 1; tauto. }
     intros H1; apply (H _ _ H1); reflexivity.
   Qed.
 
-  Fact lb_lex_trans l m k : l <l m -> m <l k -> l <l k.
+  Fact lb_lex_trans (l m k: list bool) : l <l m -> m <l k -> l <l k.
   Proof.
     intros H; revert H k.
     induction 1; inversion 1; constructor; auto.
-  Qed. 
+  Qed.
 
-  Fact lb_lex_inv x l m : x::l <l x::m -> l <l m.
+  Fact lb_lex_inv (x: bool) (l m: list bool) : x::l <l x::m -> l <l m.
   Proof. inversion 1; auto. Qed.
 
-  Fact lb_lex_mono x l m : l <l m <-> x::l <l x::m.
+  Fact lb_lex_mono (x: bool) (l m: list bool) : l <l m <-> x::l <l x::m.
   Proof. split; auto; apply lb_lex_inv. Qed.
 
-  Fact lb_lex_nil x m : nil <l x::m.
+  Fact lb_lex_nil (x: bool) (m: list bool) : nil <l x::m.
   Proof. constructor. Qed.
 
-  Fact lb_lex_cons l m : false::l <l true::m.
+  Fact lb_lex_cons (l m: list bool) : false::l <l true::m.
   Proof. constructor. Qed.
 
-  Definition lb_lex_dec l m : { l <l m } + { l = m } + { m <l l }.
+  Definition lb_lex_dec (l m: list bool) : { l <l m } + { l = m } + { m <l l }.
   Proof.
     revert m; induction l as [ | [] l IHl ]; intros [ | [] m ].
     + tauto.
@@ -165,26 +164,26 @@ Section branch_orders.
  
    *)
 
-  Definition bft_order l m := length l < length m 
-                           \/ length l = length m /\ l <l m.
+  Definition bft_order (l m: list bool) : Prop :=
+    length l < length m \/ length l = length m /\ l <l m.
 
   Notation "l <b m" := (bft_order l m).
 
-  Fact bft_order_irrefl l : ~ l <b l.
+  Fact bft_order_irrefl (l: list bool) : ~ l <b l.
   Proof. 
     intros [ H | (_ & H) ]; revert H.
     + apply lt_irrefl.
     + apply lb_lex_irrefl.
   Qed.
 
-  Fact bft_order_trans l m k : l <b m -> m <b k -> l <b k.
+  Fact bft_order_trans (l m k: list bool) : l <b m -> m <b k -> l <b k.
   Proof.
     intros [ | [] ] [ | [] ]; try (left; omega).
     right; split; try omega.
     apply lb_lex_trans with m; assumption.
   Qed.
 
-  Fact bft_order_mono x l m : l <b m <-> x::l <b x::m.
+  Fact bft_order_mono (x: bool) (l m: list bool) : l <b m <-> x::l <b x::m.
   Proof.
     split.
     + intros [ H | (H1 & H2) ].
@@ -196,13 +195,13 @@ Section branch_orders.
         revert H2; apply lb_lex_inv.
   Qed.
 
-  Fact bft_order_lt m1 m2 : length m1 < length m2 -> m1 <b m2.
+  Fact bft_order_lt (m1 m2: list bool) : length m1 < length m2 -> m1 <b m2.
   Proof. left; auto. Qed.
 
-  Fact bft_order_eq m1 m2 : length m1 = length m2 -> false::m1 <b true::m2.
+  Fact bft_order_eq (m1 m2: list bool) : length m1 = length m2 -> false::m1 <b true::m2.
   Proof. right; simpl; split; auto. Qed.
 
-  Definition bft_order_dec l m : { l <b m } + { l = m } + { m <b l }.
+  Definition bft_order_dec (l m: list bool) : { l <b m } + { l = m } + { m <b l }.
   Proof.
     destruct (le_lt_dec (length l) (length m)).
     2: right; left; auto.
@@ -352,7 +351,7 @@ Section bt_eq.
     | in_bt_eq_1 : forall x a b y c d, a ~t c -> b ~t d -> node a x b ~t node c y d
   where "x ~t y" := (bt_eq x y).
 
-  Fact bt_eq_m t1 t2 : t1 ~t t2 -> m_bt t1 = m_bt t2.
+  Fact bt_eq_m (t1: bt X) (t2: bt Y) : t1 ~t t2 -> m_bt t1 = m_bt t2.
   Proof. induction 1; simpl; f_equal; auto. Qed.
 
   Fact bt_eq_node_inv a x b c y d : node a x b ~t node c y d -> a ~t c /\ b ~t d.
@@ -363,7 +362,7 @@ End bt_eq.
 Arguments bt_eq {X Y}.
 
 Notation "x ~t y" := (bt_eq x y).
-Notation "l ~lt m" := (Forall2 bt_eq l m).
+Notation "l ~lt m" := (Forall2 bt_eq l m). (** extension to forests *)
 
 Hint Constructors bt_eq.
 

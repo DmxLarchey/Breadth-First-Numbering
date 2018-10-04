@@ -222,6 +222,7 @@ Section bfn_2q.
 
 End bfn_2q.
 
+Extraction Language Haskell.
 Extraction Inline bfn_gen.
 Recursive Extraction bfn_3q.
 

@@ -75,7 +75,7 @@ Extraction Inline measure_rect measure_double_rect.
     This is a kind of inlining of measure_rect & measure_double_rect inside
     the Coq terms instead of inlining them at extraction.
 
-    Beware that define below while not work well if "fresh" variable names 
+    Beware that [define] below while not work well if "fresh" variable names
     clash with hyps x and y ... not sure of the exact semantics of Ltac ...
 
     I agree this inlining is ugly but I am not able to remove the let/in

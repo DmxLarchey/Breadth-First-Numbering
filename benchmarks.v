@@ -19,9 +19,10 @@
 Require Import List Extraction.
 Require Import bfn_fifo_3q bfn_fifo_2l.
 
+Extraction Language OCaml.
 Extract Inductive bool => "bool" [ "true" "false" ].
 Extract Inductive prod => "(*)"  [ "(,)" ].
 Extract Inductive list => "list" [ "[]" "(::)" ].
 Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
 
-Extraction "bfn.ml" bfn_2l bfn_3q.
+Extraction "bfn" bfn_2l bfn_3q.
