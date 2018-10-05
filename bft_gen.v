@@ -50,7 +50,7 @@ Section bft_gen.
     (* And now, we show POs *)
    
     * rewrite (proj1 Hp); auto.
-      rewrite bft_f_fix_0; auto.
+      rewrite bft_f_fix_0; reflexivity.
     * intros H; apply Hp in H; discriminate.
     * unfold fifo_sum; rewrite Hp1; simpl; auto.
     * rewrite Hq1, Hp1.
@@ -58,7 +58,7 @@ Section bft_gen.
       do 2 f_equal; apply app_nil_end.
     * unfold fifo_sum. 
       rewrite Hp3, Hp2, Hp1; simpl.
-      repeat rewrite lsum_app; simpl; omega.
+      do 2 rewrite lsum_app; simpl; omega.
     * rewrite Hq, Hp3, Hp2, Hp1.
       rewrite app_ass; simpl.
       rewrite bft_f_fix_3, bft_f_fix_1; simpl.
@@ -72,7 +72,7 @@ Section bft_gen.
       let (q1,H1) := fifo_enq q0 t in
       let (l,Hl)  := bft_gen_f q1   
       in  exist _ l _).
-    rewrite Hl, H1, H0; auto.
+    rewrite Hl, H1, H0; reflexivity.
   Qed. 
 
   Definition bft_gen t := proj1_sig (bft_gen_full t).

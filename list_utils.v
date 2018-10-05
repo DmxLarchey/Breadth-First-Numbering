@@ -41,6 +41,21 @@ Definition list_length_prefix X n (ll : list X) :
     n <= length ll -> { l : _ & { r | ll = l++r /\ length l = n } }.
 Proof. intro; destruct (list_length_split n ll); trivial; omega. Qed.
 
+Section list_length_eq_ind.
+
+  Variable (X : Type) (P : list X -> list X -> Prop)
+           (HP0 : P nil nil)
+           (HP1 : forall x y l m, length l = length m -> P l m -> P (x::l) (y::m)).
+
+  Theorem list_length_eq_ind l m : length l = length m -> P l m.
+  Proof.
+    intros H; cut (Forall2 (fun _ _ => True) l m).
+    + induction 1; auto.
+    + revert m H; induction l; intros [|]; auto; discriminate.
+  Qed.
+
+End list_length_eq_ind.
+
 Section app.
 
   Variable X : Type.

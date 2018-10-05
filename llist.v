@@ -26,57 +26,59 @@ Section llist.
     | lnil: llist
     | lcons: X -> llist -> llist.
 
+  Implicit Types (n: nat) (a: X) (ll: llist) (l: list X).
+
   (* We must define an explicit unfold operation. *)
 
-  Definition lunfold (l : llist) : llist :=
-    match l with
+  Definition lunfold ll : llist :=
+    match ll with
       | lnil => lnil
-      | lcons a l' => lcons a l'
+      | lcons a ll' => lcons a ll'
     end.
  
   (* The next function unfolds a lazy list several times:
      the natural number n says how many.
   *)
 
-  Fixpoint lunfold_many (l:llist) n : llist :=
+  Fixpoint lunfold_many ll n : llist :=
     match n with
-      | O    => l
-      | S n => match l with
+      | O    => ll
+      | S n => match ll with
           | lnil      => lnil
-          | lcons a l => lcons a (lunfold_many l n)
+          | lcons a ll => lcons a (lunfold_many ll n)
           end
     end.
 
   (* We can prove that the unfolding is equal to the original list. *)
 
-  Lemma lunfold_many_eq: forall n (l:llist), l = lunfold_many l n.
+  Lemma lunfold_many_eq: forall n ll, ll = lunfold_many ll n.
   Proof.
     induction n as [ | n IHn ].
     + reflexivity.
-    + intros [ | x l ].
+    + intros [ | x ll ].
       * reflexivity.
       * simpl; f_equal; auto.
   Qed.
 
   (* Every finite list can be transformed into a lazy list. *)
 
-  Fixpoint list_llist (l: list X) : llist :=
+  Fixpoint list_llist l : llist :=
     match l with
       | nil  => lnil
       | a::l => lcons a (list_llist l)
     end.
     
-  Fact list_llist_inj l m : list_llist l = list_llist m -> l = m.
+  Fact list_llist_inj l1 l2 : list_llist l1 = list_llist l2 -> l1 = l2.
   Proof.
-    revert m; induction l as [ | x l IHl ]; intros [ | y m ]; auto; try discriminate.
+    revert l2; induction l1 as [ | x l IHl ]; intros [ | y m ]; auto; try discriminate.
     simpl; intros H; inversion H; f_equal; auto.
   Qed.
     
   Inductive lfin : llist -> Prop :=
     | lfin_lnil :  lfin lnil
-    | lfin_lcons : forall a l, lfin l -> lfin (lcons a l).
+    | lfin_lcons : forall a ll, lfin ll -> lfin (lcons a ll).
     
-  Fact lfin_inv a l : lfin (lcons a l) -> lfin l.
+  Fact lfin_inv a ll : lfin (lcons a ll) -> lfin ll.
   Proof. inversion 1; assumption. Defined.
 
   Fact lfin_list_llist l : lfin (list_llist l).
@@ -84,26 +86,26 @@ Section llist.
 
   Section llist_list.
 
-    Let llist_list_rec : forall l, lfin l -> { m | l = list_llist m }.
+    Let llist_list_rec : forall ll, lfin ll -> { l | ll = list_llist l }.
     Proof.
-      refine (fix loop l Hl { struct Hl } := 
-        match l as l' return lfin l' -> { m | l' = list_llist m } with
+      refine (fix loop ll Hll { struct Hll } :=
+        match ll as ll' return lfin ll' -> { l | ll' = list_llist l } with
           | lnil      => fun H => exist _ nil _
-          | lcons x l => fun H => let (r,Hr) := loop l _ in exist _ (x::r) _
-        end Hl); subst; trivial.
+          | lcons x ll => fun H => let (l',Hl') := loop ll _ in exist _ (x::l') _
+        end Hll); subst; trivial.
       inversion H; trivial.
     Qed.
   
-    Definition llist_list l (Hl: lfin l): list X := proj1_sig (@llist_list_rec l Hl).
+    Definition llist_list ll Hll: list X := proj1_sig (@llist_list_rec ll Hll).
   
-    Fact llist_list_spec l (Hl: lfin l) : l = list_llist (@llist_list l Hl).
-    Proof. apply (proj2_sig (@llist_list_rec l Hl)). Qed.
+    Fact llist_list_spec ll Hll : ll = list_llist (@llist_list ll Hll).
+    Proof. apply (proj2_sig (@llist_list_rec ll Hll)). Qed.
 
   End llist_list.
   
   Arguments llist_list : clear implicits.
 
-  Fact llist_list_eq l (H1 H2: lfin l) : @llist_list l H1 = @llist_list l H2.
+  Fact llist_list_eq ll (H1 H2: lfin ll) : @llist_list ll H1 = @llist_list ll H2.
   Proof.
     apply list_llist_inj; do 2 rewrite <- llist_list_spec; reflexivity.
   Qed.
@@ -115,7 +117,8 @@ Section llist.
     intros [|]; try discriminate; auto.
   Qed.
   
-  Fact llist_list_fix_1 x l H : llist_list (lcons x l) H = x::llist_list l (lfin_inv H).
+  Fact llist_list_fix_1 x ll (H: lfin (lcons x ll)):
+    llist_list (lcons x ll) H = x::llist_list ll (lfin_inv H).
   Proof.
     generalize (llist_list_spec H); simpl.
     generalize (llist_list _ H).
@@ -126,17 +129,18 @@ Section llist.
     apply llist_list_spec.
   Qed.
 
-  Definition lfin_length l (Hl: lfin l) := length (llist_list l Hl).
+  Definition lfin_length ll (Hll: lfin ll): nat := length (llist_list ll Hll).
 
   Arguments lfin_length : clear implicits.
 
-  Fact lfin_length_eq l (H1 H2: lfin l) : lfin_length l H1 = lfin_length l H2.
+  Fact lfin_length_eq ll (H1 H2: lfin ll) : lfin_length ll H1 = lfin_length ll H2.
   Proof. unfold lfin_length; f_equal; apply llist_list_eq. Qed.
   
-  Fact lfin_length_fix_0 H : lfin_length lnil H = 0.
+  Fact lfin_length_fix_0 (H: lfin lnil): lfin_length lnil H = 0.
   Proof. unfold lfin_length; rewrite llist_list_fix_0; auto. Qed.
   
-  Fact lfin_length_fix_1 x l H : lfin_length (lcons x l) H = S (lfin_length l (lfin_inv H)).
+  Fact lfin_length_fix_1 x ll (H: lfin (lcons x ll)):
+    lfin_length (lcons x ll) H = S (lfin_length ll (lfin_inv H)).
   Proof. unfold lfin_length; rewrite llist_list_fix_1; auto. Qed.
   
 End llist.
@@ -149,7 +153,7 @@ Section Append.
 
   Variable (X : Type).
   
-  Implicit Type (l m : llist X).
+  Implicit Type (l m k : llist X).
 
   Section def.
 
@@ -164,9 +168,9 @@ Section Append.
       + rewrite llist_list_fix_1; simpl; f_equal; assumption.
     Qed.
 
-    Definition llist_app l m Hl Hm: llist X := proj1_sig (@llist_app_rec l m Hl Hm).
+    Definition llist_app l m (Hl : lfin l) (Hm : lfin m): llist X := proj1_sig (@llist_app_rec l m Hl Hm).
 
-    Fact llist_app_spec l m Hl Hm : @llist_app l m Hl Hm = list_llist (llist_list _ Hl ++ llist_list _ Hm).
+    Fact llist_app_spec l m (Hl : lfin l) (Hm : lfin m) : @llist_app l m Hl Hm = list_llist (llist_list _ Hl ++ llist_list _ Hm).
     Proof. apply (proj2_sig (@llist_app_rec l m Hl Hm)). Qed.
 
   End def.
@@ -183,14 +187,19 @@ Section Rotate.
 
   Variable (X : Type).
   
-  Implicit Type (l r : llist X) (a : llist X).
+  Implicit Type (l r m a: llist X).
   
   Section def.
 
-    Let prec  l Hl r Hr: Prop := lfin_length r Hr = 1 + lfin_length l Hl.
-    Let rspec l Hl r Hr a Ha m: Prop := m = list_llist (llist_list l Hl++rev (llist_list r Hr)++llist_list a Ha).
-  
-    Let llist_rotate_rec : forall l r a Hl Hr Ha, @prec l Hl r Hr -> sig (@rspec l Hl r Hr a Ha).
+
+    Let prec l (Hl : lfin l) r (Hr : lfin r) : Prop :=
+      lfin_length r Hr = 1 + lfin_length l Hl.
+    Let rspec l (Hl : lfin l) r (Hr : lfin r) a (Ha : lfin a) m: Prop :=
+      m = list_llist (llist_list l Hl ++ rev (llist_list r Hr) ++ llist_list a Ha).
+
+(** the following definition aims at having as extracted code the function rot on p.587 in Okasaki, Simple and efficient purely functional queues and deques, JFP 1995 *)
+    Let llist_rotate_rec : forall l r a (Hl : lfin l) (Hr : lfin r) (Ha : lfin a),
+        @prec l Hl r Hr -> sig (@rspec l Hl r Hr a Ha).
     Proof.
       refine (fix loop l r a Hl Hr Ha { struct Hl } := _). 
       revert Hr.
@@ -209,32 +218,32 @@ Section Rotate.
         rewrite llist_list_fix_0, llist_list_fix_1, lfin_length_fix_0, lfin_length_fix_1.
         destruct r'.
         * rewrite llist_list_fix_0; simpl. 
-          rewrite <- llist_list_spec; trivial.
+          rewrite <- llist_list_spec; reflexivity.
         * rewrite lfin_length_fix_1; discriminate.
       + refine (let (ro,Hro) := loop l' r' (lcons y a) (lfin_inv Hl') (lfin_inv Hr') (lfin_lcons _ Ha) _ in exist _ (lcons x ro) _).
         * red in H |- *; revert H.
-          repeat rewrite lfin_length_fix_1; intros; omega.
+          do 2 rewrite lfin_length_fix_1; intros; omega.
         * red in Hro |- *; revert Hro.
-          repeat rewrite llist_list_fix_1; intros; subst.
+          do 3 rewrite llist_list_fix_1; intros; subst.
           simpl; rewrite app_ass; simpl; reflexivity.
     Qed.
 
-    Definition llist_rotate f r a Hf Hr Ha H: llist X := proj1_sig (@llist_rotate_rec f r a Hf Hr Ha H).
+    Definition llist_rotate l r a Hl Hr Ha (H: prec Hl Hr): llist X := proj1_sig (@llist_rotate_rec l r a Hl Hr Ha H).
 
-    Fact llist_rotate_spec f r a Hf Hr Ha H : @rspec f Hf r Hr a Ha (@llist_rotate f r a Hf Hr Ha H).
-    Proof. apply (proj2_sig (@llist_rotate_rec f r a Hf Hr Ha H)). Qed.
+    Fact llist_rotate_spec l r a Hl Hr Ha H : @rspec l Hl r Hr a Ha (@llist_rotate l r a Hl Hr Ha H).
+    Proof. apply (proj2_sig (@llist_rotate_rec l r a Hl Hr Ha H)). Qed.
 
   End def.
 
   Arguments llist_rotate : clear implicits.
 
-  Fact lfin_rotate f r a Hf Hr Ha H : lfin (llist_rotate f r a Hf Hr Ha H).
+  Fact lfin_rotate l r a Hl Hr Ha H : lfin (llist_rotate l r a Hl Hr Ha H).
   Proof.
     generalize (llist_rotate_spec Ha H); intros E.
     rewrite E; apply lfin_list_llist.
   Qed.
 
-  Fact llist_rotate_eq l r a Hl Hr Ha H : llist_list _ (@lfin_rotate l r a Hl Hr Ha H) = llist_list l Hl++rev (llist_list r Hr)++llist_list a Ha.
+  Fact llist_rotate_eq l r a Hl Hr Ha H : llist_list _ (@lfin_rotate l r a Hl Hr Ha H) = llist_list l Hl ++ rev (llist_list r Hr) ++ llist_list a Ha.
   Proof.
     apply list_llist_inj.
     rewrite <- (@llist_rotate_spec l r a Hl Hr Ha H).
