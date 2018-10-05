@@ -16,9 +16,11 @@ Section bt_branches.
 
   Variable X : Type.
 
+  Implicit Types (l : list bool) (ll: list(list bool)) (t : bt X).
+
   (* Depth first traversal, VERY standard algo *)
 
-  Fixpoint dft_std (t : bt X) :=
+  Fixpoint dft_std t : list X :=
     match t with 
       | leaf x => x::nil
       | node u x v => x::dft_std u++dft_std v
@@ -29,7 +31,7 @@ Section bt_branches.
 
   (* The tree branches by Depth First Traversal *)
 
-  Fixpoint dft_br (t : bt X) : list (list bool) :=
+  Fixpoint dft_br t : list (list bool) :=
     nil::match t with 
            | leaf _     => nil
            | node u _ v => map (cons false) (dft_br u) ++ map (cons true) (dft_br v)
@@ -199,6 +201,13 @@ Section bt_branches.
 
   Corollary bft_br_length t : length (bft_br t) = m_bt t.
   Proof. rewrite <- (Permutation_length (bft_br_dft_br t)); apply dft_br_length. Qed. 
+
+  Corollary bft_std_length t : length (bft_std t) = m_bt t.
+  Proof.
+    generalize (bft_br_std t); intros H.
+    apply Forall2_length in H.
+    rewrite <- H, bft_br_length; trivial.
+  Qed.
 
 End bt_branches.
 

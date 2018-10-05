@@ -17,64 +17,18 @@
 *)
 
 Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils bt bft fifo.
+Require Import list_utils wf_utils bt bft bft_spec fifo_axm.
 
 Set Implicit Arguments.
 
-Section seq_an.
-
-  (* seq_an a n = [a;a+1;...;a+(n-1)] *)
-
-  Fixpoint seq_an a n : list nat :=
-    match n with
-      | 0    => nil
-      | S n  => a::seq_an (S a) n
-    end.
-
-  Fact seq_an_length a n : length (seq_an a n) = n.
-  Proof. revert a; induction n; simpl; intros; f_equal; auto. Qed.
-
-  Fact seq_an_spec a n x : In x (seq_an a n) <-> a <= x < a+n.
-  Proof. 
-    revert x a; induction n as [ | n IHn ]; intros x a; simpl;
-      [ | rewrite IHn ]; omega.
-  Qed.
-
-  Fixpoint is_seq_from n (l : list nat) { struct l }: Prop :=
-    match l with  
-      | nil  => True
-      | x::l => n = x /\ is_seq_from (S n) l
-    end.
-
-  Theorem is_seq_from_spec a l : is_seq_from a l <-> exists n, l = seq_an a n.
-  Proof.
-    revert a; induction l as [ | x l IH ]; intros a; simpl.
-    + split; auto; exists 0; auto.
-    + rewrite IH; split.
-      * intros (? & n & Hn); subst x; exists (S n); subst; auto.
-      * intros ([ | n ] & ?); subst; try discriminate.
-        simpl in H; inversion H; subst; split; auto.
-        exists n; auto.
-  Qed.
-
-End seq_an.
+Local Definition fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
 
 Section bfn.
 
-  Variable (fifo      : Type -> Type) 
-           (fifo_list : forall X, fifo X -> list X)
-           (fifo_nil  : forall X, { q : fifo X | fifo_list q = nil })
-           (fifo_enq  : forall X q x, { q' : fifo X | fifo_list q' = fifo_list q ++ x :: nil })
-           (fifo_deq  : forall X q, @fifo_list X q <> nil -> { c : X * fifo X | let (x,q') := c in fifo_list q = x::fifo_list q' })
-           (fifo_void : forall X q, { b : bool | b = true <-> @fifo_list X q = nil }).   
-
-
-  Let fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
-
   Variable (X : Type).
 
-  Notation fX := (fifo (bt X)). 
-  Notation fN := (fifo (bt nat)).
+  Notation fifo_X   := (fifo (bt X)). 
+  Notation fifo_nat := (fifo (bt nat)).
 
   (* the forest (list of bt nat) is a breadth first numbering from n if
      its breadth first traversal yields [n;n+1;....;m[ for some m
@@ -89,14 +43,87 @@ Section bfn.
      Beware that the output is a reversed queue compared to the input
    *)
 
-  Definition bfn_gen_f n (p : fX) : { q : fN | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
+  (** We decompose the proof into Computational Content (CC) and 
+      Proof Obligations (PO) using the handy refine tactic leaving 
+      holes for PO which are thus postponed after CC.
+
+      The intended extraction is:
+
+      let rec bfn_f n p =
+        if fifo_void p then fifo_nil
+        else let c,p1 = fifo_deq p 
+             in match c with
+               | Leaf _
+              -> fifo_enq (bfn_f (1+n) p1) (Leaf u)
+               | Node (a, _, b)
+              -> let u,q1 = fifo_deq (bfn_f (1+n) (fifo_enq (fifo_enq p1 a) b))     in
+                 let v,q2 = fifo_deq q1 
+                 in fifo_enq q2 (Node (v, n, u))
+
+      Hence the CC should be something like 
+
+      refine (
+        let (b,Hb) := fifo_void p 
+        in match b with 
+          | true  
+          => let (q,Hq) := @fifo_nil _
+             in exist _ q _
+          | false 
+          => let (d1,Hd1) := fifo_deq p _ 
+             in match d1 with
+               | (leaf x    , p1) 
+               => let (q,Hq) := bfn_f (S n) p1 _          in
+                  let (q1,Hq1) := fifo_enq q (leaf n) 
+                  in exist _ q1 _
+               | (node a x b, p1) => fun Hp1 
+               => let (p2,Hp2)     := fifo_enq p1 a    in
+                  let (p3,Hp3)     := fifo_enq p2 b    in
+                  let (q,Hq)       := bfn_f (S n) p3 _ in
+                  let ((u,q1),Hq1) := fifo_deq q _     in
+                  let ((v,q2),Hq2) := fifo_deq q1 _    in
+                  let (q3,Hq3)     := fifo_enq q2 (node v n u)
+                  in  exist _ q3 _
+             end
+        end)
+
+      But this does not work well because for instance the b in Hb is
+      not decomposed into either true or false with the subsequent 
+      match b with ... end. We need to implement some kind of dependent
+      pattern matching which involves a more subtle approach
+
+      The structure of this proof is the following:
+
+      We use a series of refine to specify the CC and PO is  
+      postponed after the full CC is given using cycle tactics
+      to reorder goals and to keep CC goals upfront.
+
+      At some point, we need pattern matching to decompose 
+      term in hypotheses as well as in the conclusion. The
+      simplest way to do it is to revert the hypothesis in 
+      the conclusion before the match and then intro it in 
+      the different match branches where the matched term 
+      has been decomposed. This corresponds to dependent
+      pattern-matching but hand-writting dependent pattern-
+      matching in refines is much more complicated/verbose 
+      than just
+
+      revert Hq; refine (match q with ... => ... end); intros Hq
+
+      By postponing PO, we let the CC to develop itself in the 
+      first branch
+
+    *)
+
+  Implicit Type (p : fifo_X).
+
+  Definition bfn_gen_f n p : { q | fifo_list p ~lt rev (fifo_list q) /\ is_bfn_from n (rev (fifo_list q)) }.
   Proof.
     induction on n p as bfn_gen_f with measure (fifo_sum p).
 
     refine (let (b,Hb) := fifo_void p in _).
     revert Hb; refine (match b with 
       | true  => fun Hp 
-      => let (q,Hq) := @fifo_nil _ 
+      => let (q,Hq) := fifo_nil 
          in exist _ q _
       | false => fun Hp 
       => let (d1,Hd1) := @fifo_deq _ p _ 
@@ -161,7 +188,9 @@ Section bfn.
 
   Section bfn.
 
-    Let bfn_full (t : bt X) : { t' | t ~t t' /\ is_seq_from 0 (bft_std t') }.
+    Implicit Type (t : bt X).
+
+    Let bfn_full t : { t' | t ~t t' /\ is_seq_from 0 (bft_std t') }.
     Proof.
       refine (let (p,Hp) := @fifo_nil _   in
               let (q,Hq) := fifo_enq p t  in 
@@ -172,10 +201,9 @@ Section bfn.
       revert Hd1; refine (match d1 with (x,q1) => fun Hq1 => exist _ x _ end); simpl in Hq1.
       all: cycle 1. (* We queue 1 PO *) 
 
-      + intros H; rewrite Hq, Hp, H in Hr.
+      * intros H; rewrite Hq, Hp, H in Hr.
         apply proj1 in Hr; inversion Hr.
-
-      + rewrite Hq, Hp in Hr. 
+      * rewrite Hq, Hp in Hr. 
         destruct Hr as (H1 & H2).
         rewrite <- bft_std_eq_bft.
         rewrite Hq1 in H1; simpl in H1.
@@ -196,39 +224,23 @@ Section bfn.
     Fact bfn_gen_spec_2 t : exists n, bft_std (bfn_gen t) = seq_an 0 n.
     Proof. apply is_seq_from_spec, (proj2_sig (bfn_full t)). Qed.
 
+    Corollary bfn_gen_spec_3 t : bft_std (bfn_gen t) = seq_an 0 (m_bt t).
+    Proof.
+      destruct (bfn_gen_spec_2 t) as (n & Hn).
+      rewrite Hn.
+      apply f_equal with (f := @length _) in Hn.
+      rewrite seq_an_length, bft_std_length in Hn.
+      generalize (bfn_gen_spec_1 t); intros E.
+      apply bt_eq_m in E.
+      rewrite <- Hn, <- E; trivial.
+    Qed.
+
   End bfn.
 
 End bfn.
-
-(* Notice that fifo_2l_deq is extracted to a function that loops forever
-   if the input is the empty queue, ie does not following the spec *)
 
 Recursive Extraction bfn_gen.
 
 Check bfn_gen.
 Check bfn_gen_spec_1.
 Check bfn_gen_spec_2.
-
-Section bfn_2q.
-
-  Variable X : Type.
-
-  Definition bfn_3q := @bfn_gen _ _ fifo_3q_nil_full fifo_3q_enq_full fifo_3q_deq_full fifo_3q_void_full X.
-
-  Definition bfn_3q_spec_1 t : t ~t bfn_3q t.
-  Proof. apply bfn_gen_spec_1. Qed.
-
-  Definition bfn_3q_spec_2 t : exists n, bft_std (bfn_3q t) = seq_an 0 n.
-  Proof. apply bfn_gen_spec_2. Qed.
-
-End bfn_2q.
-
-(* Extraction Language Haskell. *)
-Extraction Inline bfn_gen.
-Recursive Extraction bfn_3q bfn_gen.
-
-Check bfn_3q.
-Check bfn_3q_spec_1.
-Check bfn_3q_spec_2.
-
-
