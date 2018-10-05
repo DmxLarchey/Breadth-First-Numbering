@@ -115,9 +115,20 @@ Section map_concat_zip.
 
 End map_concat_zip.
 
+Fact map_zip_length X l m : map (@length X) (zip (@app _) l m) = zip plus (map (@length _) l) (map (@length _) m).
+Proof.
+  apply map_zip, app_length.
+Qed.
+
 Fact map_zip_app X Y (f : X -> Y) l m : 
     map (map f) (zip (@app _) l m) = zip (@app _) (map (map f) l) (map (map f) m).
 Proof. apply map_zip; intros; apply map_app. Qed.
+
+Fact zip_list_sum l m : list_sum (zip plus l m) = list_sum l + list_sum m.
+Proof.
+  revert m; induction l as [ | x l IHl ]; intros [|]; simpl; try omega.
+  rewrite IHl; omega.
+Qed.
 
 Fact In_concat_zip_app_left X (x : X) ll mm : In x (concat ll) -> In x (concat (zip (@app _) ll mm)).
 Proof.

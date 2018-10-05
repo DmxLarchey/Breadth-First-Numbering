@@ -81,6 +81,18 @@ Section app.
 
 End app.
 
+Section list_sum.
+
+  Definition list_sum := fold_right plus 0.
+
+  Fact list_sum_app l m : list_sum (l++m) = list_sum l + list_sum m.
+  Proof. induction l as [ | x l IHl ]; simpl; auto; rewrite IHl; omega. Qed.
+
+  Fact length_concat X ll : length (concat ll) = list_sum (map (@length X) ll).
+  Proof. induction ll; simpl; auto; rewrite app_length; f_equal; trivial. Qed.
+
+End list_sum.
+
 Section incl.
 
   Variable X : Type.

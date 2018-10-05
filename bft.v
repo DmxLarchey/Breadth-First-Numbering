@@ -55,8 +55,21 @@ Section breadth_first_traversal.
       | leaf x     => (x::nil) :: nil
       | node a x b => (x::nil) :: zip (@app _) (niveaux a) (niveaux b)
     end.
+
+  Fact length_niveaux t : list_sum (map (@length _) (niveaux t)) = m_bt t.
+  Proof.
+    induction t as [ x | a Ha x b Hb ]; simpl; auto.
+    rewrite map_zip_length, zip_list_sum; do 2 f_equal; trivial.
+  Qed.
     
   Definition bft_std t : list X := concat (niveaux t).
+
+  Fact bft_std_length t : length (bft_std t) = m_bt t.
+  Proof.
+    unfold bft_std.
+    rewrite length_concat.
+    apply length_niveaux.
+  Qed.
 
   Fixpoint subt ll : list (bt X) :=
     match ll with
@@ -68,13 +81,6 @@ Section breadth_first_traversal.
   Fact subt_app l m : subt (l++m) = subt l ++ subt m.
   Proof. induction l as [ | [ | ] ]; simpl; repeat f_equal; auto. Qed.
 
-  (* The measure of the size of a forest on which most complicated inductions are based *) 
-
-  Definition lsum := fold_right (fun t y => m_bt t + y) 0.
-
-  Fact lsum_app l m : lsum (l++m) = lsum l + lsum m.
-  Proof. induction l; simpl; omega. Qed.
-
   Fact subt_dec ll : ll = nil \/ lsum (subt ll) < lsum ll.
   Proof.
     induction ll as [ | [|] ]; simpl; auto;
@@ -84,6 +90,8 @@ Section breadth_first_traversal.
   Fact subt_le ll : lsum (subt ll) <= lsum ll.
   Proof. destruct (subt_dec ll); subst; simpl; omega. Qed.
   
+
+
   (* The specification of niveaux_f
   
       let rec niveaux_f ll =

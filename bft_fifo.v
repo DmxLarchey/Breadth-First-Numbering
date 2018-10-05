@@ -8,23 +8,21 @@
 (**************************************************************)
 
 Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils bt bft fifo_axm.
+
+Require Import list_utils wf_utils. 
+Require Import bt bft fifo.
 
 Set Implicit Arguments.
 
-Local Definition fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
-
-Section bft_gen.
+Section bft_fifo.
 
   Variable (X : Type).
 
-  Notation fifo_X := (fifo (bt X)).
+  Implicit Type p : fifo (bt X). 
 
-  Implicit Type (p : fifo_X). 
-
-  Definition bft_gen_f p : { l | l = bft_f (fifo_list p) }.
+  Definition bft_fifo_f p : { l | l = bft_f (fifo_list p) }.
   Proof.
-    induction on p as bft_gen_f with measure (fifo_sum p).
+    induction on p as bft_fifo_f with measure (fifo_lsum p).
 
     refine (let (b,Hb) := fifo_void p in _).
     revert Hb; refine (match b with 
@@ -38,12 +36,12 @@ Section bft_gen.
     revert Hc; refine (match c with (t,q) => _ end); clear c.
     refine (match t with
       | leaf x => fun Hq 
-      => let (r,Hr) := bft_gen_f q _ 
+      => let (r,Hr) := bft_fifo_f q _ 
          in  exist _ (x::r) _
       | node a x b => fun Hq 
       => let (r,Hr) := fifo_enq q a    in
          let (s,Hs) := fifo_enq r b    in
-         let (t,Ht) := bft_gen_f s _
+         let (t,Ht) := bft_fifo_f s _
          in  exist _ (x::t) _
     end); simpl in Hq.
     all: cycle 4. (* We queue 4 POs *)
@@ -53,12 +51,11 @@ Section bft_gen.
     * rewrite (proj1 Hp); auto.
       rewrite bft_f_fix_0; reflexivity.
     * intros H; apply Hp in H; discriminate.
-    * unfold fifo_sum; rewrite Hq; simpl; auto.
+    * rewrite Hq; simpl; auto.
     * rewrite Hr, Hq.
       rewrite bft_f_fix_3; simpl.
       do 2 f_equal; apply app_nil_end.
-    * unfold fifo_sum. 
-      rewrite Hs, Hr, Hq; simpl.
+    * rewrite Hs, Hr, Hq; simpl.
       do 2 rewrite lsum_app; simpl; omega.
     * rewrite Ht, Hs, Hr, Hq.
       rewrite app_ass; simpl.
@@ -66,24 +63,22 @@ Section bft_gen.
       rewrite bft_f_fix_1; auto.
   Defined.
 
-  Let bft_gen_full t : { l : list X | l = bft t }.
+  Let bft_fifo_full t : { l : list X | l = bft t }.
   Proof.
     refine (
       let (q0,H0) := @fifo_nil _   in
       let (q1,H1) := fifo_enq q0 t in
-      let (l,Hl)  := bft_gen_f q1   
+      let (l,Hl)  := bft_fifo_f q1   
       in  exist _ l _).
     rewrite Hl, H1, H0; reflexivity.
   Qed. 
 
-  Definition bft_gen t := proj1_sig (bft_gen_full t).
+  Definition bft_fifo t := proj1_sig (bft_fifo_full t).
 
-  Fact bft_gen_spec t : bft_gen t = bft t.
-  Proof. apply (proj2_sig (bft_gen_full t)). Qed.
+  Fact bft_fifo_spec t : bft_fifo t = bft t.
+  Proof. apply (proj2_sig (bft_fifo_full t)). Qed.
 
-End bft_gen.
+End bft_fifo.
 
-Recursive Extraction bft_gen.
-
-Check bft_gen.
-Check bft_gen_spec.
+Check bft_fifo.
+Check bft_fifo_spec.

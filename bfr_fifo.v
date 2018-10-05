@@ -8,27 +8,22 @@
 (**************************************************************)
 
 Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils bt bft bft_spec bft_inj fifo_axm bfn_gen.
+Require Import list_utils wf_utils.
+Require Import bt bft fifo.
 
 Set Implicit Arguments.
 
-Local Definition fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
-
-Section bfr_gen.
+Section bfr_fifo.
 
   Variable (X Y : Type).
 
-  Notation fifo_X := (fifo (bt X)).
-  Notation fifo_Y := (fifo (bt Y)).
+  Implicit Type (p : fifo (bt X)) (ll : list Y).
 
-  Implicit Type (p : fifo_X) (ll : list Y).
-
-  Fixpoint bfr_gen_f p (ll : list Y) { struct ll } : 
-            fifo_sum p = length ll
+  Fixpoint bfr_fifo_f p (ll : list Y) { struct ll } : 
+            fifo_lsum p = length ll
          -> { q  | fifo_list p ~lt rev (fifo_list q) 
                 /\ bft_f (rev (fifo_list q)) = ll }.
   Proof.
-    unfold fifo_sum in *.
     refine (match ll with 
       | nil   => fun Hll => let (q,Hq)   := fifo_nil 
                             in  exist _ q _
@@ -39,12 +34,12 @@ Section bfr_gen.
     revert Hd1; refine (match d1 with (t,p1) => _ end); intros Hp1.
     rewrite Hp1 in Hll; simpl in Hll; clear d1.
     revert Hll Hp1; refine (match t with 
-      | leaf x     => fun Hll Hp1 => let (q,Hq)   := bfr_gen_f p1 mm _ in 
+      | leaf x     => fun Hll Hp1 => let (q,Hq)   := bfr_fifo_f p1 mm _ in 
                                      let (q1,Hq1) := fifo_enq q (leaf y) 
                                      in  exist _ q1 _
       | node a x b => fun Hll Hp1 => let (p2,Hp2) := fifo_enq p1 a     in
                                      let (p3,Hp3) := fifo_enq p2 b     in
-                                     let (q,Hq)   := bfr_gen_f p3 mm _ in  
+                                     let (q,Hq)   := bfr_fifo_f p3 mm _ in  
                                      let (d2,Hd2) := fifo_deq q _     
                                      in  _
     end); auto.
@@ -98,12 +93,12 @@ Section bfr_gen.
   
   Section bfr.
 
-    Let bfr_gen_full (t : bt X) (l : list Y) : m_bt t = length l -> { t' | t ~t t' /\ bft_std t' = l }.
+    Let bfr_fifo_full (t : bt X) (l : list Y) : m_bt t = length l -> { t' | t ~t t' /\ bft_std t' = l }.
     Proof.
       intros H.
       refine (let (p,Hp) := @fifo_nil _     in
               let (q,Hq) := fifo_enq p t    in 
-              let (r,Hr) := bfr_gen_f q l _ in
+              let (r,Hr) := bfr_fifo_f q l _ in
               let (d1,Hd1) := fifo_deq r _ 
               in _).
       all: cycle 2.
@@ -112,8 +107,7 @@ Section bfr_gen.
       end).
       all: cycle 1.
 
-      + unfold fifo_sum.
-        rewrite Hq, Hp, <- H; simpl; omega.
+      + rewrite Hq, Hp, <- H; simpl; omega.
       + intros E; rewrite E in Hr; apply proj2 in Hr; simpl in Hr.
         rewrite bft_f_fix_0 in Hr; subst.
         generalize (m_bt_ge_1 t); simpl in *; omega.
@@ -129,38 +123,25 @@ Section bfr_gen.
         rewrite <- bft_eq_bft_std; auto.
     Qed.
 
-    Definition bfr_gen t l H := proj1_sig (bfr_gen_full t l H).
+    Definition bfr_fifo t l H := proj1_sig (bfr_fifo_full t l H).
 
-    Fact bfr_gen_spec_1 t l H : t ~t bfr_gen t l H.
-    Proof. apply (proj2_sig (bfr_gen_full t l H)). Qed.
+    Fact bfr_fifo_spec_1 t l H : t ~t bfr_fifo t l H.
+    Proof. apply (proj2_sig (bfr_fifo_full t l H)). Qed.
 
-    Fact bfr_gen_spec_2 t l H : bft_std (bfr_gen t l H) = l.
-    Proof. apply (proj2_sig (bfr_gen_full t l H)). Qed.
+    Fact bfr_fifo_spec_2 t l H : bft_std (bfr_fifo t l H) = l.
+    Proof. apply (proj2_sig (bfr_fifo_full t l H)). Qed.
 
   End bfr.
 
-End bfr_gen.
+End bfr_fifo.
 
-Theorem bfr_bfn_gen X (t : bt X) : bfn_gen t = bfr_gen t (seq_an 0 (m_bt t)) (eq_sym (seq_an_length _ _)).
-Proof.
-  apply bft_std_inj.
-  * apply bt_eq_trans with (s := t).
-    + apply bt_eq_sym, bfn_gen_spec_1.
-    + apply bfr_gen_spec_1.
-  * rewrite bfr_gen_spec_2, bfn_gen_spec_3; trivial.
-Qed.
+Check bfr_fifo.
+Check bfr_fifo_spec_1.
+Check bfr_fifo_spec_2.
 
-Extract Inductive bool => "bool" [ "true" "false" ].
-Extract Inductive prod => "(*)"  [ "(,)" ].
-Extract Inductive list => "list" [ "[]" "(::)" ].
-Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
 
-Recursive Extraction bfr_gen.
 
-Check bfr_gen.
-Check bfr_gen_spec_1.
-Check bfr_gen_spec_2.
 
-(** BFN (Breadth-First Numbering) is a particular instance of 
-    BFR (Breadth-First Reconstruction)   *)
+
+
 

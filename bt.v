@@ -38,6 +38,13 @@ Section bt.
   Fact m_bt_ge_1 t : 1 <= m_bt t.
   Proof. destruct t; simpl; omega. Qed.
 
+  (* The measure of the size of a forest on which most complicated inductions are based *) 
+
+  Definition lsum := fold_right (fun t y => m_bt t + y) 0.
+
+  Fact lsum_app l m : lsum (l++m) = lsum l + lsum m.
+  Proof. induction l; simpl; omega. Qed.
+
   (* A branch is a list of left/right Boolean choices *)
 
   (* The branches that correspond to a node in a binary tree *)
