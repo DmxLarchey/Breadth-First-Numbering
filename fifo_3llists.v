@@ -19,6 +19,7 @@ Set Implicit Arguments.
 Section fifo_three_lazy_lists.
 
   (** From "Simple and Efficient Purely Functional Queues and Deques" by Chris Okasaki 
+          Journal of Functional Programming 5(4):583-592
 
       this implements and prove the spec from page 587 with lazy lists (llist)
       with invariant (l,r,l') : llength l' + llength r = llength l
@@ -186,15 +187,7 @@ Section fifo_three_lazy_lists.
 End fifo_three_lazy_lists.
 
 Arguments fifo_nil {X}.
-
-Recursive Extraction fifo_nil fifo_enq fifo_deq fifo_void.
-
-Check fifo.
-Check fifo_list.
-Check fifo_nil.
-Check fifo_enq.
-Check fifo_deq.
-Check fifo_void.
+Arguments fifo_deq {X}.
 
 
 

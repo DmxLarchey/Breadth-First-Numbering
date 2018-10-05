@@ -97,12 +97,6 @@ Section fifo_two_lists.
 
 End fifo_two_lists.
 
-Recursive Extraction fifo_nil fifo_enq fifo_deq fifo_void.
-
-Check fifo.
-Check fifo_list.
-Check fifo_nil.
-Check fifo_enq.
-Check fifo_deq.
-Check fifo_void.
+Arguments fifo_nil {X}.
+Arguments fifo_deq {X}.
 

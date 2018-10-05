@@ -45,15 +45,8 @@ Section fifo_triv.
 End fifo_triv.
 
 Arguments fifo_nil {X}.
+Arguments fifo_deq {X}.
 
-Recursive Extraction fifo_nil fifo_enq fifo_deq fifo_void.
-
-Check fifo.
-Check fifo_list.
-Check fifo_nil.
-Check fifo_enq.
-Check fifo_deq.
-Check fifo_void.
 
 
 

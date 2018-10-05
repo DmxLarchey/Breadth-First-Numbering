@@ -15,9 +15,13 @@ Set Implicit Arguments.
 
 Section llist.
 
-  (* G54DTP Dependently Typed Programming.
-    Introduction to coinductive types.
-    Venanzio Capretta, March 2011.
+
+  (** An implementation of lazy lists as co-inductive lists/streams
+      with a finiteness predicate in Prop
+
+      Inspired by  G54DTP Dependently Typed Programming.
+                   Introduction to coinductive types.
+                   Venanzio Capretta, March 2011.
   *)
 
   Variable X : Type.
@@ -197,7 +201,9 @@ Section Rotate.
     Let rspec l (Hl : lfin l) r (Hr : lfin r) a (Ha : lfin a) m: Prop :=
       m = list_llist (llist_list l Hl ++ rev (llist_list r Hr) ++ llist_list a Ha).
 
-(** the following definition aims at having as extracted code the function rot on p.587 in Okasaki, Simple and efficient purely functional queues and deques, JFP 1995 *)
+    (** the following definition aims at having as extracted code the function rot on p.587 in Okasaki, 
+              Simple and efficient purely functional queues and deques, JFP 1995 *)
+
     Let llist_rotate_rec : forall l r a (Hl : lfin l) (Hr : lfin r) (Ha : lfin a),
         @prec l Hl r Hr -> sig (@rspec l Hl r Hr a Ha).
     Proof.
@@ -261,8 +267,9 @@ Section Rotate.
  
 End Rotate.
 
-Recursive Extraction llist_list list_llist llist_app llist_rotate.
+(* Recursive Extraction llist_list list_llist llist_app llist_rotate.
 
 Check llist_rotate.
 Check llist_rotate_spec.
 
+*)
