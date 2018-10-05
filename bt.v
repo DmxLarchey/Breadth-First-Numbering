@@ -9,7 +9,7 @@
 
 (** Binary trees *)
 
-Require Import Arith Omega List.
+Require Import Arith Omega List Relations.
 
 Require Import list_utils.
 
@@ -215,9 +215,9 @@ Section branch_orders.
 
 End branch_orders.
 
-Definition is_dft_order R := 
-             (forall l, ~ R l l)
-          /\ (forall l m k, R l m -> R m k -> R l k)
+Definition is_dft_order (R: relation (list bool)): Prop :=
+            (forall l, ~ R l l)
+          /\ transitive _ R
           /\ (forall x l m, R l m <-> R (x::l) (x::m))
           /\ (forall x m, R nil (x::m))
           /\ (forall m1 m2, R (false::m1) (true::m2)).
@@ -229,15 +229,20 @@ Section dft_order_characterization.
   Hint Resolve lb_lex_irrefl lb_lex_trans lb_lex_mono lb_lex_nil lb_lex_cons.
 
   Theorem lb_lex_is_dft_order : is_dft_order lb_lex.
-  Proof. repeat (split; auto); apply lb_lex_trans. Qed. 
+  Proof. repeat (split; auto); red; apply lb_lex_trans. Qed.
 
-  Variables (R : list bool -> list bool -> Prop) (HR : is_dft_order R).
+  Variables (R : relation (list bool)) (HR : is_dft_order R).
       
-  Let R_irrefl : forall l, ~ R l l.                        Proof. apply HR. Qed.
-  Let R_trans : forall l m k, R l m -> R m k -> R l k.     Proof. apply HR. Qed.
-  Let R_mono : forall x l m, R l m <-> R (x::l) (x::m).    Proof. apply HR. Qed.
-  Let R_nil : forall x m, R nil (x::m).                    Proof. apply HR. Qed.
-  Let R_cons : forall m1 m2, R (false::m1) (true::m2).     Proof. apply HR. Qed.
+  Let R_irrefl : forall l, ~ R l l.
+  Proof. apply HR. Qed.
+  Let R_trans : transitive _ R.
+  Proof. apply HR. Qed.
+  Let R_mono : forall x l m, R l m <-> R (x::l) (x::m).
+  Proof. apply HR. Qed.
+  Let R_nil : forall x m, R nil (x::m).
+  Proof. apply HR. Qed.
+  Let R_cons : forall m1 m2, R (false::m1) (true::m2).
+  Proof. apply HR. Qed.
 
   Hint Constructors lb_lex.
 
@@ -271,9 +276,9 @@ End dft_order_characterization.
 Check lb_lex_is_dft_order.
 Check dft_order_charac.
 
-Definition is_bft_order R := 
-             (forall l, ~ R l l)
-          /\ (forall l m k, R l m -> R m k -> R l k)
+Definition is_bft_order (R: relation (list bool)): Prop :=
+            (forall l, ~ R l l)
+          /\ transitive _ R
           /\ (forall x l m, R l m <-> R (x::l) (x::m))
           /\ (forall m1 m2, length m1 < length m2 -> R m1 m2)
           /\ (forall m1 m2, length m1 = length m2 -> R (false::m1) (true::m2)).
@@ -285,15 +290,20 @@ Section bft_order.
   Hint Resolve bft_order_irrefl bft_order_trans bft_order_mono bft_order_lt bft_order_eq.
 
   Theorem bft_order_checks : is_bft_order bft_order.
-  Proof. repeat (split; auto); apply bft_order_trans. Qed. 
+  Proof. repeat (split; auto); red; apply bft_order_trans. Qed.
 
-  Variables (R : list bool -> list bool -> Prop) (HR : is_bft_order R).
+  Variables (R : relation (list bool)) (HR : is_bft_order R).
 
-  Let R_irrefl : forall l, ~ R l l.                                            Proof. apply HR. Qed.
-  Let R_trans : forall l m k, R l m -> R m k -> R l k.                         Proof. apply HR. Qed.
-  Let R_mono : forall x l m, R l m <-> R (x::l) (x::m).                        Proof. apply HR. Qed.
-  Let R_lt : forall m1 m2, length m1 < length m2 -> R m1 m2.                   Proof. apply HR. Qed.
-  Let R_eq : forall m1 m2, length m1 = length m2 -> R (false::m1) (true::m2).  Proof. apply HR. Qed.
+  Let R_irrefl : forall l, ~ R l l.
+  Proof. apply HR. Qed.
+  Let R_trans : transitive _ R.
+  Proof. apply HR. Qed.
+  Let R_mono : forall x l m, R l m <-> R (x::l) (x::m).
+  Proof. apply HR. Qed.
+  Let R_lt : forall m1 m2, length m1 < length m2 -> R m1 m2.
+  Proof. apply HR. Qed.
+  Let R_eq : forall m1 m2, length m1 = length m2 -> R (false::m1) (true::m2).
+  Proof. apply HR. Qed.
 
   Let HR3 m1 m2 : length m2 < length m1 -> ~ R m1 m2.
   Proof. 
@@ -314,19 +324,19 @@ Section bft_order.
     + destruct (lt_eq_lt_dec (length l) (length m)) as [ [ H | H ] | H ].
       all: cycle 2.
       { intros E; apply HR3 in E; tauto. }
-      { intros; apply bft_order_lt; auto. }
+      { intros; apply bft_order_lt; assumption. }
       pattern l, m.
       revert l m H; apply list_length_eq_ind.
       * intros H; apply R_irrefl in H; tauto.
       * intros [|] [|] l m H1 IH H2.
         - revert H2; rewrite <- bft_order_mono, <- R_mono; auto.
         - apply HR4 in H2; tauto.
-        - apply bft_order_eq; auto.
+        - apply bft_order_eq; assumption.
         - revert H2; rewrite <- bft_order_mono, <- R_mono; auto.
     + intros [ H | [ H1 H2 ] ].
-      * apply R_lt; auto.
+      * apply R_lt; assumption.
       * revert H1; induction H2.
-        - intros; apply R_lt; simpl; omega.
+        - intros; discriminate.
         - simpl; intros; apply R_eq; omega.
         - simpl; intros; apply R_mono; auto.
   Qed.
