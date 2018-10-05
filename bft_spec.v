@@ -1,11 +1,14 @@
 (**************************************************************)
 (*   Copyright Dominique Larchey-Wendling [*]                 *)
+(*             Ralph Matthes [+]                              *)
 (*                                                            *)
 (*                             [*] Affiliation LORIA -- CNRS  *)
+(*                             [+] Affiliation IRIT -- CNRS   *)
 (**************************************************************)
 (*      This file is distributed under the terms of the       *)
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
+
 
 Require Import List Arith Omega Wellfounded Permutation.
 Require Import list_utils wf_utils bt zip sorted increase bft.

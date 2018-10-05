@@ -1,0 +1,36 @@
+list_utils.v:
+wf_utils.v:
+llist.v:
+
+zip.v: 		list_utils.v
+php.v: 		list_utils.v wf_utils.v
+sorted.v:	list_utils.v php.v
+increase.v:	list_utils.v zip.v sorted.v
+
+bt.v:		list_utils.v
+
+fifo_axm.v:
+fifo_triv.v:
+
+fifo_2lists.v:	wf_utils.v
+fifo_3llists.v:	wf_utils.v llist.v
+
+fifo.v:		bt.v fifo_*.v
+
+bft.v:		list_utils wf_utils zip bt
+bft_spec.v:	list_utils wf_utils zip sorted increase bt bft
+
+bft_fifo.v:     list_utils wf_utils bt bft fifo
+bfn_fifo.v:     list_utils wf_utils bt bft fifo
+bfr_fifo.v:     list_utils wf_utils bt bft fifo
+
+bfr_bfn_fifo.v: list_utils wf_utils bt bft fifo bfn_fifo bfr_fifo
+
+extraction.v:	bt fifo bft bft_fifo bfn_fifo bfr_fifo
+
+benchmarks.v:   bt fifo bfn_fifo
+
+
+
+
+

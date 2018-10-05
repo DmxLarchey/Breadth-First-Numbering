@@ -3,7 +3,7 @@
 (*             Ralph Matthes [+]                              *)
 (*                                                            *)
 (*                             [*] Affiliation LORIA -- CNRS  *)
-(*                             [*] Affiliation IRIT -- CNRS   *)
+(*                             [+] Affiliation IRIT -- CNRS   *)
 (**************************************************************)
 (*      This file is distributed under the terms of the       *)
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)

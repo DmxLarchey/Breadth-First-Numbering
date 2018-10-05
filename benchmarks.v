@@ -1,7 +1,9 @@
 (**************************************************************)
 (*   Copyright Dominique Larchey-Wendling [*]                 *)
+(*             Ralph Matthes [+]                              *)
 (*                                                            *)
 (*                             [*] Affiliation LORIA -- CNRS  *)
+(*                             [+] Affiliation IRIT -- CNRS   *)
 (**************************************************************)
 (*      This file is distributed under the terms of the       *)
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
@@ -17,7 +19,7 @@
 *)
 
 Require Import List Extraction.
-Require Import bfn_fifo_3q bfn_fifo_2l.
+Require Import bt fifo bfn_fifo.
 
 Extraction Language OCaml.
 Extract Inductive bool => "bool" [ "true" "false" ].
@@ -25,4 +27,11 @@ Extract Inductive prod => "(*)"  [ "(,)" ].
 Extract Inductive list => "list" [ "[]" "(::)" ].
 Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
 
-Extraction "bfn" bfn_2l bfn_3q.
+(* Depending on the content of fifo.v, the extraction here provides either
+   1) an empty implementation of FIFOs (with fifo_axm)
+   2) a trivial implementation with lists (with fifo_triv)
+   3) an implementation with 2 lists and efficient reverse (with fifo_2lists), (relaxed) O(1) enqueue/dequeue
+   4) an implementation with 3 lazy lists (with fifo_3llists), O(1) enqueue/dequeue
+ *)
+
+Extraction "bfn" bfn_fifo.bfn_fifo.
