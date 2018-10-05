@@ -1,7 +1,9 @@
 (**************************************************************)
 (*   Copyright Dominique Larchey-Wendling [*]                 *)
+(*             Ralph Matthes [+]                              *)
 (*                                                            *)
 (*                             [*] Affiliation LORIA -- CNRS  *)
+(*                             [+] Affiliation IRIT -- CNRS   *)
 (**************************************************************)
 (*      This file is distributed under the terms of the       *)
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
@@ -37,6 +39,13 @@ Section bt.
 
   Fact m_bt_ge_1 t : 1 <= m_bt t.
   Proof. destruct t; simpl; omega. Qed.
+
+  (* The measure of the size of a forest on which most complicated inductions are based *) 
+
+  Definition lsum := fold_right (fun t y => m_bt t + y) 0.
+
+  Fact lsum_app l m : lsum (l++m) = lsum l + lsum m.
+  Proof. induction l; simpl; omega. Qed.
 
   (* A branch is a list of left/right Boolean choices *)
 
@@ -273,9 +282,6 @@ Section dft_order_characterization.
 
 End dft_order_characterization.
 
-Check lb_lex_is_dft_order.
-Check dft_order_charac.
-
 Definition is_bft_order (R: relation (list bool)): Prop :=
             (forall l, ~ R l l)
           /\ transitive _ R
@@ -343,9 +349,6 @@ Section bft_order.
 
 End bft_order.
 
-Check bft_order_checks.
-Check bft_order_charac.
-
 (** Equivalence between trees and forests, same structure,
     only the values of nodes differ *)
 
@@ -384,4 +387,3 @@ Proof. induction 1; constructor; auto. Qed.
 
 Fact bt_eq_trans X Y Z (r : bt X) (s : bt Y) (t : bt Z) : r ~t s -> s ~t t -> r ~t t.
 Proof. intros H; revert H t; induction 1; inversion 1; auto. Qed.
-

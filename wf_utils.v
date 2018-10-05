@@ -1,7 +1,9 @@
 (**************************************************************)
 (*   Copyright Dominique Larchey-Wendling [*]                 *)
+(*             Ralph Matthes [+]                              *)
 (*                                                            *)
 (*                             [*] Affiliation LORIA -- CNRS  *)
+(*                             [+] Affiliation IRIT -- CNRS   *)
 (**************************************************************)
 (*      This file is distributed under the terms of the       *)
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
@@ -53,14 +55,6 @@ Section measure_double_rect.
 
 End measure_double_rect.
 
-(*
-Tactic Notation "measure" "induction" "on" hyp(x) "with" uconstr(f) "as" ident(IH) :=
-  pattern x; revert x; apply measure_rect with (m := fun x => f); intros x IH.
-
-Tactic Notation "double" "measure" "induction" "on" hyp(x) hyp(y) "with" uconstr(f) "as" ident(IH) :=
-  pattern x, y; revert x y; apply measure_double_rect with (m := fun x y => f); intros x y IH.
-*)
-
 (* Tactic Notation "induction" "on" hyp(x) "as" ident(IH) "with" "measure" uconstr(f) :=
    pattern x; revert x; apply measure_rect with (m := fun x => f); intros x IH. *)
 
@@ -75,7 +69,7 @@ Extraction Inline measure_rect measure_double_rect.
     This is a kind of inlining of measure_rect & measure_double_rect inside
     the Coq terms instead of inlining them at extraction.
 
-    Beware that [define] below while not work well if "fresh" variable names
+    Beware that [define] below will not work well if "fresh" variable names
     clash with hyps x and y ... not sure of the exact semantics of Ltac ...
 
     I agree this inlining is ugly but I am not able to remove the let/in

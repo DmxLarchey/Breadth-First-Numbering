@@ -1,11 +1,14 @@
 (**************************************************************)
 (*   Copyright Dominique Larchey-Wendling [*]                 *)
+(*             Ralph Matthes [+]                              *)
 (*                                                            *)
 (*                             [*] Affiliation LORIA -- CNRS  *)
+(*                             [+] Affiliation IRIT -- CNRS   *)
 (**************************************************************)
 (*      This file is distributed under the terms of the       *)
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
+
 
 Require Import List Arith Omega Wellfounded Permutation.
 Require Import list_utils wf_utils bt zip sorted increase bft.
@@ -91,7 +94,7 @@ Section bt_branches.
                                                  (map (map (cons true))  (niveaux_br b))
     end.
 
-  Lemma niveaux_br_tree t : Forall2 (Forall2 (bt_path_node t)) (niveaux_br t) (niveaux_tree t).
+  Lemma niveaux_br_niveaux t : Forall2 (Forall2 (bt_path_node t)) (niveaux_br t) (niveaux t).
   Proof.
     induction t as [ | ? Hu ? ? Hv ]; simpl; repeat constructor.
     apply Forall2_zip_app; apply Forall2_map_left;
@@ -111,7 +114,7 @@ Section bt_branches.
   Corollary niveaux_br_spec_1 t : forall l ll, In l ll -> In ll (niveaux_br t) -> btb t l.
   Proof.
     intros l ll H1 H2.
-    destruct Forall2_In_inv_left with (1 := niveaux_br_tree t) (2 := H2) as (? & ? & H3).
+    destruct Forall2_In_inv_left with (1 := niveaux_br_niveaux t) (2 := H2) as (? & ? & H3).
     destruct Forall2_In_inv_left with (1 := H3) (2 := H1) as (? & ? & ?).
     apply btb_spec; firstorder.
   Qed.
@@ -157,7 +160,7 @@ Section bt_branches.
   (* bft_br corresponds to bft_std *)
 
   Theorem bft_br_std t : Forall2 (bt_path_node t) (bft_br t) (bft_std t).
-  Proof. apply Forall2_concat, niveaux_br_tree. Qed.
+  Proof. apply Forall2_concat, niveaux_br_niveaux. Qed.
 
   (* bft_br contains the branches of t *)
 

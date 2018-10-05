@@ -9,11 +9,15 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import bt.
+Require Import List Extraction.
+Require Export bt fifo bft bft_fifo bfn_fifo bfr_fifo.
 
-Require Export fifo_axm.
-(* Require Export fifo_triv. *)
-(* Require Export fifo_2lists. *)
-(* Require Export fifo_3llists. *)
+Extract Inductive bool => "bool" [ "true" "false" ].
+Extract Inductive prod => "(*)"  [ "(,)" ].
+Extract Inductive list => "list" [ "[]" "(::)" ].
+Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
 
-Notation fifo_lsum := ((fun X (q : fifo (bt X)) => lsum (fifo_list q)) _).
+Recursive Extraction bft_fifo.bft_fifo 
+                     bfn_fifo.bfn_fifo 
+                     bfr_fifo.bfr_fifo.
+
