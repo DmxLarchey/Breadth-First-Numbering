@@ -16,9 +16,11 @@ Section bft_inj.
 
   Variable X : Type.
 
+
   Implicit Types (l m : list (bt X)) (t : bt X).
 
   (** injectivity of [bft_f] given that the arguments are structurally equal *)
+
   Theorem bft_f_inj l m : l ~lt m -> bft_f l = bft_f m -> l = m.
   Proof.
     induction on l m as IH with measure (lsum (l++m)).

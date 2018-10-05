@@ -374,4 +374,3 @@ Proof. induction 1; constructor; auto. Qed.
 
 Fact bt_eq_trans X Y Z (r : bt X) (s : bt Y) (t : bt Z) : r ~t s -> s ~t t -> r ~t t.
 Proof. intros H; revert H t; induction 1; inversion 1; auto. Qed.
-

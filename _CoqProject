@@ -21,3 +21,10 @@ bfn_fifo_3q_full.v
 bfr_fifo_3q_full.v
 bft_inj.v
 bft_gen.v
+fifo_axm.v
+bfn_gen.v
+fifo_2lists.v
+fifo_triv.v
+fifo_3llists.v
+bfr_gen.v
+bft_inj.v

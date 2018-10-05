@@ -8,26 +8,21 @@
 (**************************************************************)
 
 Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils bt bft.
+Require Import list_utils wf_utils bt bft fifo_axm.
 
 Set Implicit Arguments.
 
-Parameters (fifo      : Type -> Type) 
-           (fifo_list : forall X, fifo X -> list X)
-           (fifo_nil  : forall X, { q : fifo X | fifo_list q = nil })
-           (fifo_enq  : forall X q x, { q' : fifo X | fifo_list q' = fifo_list q ++ x :: nil })
-           (fifo_deq  : forall X q, @fifo_list X q <> nil -> { c : X * fifo X | let (x,q') := c in fifo_list q = x::fifo_list q' })
-           (fifo_void : forall X q, { b : bool | b = true <-> @fifo_list X q = nil }).
+Local Definition fifo_sum { X } (q : fifo (bt X)) := lsum (fifo_list q). 
 
 Section bft_gen.
 
-  Let fifo_sum { X } (q : fifo (bt X)): nat := lsum (fifo_list q).
-
   Variable (X : Type).
 
-  Notation fX := (fifo (bt X)). 
+  Notation fifo_X := (fifo (bt X)).
 
-  Definition bft_gen_f (p : fX) : { l : list X | l = bft_f (fifo_list p) }.
+  Implicit Type (p : fifo_X). 
+
+  Definition bft_gen_f p : { l | l = bft_f (fifo_list p) }.
   Proof.
     induction on p as bft_gen_f with measure (fifo_sum p).
 

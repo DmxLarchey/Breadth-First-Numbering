@@ -267,5 +267,42 @@ Fact Forall2_mono X Y (R S : X -> Y -> Prop) l m :
      -> Forall2 R l m -> Forall2 S l m.
 Proof. induction 2; auto. Qed.
 
+Section seq_an.
+
+  (* seq_an a n = [a;a+1;...;a+(n-1)] *)
+
+  Fixpoint seq_an a n: list nat :=
+    match n with
+      | 0    => nil
+      | S n  => a::seq_an (S a) n
+    end.
+
+  Fact seq_an_length a n : length (seq_an a n) = n.
+  Proof. revert a; induction n; simpl; intros; f_equal; auto. Qed.
+
+  Fact seq_an_spec a n x : In x (seq_an a n) <-> a <= x < a+n.
+  Proof. 
+    revert x a; induction n as [ | n IHn ]; intros x a; simpl;
+      [ | rewrite IHn ]; omega.
+  Qed.
+
+  Fixpoint is_seq_from n (l : list nat) { struct l }: Prop :=
+    match l with  
+      | nil  => True
+      | x::l => n=x /\ is_seq_from (S n) l
+    end.
+
+  Theorem is_seq_from_spec a l : is_seq_from a l <-> exists n, l = seq_an a n.
+  Proof.
+    revert a; induction l as [ | x l IH ]; intros a; simpl.
+    + split; auto; exists 0; auto.
+    + rewrite IH; split.
+      * intros (? & n & Hn); subst x; exists (S n); subst; auto.
+      * intros ([ | n ] & ?); subst; try discriminate.
+        simpl in H; inversion H; subst; split; auto.
+        exists n; auto.
+  Qed.
+
+End seq_an.
 
 
