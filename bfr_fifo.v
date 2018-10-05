@@ -61,19 +61,19 @@ Section bfr_fifo.
       generalize (fifo_list p).
       intros [ | [] ? ]; simpl; try discriminate.
       split; auto.
-      rewrite bft_f_fix_0; auto.
+      rewrite bft_f_fix_0; reflexivity.
     * intros E; rewrite E in Hll; discriminate.
     * destruct Hq as (Hq2 & Hq3).
       rewrite Hp1, Hq1, rev_app_distr; split; simpl; auto.
       rewrite bft_f_fix_3, <- app_nil_end, Hq3; auto.
-    * rewrite Hp3, Hp2; repeat rewrite lsum_app; simpl in Hll |- *; omega.
+    * rewrite Hp3, Hp2; do 2 rewrite lsum_app; simpl in Hll |- *; omega.
     * destruct Hq as (Hq_1 & Hq_2); 
       apply Forall2_rev in Hq_1; rewrite rev_involutive in Hq_1.
       intros H; rewrite H, Hp3, rev_app_distr in Hq_1; inversion Hq_1.
     * destruct Hq as (Hq_1 & Hq_2).
       apply Forall2_rev in Hq_1; rewrite rev_involutive in Hq_1.
       intros H; rewrite Hd2, H, Hp3, Hp2 in Hq_1. 
-      repeat rewrite rev_app_distr in Hq_1.
+      do 2 rewrite rev_app_distr in Hq_1.
       inversion Hq_1.
       inversion H5.
     * destruct Hq as (Hq_1 & Hq_2).
@@ -81,16 +81,15 @@ Section bfr_fifo.
       simpl in *.
       rewrite Hp1, Hq3, rev_app_distr; simpl.
       rewrite Hp3, Hp2, Hd2, Hd3 in Hq_1.
-      repeat rewrite rev_app_distr in Hq_1.
+      do 2 rewrite rev_app_distr in Hq_1.
       simpl in Hq_1.
       apply Forall2_cons_inv in Hq_1; destruct Hq_1 as (Hq_3 & Hq_1).
       apply Forall2_cons_inv in Hq_1; destruct Hq_1 as (Hq_4 & Hq_1).
-      apply Forall2_rev in Hq_1.
-      rewrite rev_involutive in Hq_1.
+      apply Forall2_rev in Hq_1; rewrite rev_involutive in Hq_1.
       split; auto.
       rewrite bft_f_fix_3; simpl; f_equal.
       rewrite <- Hq_2, Hd2, Hd3; f_equal; simpl.
-      rewrite app_ass; auto.
+      rewrite app_ass; reflexivity.
   Defined.
   
   Section bfr.
@@ -122,7 +121,7 @@ Section bfr_fifo.
         split; auto.
         rewrite Hd1, Hr_1 in Hr_2.
         simpl in Hr_2.
-        rewrite <- bft_eq_bft_std; auto.
+        rewrite <- bft_eq_bft_std; assumption.
     Qed.
 
     Definition bfr_fifo t l H := proj1_sig (bfr_fifo_full t l H).
