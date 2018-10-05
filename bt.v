@@ -268,9 +268,6 @@ Section dft_order_characterization.
 
 End dft_order_characterization.
 
-Check lb_lex_is_dft_order.
-Check dft_order_charac.
-
 Definition is_bft_order R := 
              (forall l, ~ R l l)
           /\ (forall l m k, R l m -> R m k -> R l k)
@@ -332,9 +329,6 @@ Section bft_order.
   Qed.
 
 End bft_order.
-
-Check bft_order_checks.
-Check bft_order_charac.
 
 (** Equivalence between trees and forests, same structure,
     only the values of nodes differ *)

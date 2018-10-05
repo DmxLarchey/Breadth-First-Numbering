@@ -31,20 +31,21 @@ Section bft_gen.
       | true  => fun Hp 
       => exist _ nil _
       | false => fun Hp 
-      => let (d1,Hd1) := @fifo_deq _ p _ 
+      => let (c,Hc) := @fifo_deq _ p _ 
          in _
     end). 
     all: cycle 2. (* We queue 2 POs *)
-    revert Hd1; refine (match d1 with
-      | (leaf x    , p1) => fun Hp1 
-      => let (q1,Hq1) := bft_gen_f p1 _ 
-         in  exist _ (x::q1) _
-      | (node a x b, p1) => fun Hp1 
-      => let (p2,Hp2) := fifo_enq p1 a                  in
-         let (p3,Hp3) := fifo_enq p2 b                  in
-         let (q,Hq)   := bft_gen_f p3 _  
-         in  exist _ (x::q) _
-    end); simpl in Hp1.
+    revert Hc; refine (match c with (t,q) => _ end); clear c.
+    refine (match t with
+      | leaf x => fun Hq 
+      => let (r,Hr) := bft_gen_f q _ 
+         in  exist _ (x::r) _
+      | node a x b => fun Hq 
+      => let (r,Hr) := fifo_enq q a    in
+         let (s,Hs) := fifo_enq r b    in
+         let (t,Ht) := bft_gen_f s _
+         in  exist _ (x::t) _
+    end); simpl in Hq.
     all: cycle 4. (* We queue 4 POs *)
 
     (* And now, we show POs *)
@@ -52,14 +53,14 @@ Section bft_gen.
     * rewrite (proj1 Hp); auto.
       rewrite bft_f_fix_0; reflexivity.
     * intros H; apply Hp in H; discriminate.
-    * unfold fifo_sum; rewrite Hp1; simpl; auto.
-    * rewrite Hq1, Hp1.
+    * unfold fifo_sum; rewrite Hq; simpl; auto.
+    * rewrite Hr, Hq.
       rewrite bft_f_fix_3; simpl.
       do 2 f_equal; apply app_nil_end.
     * unfold fifo_sum. 
-      rewrite Hp3, Hp2, Hp1; simpl.
+      rewrite Hs, Hr, Hq; simpl.
       do 2 rewrite lsum_app; simpl; omega.
-    * rewrite Hq, Hp3, Hp2, Hp1.
+    * rewrite Ht, Hs, Hr, Hq.
       rewrite app_ass; simpl.
       rewrite bft_f_fix_3, bft_f_fix_1; simpl.
       rewrite bft_f_fix_1; auto.

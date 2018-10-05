@@ -126,7 +126,7 @@ Section bfr_gen.
         split; auto.
         rewrite Hd1, Hr_1 in Hr_2.
         simpl in Hr_2.
-        rewrite <- bft_std_eq_bft; auto.
+        rewrite <- bft_eq_bft_std; auto.
     Qed.
 
     Definition bfr_gen t l H := proj1_sig (bfr_gen_full t l H).

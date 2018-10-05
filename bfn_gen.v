@@ -205,7 +205,7 @@ Section bfn.
         apply proj1 in Hr; inversion Hr.
       * rewrite Hq, Hp in Hr. 
         destruct Hr as (H1 & H2).
-        rewrite <- bft_std_eq_bft.
+        rewrite <- bft_eq_bft_std.
         rewrite Hq1 in H1; simpl in H1.
         apply Forall2_snoc_inv with (l := nil) in H1.
         destruct H1 as (G1 & H1).

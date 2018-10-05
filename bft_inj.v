@@ -53,6 +53,6 @@ Section bft_inj.
   Qed.
 
   Corollary bft_std_inj t1 t2 : t1 ~t t2 -> bft_std t1 = bft_std t2 -> t1 = t2.
-  Proof. do 2 rewrite <- bft_std_eq_bft; apply bft_inj. Qed.
+  Proof. do 2 rewrite <- bft_eq_bft_std; apply bft_inj. Qed.
 
 End bft_inj.

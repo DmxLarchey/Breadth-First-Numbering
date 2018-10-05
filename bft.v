@@ -50,17 +50,17 @@ Section breadth_first_traversal.
 
   (* This is the standard/obvious specification of breadth-first traversal *)
 
-  Fixpoint niveaux_tree t : list (list X) :=
+  Fixpoint niveaux t : list (list X) :=
     match t with 
       | leaf x     => (x::nil) :: nil
-      | node a x b => (x::nil) :: zip (@app _) (niveaux_tree a) (niveaux_tree b)
+      | node a x b => (x::nil) :: zip (@app _) (niveaux a) (niveaux b)
     end.
     
-  Definition bft_std t : list X := concat (niveaux_tree t).
+  Definition bft_std t : list X := concat (niveaux t).
 
   Fixpoint subt ll : list (bt X) :=
     match ll with
-      | nil              => nil
+      | nil             => nil
       | leaf _     :: l => subt l
       | node a _ b :: l => a :: b :: subt l
     end.
@@ -84,12 +84,12 @@ Section breadth_first_traversal.
   Fact subt_le ll : lsum (subt ll) <= lsum ll.
   Proof. destruct (subt_dec ll); subst; simpl; omega. Qed.
   
-  (* The specification of 
+  (* The specification of niveaux_f
   
-      let rec niveaux ll =
+      let rec niveaux_f ll =
         match ll with
           | [] -> []
-          | _  -> map root ll :: niveaux (subt ll);;
+          | _  -> map root ll :: niveaux_f (subt ll);;
 
      as a graph *)
 
@@ -118,9 +118,9 @@ Section breadth_first_traversal.
       + rewrite subt_app; apply IH2; auto.
   Qed. 
 
-  (* We show that niveaux_tree satisfies g_niv *)
+  (* We show that niveaux satisfies g_niv *)
 
-  Fact g_niv_tree t : g_niv (t::nil) (niveaux_tree t).
+  Fact g_niv_tree t : g_niv (t::nil) (niveaux t).
   Proof.
     induction t as [ x | a Ha x b Hb ].
     * constructor 2; try discriminate.
@@ -129,22 +129,19 @@ Section breadth_first_traversal.
       apply (g_niv_app Ha Hb).
   Qed.
   
-  (* We reify the graph g_niv using well-founded 
-     induction directly (instead of using measure_rect)
+  Section niveaux_f.
+
+    (* We reify the graph g_niv using induction on a measure
   
-     This one extracts to the exact same Ocaml algo
-     than advertised in the opening comments *)
+       This one extracts to the exact same Ocaml algo
+       as advertised in the opening comments *)
 
-  Section niveaux_rec.
-
-    (* Let R x y := lsum x < lsum y. *)
-
-    Let niveaux_rec ll : sig (g_niv ll).
+    Let niveaux_f_rec ll : sig (g_niv ll).
     Proof.
-      induction on ll as niveaux_rec with measure (lsum ll).
+      induction on ll as niveaux_f_rec with measure (lsum ll).
       refine (match ll as l return ll = l -> sig (g_niv l) with
           | nil  => fun _ => exist _ nil _
-          | t::l => fun E => let (r,Hr) := niveaux_rec (subt ll) _
+          | t::l => fun E => let (r,Hr) := niveaux_f_rec (subt ll) _
                              in exist _ (map root ll :: r) _
         end eq_refl).
       1,2 : cycle 1. 
@@ -153,45 +150,47 @@ Section breadth_first_traversal.
       * rewrite <- E; constructor; auto; subst; discriminate.
     Qed.
 
-    Definition niveaux ll : list (list X) := proj1_sig (@niveaux_rec ll).
+    Definition niveaux_f ll : list (list X) := proj1_sig (@niveaux_f_rec ll).
  
-    Fact niveaux_spec ll : g_niv ll (niveaux ll).
+    Fact niveaux_f_spec ll : g_niv ll (niveaux_f ll).
     Proof. apply (proj2_sig _). Qed.
 
-    Hint Resolve niveaux_spec.
+    Hint Resolve niveaux_f_spec.
 
-    Fact niveaux_fix_0 : niveaux nil = nil.
+    Fact niveaux_f_fix_0 : niveaux_f nil = nil.
     Proof. apply g_niv_fun with nil; auto; constructor. Qed.
 
-    Fact niveaux_fix_1 ll : ll <> nil -> niveaux ll = map root ll :: niveaux (subt ll).
+    Fact niveaux_f_fix_1 ll : ll <> nil -> niveaux_f ll = map root ll :: niveaux_f (subt ll).
     Proof. intro; apply g_niv_fun with ll; auto; constructor; auto. Qed.
   
-  End niveaux_rec.
+  End niveaux_f.
+
+  (* Hence niveaux_f is indeed a generalization of niveaux *)
   
-  Fact niveaux_eq_niveaux_tree t : niveaux (t::nil) = niveaux_tree t.
+  Fact niveaux_eq_niveaux_f t : niveaux t = niveaux_f (t::nil). 
   Proof.
     apply g_niv_fun with (t::nil).
-    + apply niveaux_spec.
     + apply g_niv_tree.
+    + apply niveaux_f_spec.
   Qed.
 
   (* Breadth first traversal of a forest *)
 
-  Definition bft_f l := concat (niveaux l).
+  Definition bft_f l := concat (niveaux_f l).
 
-  (* Efficient breadth first traversal of a tree *)
+  (* Breadth first traversal of a tree as a particular instance *)
 
   Definition bft t := bft_f (t::nil).
 
   (* bft is extensionally equal to bft_std *)
   
-  Theorem bft_std_eq_bft t : bft t = bft_std t.
-  Proof. unfold bft_std, bft, bft_f; f_equal; apply niveaux_eq_niveaux_tree. Qed.
+  Theorem bft_eq_bft_std t : bft t = bft_std t.
+  Proof. unfold bft_std, bft, bft_f; f_equal; symmetry; apply niveaux_eq_niveaux_f. Qed.
 
   (* Now important fixpoint equations of bft_f *)
 
   Fact bft_f_fix_0 : bft_f nil = nil.
-  Proof. unfold bft_f; rewrite niveaux_fix_0; auto. Qed. 
+  Proof. unfold bft_f; rewrite niveaux_f_fix_0; auto. Qed. 
 
   (** The identity   bft_f (l++m) = map root l ++ bft_f (m++subt l) is critical
       to show the correctness of Breadth First Numbering *)
@@ -205,12 +204,12 @@ Section breadth_first_traversal.
     induction on l m as IH with measure (lsum (l++m)).
     destruct l as [ | [ x | a x b ] l ].
     + rewrite <- app_nil_end; auto.
-    + rewrite niveaux_fix_1; try discriminate; simpl; f_equal.
+    + rewrite niveaux_f_fix_1; try discriminate; simpl; f_equal.
       rewrite map_app, <- app_assoc; f_equal.
       rewrite IH, <- subt_app; auto.
       simpl; repeat rewrite lsum_app.
       generalize (subt_le l); omega.
-    + simpl; rewrite niveaux_fix_1; try discriminate.
+    + simpl; rewrite niveaux_f_fix_1; try discriminate.
       simpl; f_equal; rewrite map_app, <- app_assoc; f_equal.
       rewrite IH, subt_app; auto.
       simpl; repeat rewrite lsum_app; simpl.
@@ -223,8 +222,105 @@ Section breadth_first_traversal.
   Corollary bft_f_fix_3 x l : bft_f (x::l) = root x :: bft_f (l++subt (x::nil)).
   Proof. apply bft_f_fix_1 with (l := _::nil). Qed.
 
+  Section bft_f'.
+
+    Inductive g_bft_f : list (bt X) -> list X -> Prop :=
+      | in_g_bft_f_0 : g_bft_f nil nil
+      | in_g_bft_f_1 : forall lt r, lt <> nil -> g_bft_f (subt lt) r -> g_bft_f lt (map root lt ++ r).
+
+    Fact g_bft_f_inj lt r1 r2 : g_bft_f lt r1 -> g_bft_f lt r2 -> r1 = r2.
+    Proof.
+      intros H1; revert H1 r2.
+      induction 1; inversion 1; subst; auto.
+      mysolve.
+      f_equal; auto.
+    Qed.
+
+    Fact g_bft_f_bft_f lt : g_bft_f lt (bft_f lt).
+    Proof.
+      induction on lt as IH with measure (lsum lt).
+      destruct lt.
+      + rewrite bft_f_fix_0; constructor.
+      + rewrite bft_f_fix_2; constructor.
+        * discriminate.
+        * apply IH.
+          destruct (subt_dec (b::lt)); auto; subst; discriminate.
+    Qed.
+
+    Let bft_f'_rec lt : sig (g_bft_f lt).
+    Proof.
+      induction on lt as loop with measure (lsum lt).
+      refine (match lt as l return lt = l -> sig (g_bft_f l) with
+        | nil  => fun _ => exist _ nil _
+        | t::l => fun E => let (mm,Hmm) := loop (subt lt) _
+                           in exist _ (map root lt ++ mm) _
+      end eq_refl).
+      + constructor.
+      + destruct (subt_dec lt); auto; subst; discriminate.
+      + rewrite <- E; constructor; auto; subst; discriminate.
+    Qed.
+
+    Definition bft_f' lt := proj1_sig (bft_f'_rec lt).
+
+    Fact bft_f'_spec lt : g_bft_f lt (bft_f' lt).
+    Proof. apply (proj2_sig _). Qed.
+
+    Fact bft_f'_eq_bft_f lt : bft_f' lt = bft_f lt.
+    Proof.
+      apply (@g_bft_f_inj lt).
+      + apply bft_f'_spec.
+      + apply g_bft_f_bft_f.
+    Qed.
+
+    Fact bft_f'_fix_0 : bft_f' nil = nil.
+    Proof.
+      apply (@g_bft_f_inj nil).
+      + apply bft_f'_spec.
+      + constructor.
+    Qed.
+
+    Fact bft_f'_fix_1 lt : lt <> nil -> bft_f' lt = map root lt ++ bft_f' (subt lt).
+    Proof.
+      intros H; apply (@g_bft_f_inj lt).
+      + apply bft_f'_spec.
+      + constructor; auto.
+        apply bft_f'_spec.
+    Qed.
+
+    Fact bft_f'_fix_2 lt : bft_f' lt = map root lt ++ bft_f' (subt lt).
+    Proof. 
+      destruct lt; auto.
+      apply bft_f'_fix_1; discriminate.
+    Qed.
+
+    Fact bft_f'_fix_3 l m : bft_f' (l++m) = map root l ++ bft_f' (m++subt l).
+    Proof.
+      induction on l m as IH with measure (lsum (l++m)).
+      destruct l as [ | [ x | a x b ] l ].
+      + rewrite <- app_nil_end; auto.
+      + rewrite bft_f'_fix_2.
+        simpl.
+        rewrite map_app, app_ass; do 2 f_equal.
+        rewrite IH.
+        * do 2 f_equal; rewrite subt_app; auto.
+        * simpl; do 2 rewrite lsum_app.
+          generalize (subt_le l); omega.
+      + rewrite bft_f'_fix_2.
+        simpl.
+        rewrite map_app, app_ass; do 2 f_equal.
+        rewrite IH.
+        * do 2 f_equal; rewrite subt_app; auto.
+        * simpl; do 2 rewrite lsum_app.
+          simpl; generalize (subt_le l); omega.
+   Qed.
+   
+   Corollary bft_f'_fix_4 x l : bft_f' (x::l) = root x :: bft_f' (l++subt (x::nil)).
+   Proof. apply bft_f'_fix_3 with (l := _::nil). Qed.
+
+  End bft_f'.
+
 End breadth_first_traversal.
 
-Recursive Extraction bft_std bft.
+Recursive Extraction bft_std bft bft_f'.
 
-Check bft_std_eq_bft.
+Check bft_eq_bft_std.
