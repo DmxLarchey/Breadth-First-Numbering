@@ -46,7 +46,7 @@ Section breadth_first_traversal.
 
   Context (X : Type).
  
-  Implicit Type (t : bt X) (l ll : list (bt X)).
+  Implicit Type (t : bt X) (l m ll : list (bt X)) (rl rm: list(list X)).
 
   (* This is the standard/obvious specification of breadth-first traversal *)
 
@@ -95,13 +95,13 @@ Section breadth_first_traversal.
 
   Inductive g_niv : list (bt X) -> list (list X) -> Prop :=
     | in_gn_0 : g_niv nil nil
-    | in_gn_1 : forall l p, l <> nil -> g_niv (subt l) p -> g_niv l (map root l :: p).
+    | in_gn_1 : forall l rl, l <> nil -> g_niv (subt l) rl -> g_niv l (map root l :: rl).
     
   Ltac mysolve := try match goal with H: ?x <> ?x |- _ => destruct H; reflexivity end.
 
-  Fact g_niv_fun l m1 m2 : g_niv l m1 -> g_niv l m2 -> m1 = m2.
+  Fact g_niv_fun l rl1 rl2 : g_niv l rl1 -> g_niv l rl2 -> rl1 = rl2.
   Proof.
-    intros H; revert H m2.
+    intros H; revert H rl2.
     induction 1 as [ | l m1 H1 H2 IH2 ]; intros m2 H3; inversion H3; auto; subst; mysolve.
     f_equal; apply IH2; trivial.
   Qed.

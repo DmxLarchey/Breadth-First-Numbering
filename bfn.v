@@ -21,6 +21,8 @@ Require Import list_utils wf_utils bt bft.
 
 Set Implicit Arguments.
 
+Implicit Types (a n x: nat).
+
 Section seq_an.
 
   (* seq_an a n = [a;a+1;...;a+(n-1)] *)
@@ -40,13 +42,13 @@ Section seq_an.
       [ | rewrite IHn ]; omega.
   Qed.
 
-  Fixpoint is_seq_from n (l : list nat) { struct l }: Prop :=
+  Fixpoint is_seq_from n (l: list nat) { struct l }: Prop :=
     match l with  
       | nil  => True
       | x::l => n=x /\ is_seq_from (S n) l
     end.
 
-  Theorem is_seq_from_spec a l : is_seq_from a l <-> exists n, l = seq_an a n.
+  Theorem is_seq_from_spec a (l: list nat): is_seq_from a l <-> exists n, l = seq_an a n.
   Proof.
     revert a; induction l as [ | x l IH ]; intros a; simpl.
     + split; auto; exists 0; auto.
@@ -72,18 +74,20 @@ Section bfn.
 
   Variable (X : Type).
 
+  Implicit Types (t : bt X) (l: list(bt X)).
+
   (* the forest (list of bt nat) is a breadth first numbering from n if
      its breadth first traversal yields [n;n+1;....;m[ for some m
    *)
 
-  Definition is_bfn_from n l: Prop := is_seq_from n (bft_f l).
+  Definition is_bfn_from n (l: list (bt nat)): Prop := is_seq_from n (bft_f l).
 
   (* Breadth First Numbering: maps a forest X to a forest nat such that
           1) the two forests are of the same shape
           2) the result is a breadth first numbering from n  
    *)
 
-  Definition bfn_f n (l : list (bt X)) : { m | l ~lt m /\ is_bfn_from n m }.
+  Definition bfn_f n l : { m | l ~lt m /\ is_bfn_from n m }.
   Proof.
     induction on n l as bfn_f with measure (lsum l).
     refine (match l as l' return l = l' -> _ with
@@ -116,12 +120,12 @@ Section bfn.
         red in H2 |- *. 
         rewrite bft_f_fix_3; simpl; auto.
       * apply Forall2_length in H1. 
-        repeat rewrite app_length in H1; simpl in H1; omega.
+        do 2 rewrite app_length in H1; simpl in H1; omega.
   Defined.
 
   Section bfn.
 
-    Let bfn_full (t : bt X) : { t' | t ~t t' /\ is_seq_from 0 (bft_std t') }.
+    Let bfn_full t : { t' | t ~t t' /\ is_seq_from 0 (bft_std t') }.
     Proof.
       refine (match @bfn_f 0 (t::nil) with
         | exist _ l Hl      => 
