@@ -11,7 +11,7 @@
 
 Require Import List Arith Omega.
 
-Require Import wf_utils.
+Require Import wf_utils fifo_mod.
 
 Set Implicit Arguments.
 
@@ -43,6 +43,8 @@ Section rev_linear.
   Qed.
 
 End rev_linear.
+
+Module fifo_two_lists <: Fifo_polymorphic.
 
 Section fifo_two_lists.
 
@@ -99,6 +101,8 @@ Section fifo_two_lists.
 
 End fifo_two_lists.
 
-Arguments fifo_nil {X}.
-Arguments fifo_deq {X}.
+End fifo_two_lists.
+
+Arguments fifo_two_lists.fifo_nil {X}.
+Arguments fifo_two_lists.fifo_deq {X}.
 

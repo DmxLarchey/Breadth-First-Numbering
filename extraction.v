@@ -10,14 +10,20 @@
 (**************************************************************)
 
 Require Import List Extraction.
-Require Export bt fifo bft bft_fifo bfn_fifo bfr_fifo.
+Require Import fifo_mod fifo_triv fifo_2lists fifo_3llists.
+Require Import bt bft bft_fifo.
 
 Extract Inductive bool => "bool" [ "true" "false" ].
 Extract Inductive prod => "(*)"  [ "(,)" ].
 Extract Inductive list => "list" [ "[]" "(::)" ].
 Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
 
-Recursive Extraction bft_fifo.bft_fifo 
-                     bfn_fifo.bfn_fifo 
-                     bfr_fifo.bfr_fifo.
+Module bft_fifo_trivial := bft_fifo (fifo_trivial).
+Module bft_fifo_2lists := bft_fifo (fifo_two_lists).
+Module bft_fifo_3llists := bft_fifo (fifo_three_llists).
 
+Recursive Extraction bft_fifo_trivial bft_fifo_2lists bft_fifo_3llists.
+
+Check bft_fifo_trivial.bft_fifo_spec.
+Check bft_fifo_2lists.bft_fifo_spec.
+Check bft_fifo_3llists.bft_fifo_spec.

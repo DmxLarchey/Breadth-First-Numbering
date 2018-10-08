@@ -12,11 +12,16 @@
 Require Import List Arith Omega Extraction.
 
 Require Import list_utils wf_utils. 
-Require Import bt bft fifo.
+Require Import bt bft fifo_mod.
 
 Set Implicit Arguments.
 
-Section bft_fifo.
+Module bft_fifo (fifo : Fifo_polymorphic).
+Section bft_fifo_sect.
+
+  Import fifo.
+
+  Notation fifo_lsum := ((fun X (q : fifo (bt X)) => lsum (fifo_list q)) _).
 
   Variable (X : Type).
 
@@ -80,7 +85,6 @@ Section bft_fifo.
   Fact bft_fifo_spec t : bft_fifo t = bft t.
   Proof. apply (proj2_sig (bft_fifo_full t)). Qed.
 
+End bft_fifo_sect.
 End bft_fifo.
 
-Check bft_fifo.
-Check bft_fifo_spec.

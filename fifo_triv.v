@@ -10,11 +10,14 @@
 (**************************************************************)
 
 Require Import List Extraction.
+Require Import fifo_mod.
 
 Set Implicit Arguments.
 
 (* We provide a trivial implementation of FIFO as lists 
    satisfying the axioms in fifo_axm.v *)
+
+Module fifo_trivial <: Fifo_polymorphic.
 
 Section fifo_triv.
 
@@ -46,8 +49,10 @@ Section fifo_triv.
   
 End fifo_triv.
 
-Arguments fifo_nil {X}.
-Arguments fifo_deq {X}.
+End fifo_trivial.
+
+Arguments fifo_trivial.fifo_nil {X}.
+Arguments fifo_trivial.fifo_deq {X}.
 
 
 

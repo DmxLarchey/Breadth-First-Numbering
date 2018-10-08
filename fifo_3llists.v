@@ -11,12 +11,14 @@
 
 Require Import List Arith Omega.
 
-Require Import wf_utils llist.
+Require Import wf_utils llist fifo_mod.
 
 Set Implicit Arguments.
 
 (* We provide an implementation of FIFO as a triple of lazy lists 
    satisfying the axioms in fifo_axm.v *)
+
+Module fifo_three_llists <: Fifo_polymorphic.
 
 Section fifo_three_lazy_lists.
 
@@ -188,8 +190,10 @@ Section fifo_three_lazy_lists.
 
 End fifo_three_lazy_lists.
 
-Arguments fifo_nil {X}.
-Arguments fifo_deq {X}.
+End fifo_three_llists.
+
+Arguments fifo_three_llists.fifo_nil {X}.
+Arguments fifo_three_llists.fifo_deq {X}.
 
 
 

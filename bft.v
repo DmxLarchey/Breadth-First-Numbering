@@ -92,7 +92,20 @@ Section breadth_first_traversal.
   Fact subt_le ll : lsum (subt ll) <= lsum ll.
   Proof. destruct (subt_dec ll); subst; simpl; omega. Qed.
   
-
+  Fixpoint forest_decomp ll : { c | c = (map root ll, subt ll) }.
+  Proof.
+    refine (match ll as l return { c | c = (map root l, subt l) } with
+      | nil   => exist _ (nil,nil) _
+      | t::ll => let (c,Hc) := forest_decomp ll in _
+    end); [ reflexivity | ].
+    revert Hc; refine(
+        match c with (ro,sf) => 
+          match t with
+          | leaf x     => fun Hc => exist _ (x::ro,sf) _
+          | node a x b => fun Hc => exist _ (x::ro,a::b::sf) _
+          end
+        end); inversion Hc; auto.
+  Defined.
 
   (* The specification of niveaux_f
   
@@ -151,13 +164,19 @@ Section breadth_first_traversal.
       induction on ll as niveaux_f_rec with measure (lsum ll).
       refine (match ll as l return ll = l -> sig (g_niv l) with
           | nil  => fun _ => exist _ nil _
-          | t::l => fun E => let (r,Hr) := niveaux_f_rec (subt ll) _
-                             in exist _ (map root ll :: r) _
+          | t::l => fun E => _
         end eq_refl).
-      1,2 : cycle 1. 
-      * destruct (subt_dec ll); auto; subst; discriminate.
+      1,2 : cycle 1.
+      refine (let (c,Hc) := forest_decomp ll in _).
+      revert Hc; refine (match c with (ro,sf) => _ end); intros Hc.
+      refine (let (r,Hr) := niveaux_f_rec sf _
+              in exist _ (ro :: r) _).
+      1-3: cycle 2.
       * constructor.
-      * rewrite <- E; constructor; auto; subst; discriminate.
+      * inversion Hc.
+        destruct (subt_dec ll); auto; subst; discriminate.
+      * inversion Hc.
+        rewrite <- E; constructor; subst; auto; discriminate.
     Qed.
 
     Definition niveaux_f ll : list (list X) := proj1_sig (@niveaux_f_rec ll).
@@ -262,12 +281,16 @@ Section breadth_first_traversal.
       induction on lt as loop with measure (lsum lt).
       refine (match lt as l return lt = l -> sig (g_bft_f l) with
         | nil  => fun _ => exist _ nil _
-        | t::l => fun E => let (mm,Hmm) := loop (subt lt) _
-                           in exist _ (map root lt ++ mm) _
+        | t::l => fun E => _ 
       end eq_refl).
+      all: cycle 1.
+      refine (let (c,Hc) := forest_decomp lt in _).
+      revert Hc; refine (match c with (ro,sf) => _ end); intros Hc.
+      refine (let (mm,Hmm) := loop sf _ in exist _ (ro ++ mm) _).
+      all: cycle 2.
       + constructor.
-      + destruct (subt_dec lt); auto; subst; discriminate.
-      + rewrite <- E; constructor; auto; subst; discriminate.
+      + inversion Hc; destruct (subt_dec lt); auto; subst; discriminate.
+      + inversion Hc; rewrite <- E; constructor; subst; auto; discriminate.
     Qed.
 
     Definition bft_f' lt := proj1_sig (bft_f'_rec lt).
@@ -374,4 +397,6 @@ Section bft_inj.
   Proof. do 2 rewrite <- bft_eq_bft_std; apply bft_inj. Qed.
 
 End bft_inj.
+
+Recursive Extraction bft bft_f'.
 
