@@ -25,8 +25,11 @@ Require Import bt bft fifo.
 
 Set Implicit Arguments.
 
-Section bfn_fifo.
+Module BFN_FIFO (M: FIFO).
 
+  Export M.
+
+  Section bfn_fifo.
   Variable (X : Type).
 
   (* the forest (list of bt nat) is a breadth first numbering from n if
@@ -240,3 +243,5 @@ End bfn_fifo.
 Check bfn_fifo.
 Check bfn_fifo_spec_1.
 Check bfn_fifo_spec_2.
+
+End BFN_FIFO.
