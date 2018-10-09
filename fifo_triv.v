@@ -17,8 +17,6 @@ Set Implicit Arguments.
 (* We provide a trivial implementation of FIFO as lists 
    satisfying the axioms in fifo_axm.v *)
 
-Module fifo_trivial <: Fifo_polymorphic.
-
 Section fifo_triv.
 
   Variable X : Type.
@@ -49,10 +47,28 @@ Section fifo_triv.
   
 End fifo_triv.
 
+Arguments fifo_nil {X}.
+Arguments fifo_deq {X}.
+
+Module fifo_trivial <: Fifo_polymorphic.
+
+  Definition fifo := fifo.
+  Definition fifo_list := fifo_list.
+  Definition fifo_nil := @fifo_nil.
+  Definition fifo_enq := fifo_enq.
+  Definition fifo_deq := @fifo_deq.
+  Definition fifo_void := fifo_void. 
+
 End fifo_trivial.
 
-Arguments fifo_trivial.fifo_nil {X}.
-Arguments fifo_trivial.fifo_deq {X}.
+Definition fifo_triv : Fifo.
+Proof.
+  exists fifo fifo_list.
+  + exact @fifo_nil.
+  + exact fifo_enq.
+  + exact @fifo_deq.
+  + exact @fifo_void.
+Defined.
 
 
 

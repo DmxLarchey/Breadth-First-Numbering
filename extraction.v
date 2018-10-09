@@ -22,8 +22,18 @@ Module bft_fifo_trivial := bft_fifo (fifo_trivial).
 Module bft_fifo_2lists := bft_fifo (fifo_two_lists).
 Module bft_fifo_3llists := bft_fifo (fifo_three_llists).
 
+Definition mybft := bft_fifo fifo_triv.
+
+Check mybft.
+
+Recursive Extraction mybft.
+
+(*
+
 Recursive Extraction bft_fifo_trivial bft_fifo_2lists bft_fifo_3llists.
 
 Check bft_fifo_trivial.bft_fifo_spec.
 Check bft_fifo_2lists.bft_fifo_spec.
 Check bft_fifo_3llists.bft_fifo_spec.
+
+*)
