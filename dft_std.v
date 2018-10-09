@@ -15,9 +15,9 @@ Require Import list_utils bt sorted.
 Set Implicit Arguments.
 
 (** The very standard Depth First Search algorithm on a binary
-    tree with a specification: it return the values on nodes where
-    nodes are sorted in lexicographic order on their corresponding
-    branch *)
+    tree with a specification: it returns the values on nodes where
+    nodes are sorted in lexicographic order of their corresponding
+    branches. *)
 
 Section dft_std.
 
