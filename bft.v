@@ -92,7 +92,18 @@ Section breadth_first_traversal.
   Fact subt_le ll : lsum (subt ll) <= lsum ll.
   Proof. destruct (subt_dec ll); subst; simpl; omega. Qed.
   
+  Fixpoint forest_decomp ll: list X * list (bt X) :=
+    match ll with 
+      | nil   => (nil,nil)
+      | t::ll => let (ro,sf) := forest_decomp ll in
+      match t with
+        | leaf x     => (x::ro,sf)
+        | node a x b => (x::ro,a::b::sf)
+      end
+    end.
 
+  Fact forest_decomp_eq ll : forest_decomp ll = (map root ll, subt ll).
+  Proof. induction ll as [ | [] ? IH ]; simpl; auto; rewrite IH; auto. Qed.
 
   (* The specification of niveaux_f
   
