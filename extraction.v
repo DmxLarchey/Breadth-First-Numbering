@@ -10,7 +10,7 @@
 (**************************************************************)
 
 Require Import List Extraction.
-Require Export bt fifo bft_std bft_forest bft_fifo bfn_fifo bfr_fifo.
+Require Import bt fifo bft_std bft_forest bft_fifo bfn_fifo bfr_fifo.
 
 Extract Inductive bool => "bool" [ "true" "false" ].
 Extract Inductive prod => "(*)"  [ "(,)" ].
@@ -43,6 +43,8 @@ Recursive Extraction BFR_triv.bfr_fifo BFR_2lists.bfr_fifo BFR_3llists.bfr_fifo.
 (*Recursive Extraction BFT_triv.bft_fifo BFN_triv.bfn_fifo  BFR_triv.bfr_fifo. *)
 
 Recursive Extraction BFT_2lists.bft_fifo BFN_2lists.bfn_fifo BFR_2lists.bfr_fifo.
+
+Recursive Extraction bft_forest.bft_forest.
 
 (*
 Recursive Extraction BFT_3llists.bft_fifo
