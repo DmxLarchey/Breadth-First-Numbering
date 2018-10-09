@@ -144,17 +144,19 @@ Section bfn_fifo.
          in _
     end). 
     all: cycle 2. (* We queue 2 POs *)
-    revert Hd1; refine (match d1 with
-      | (leaf x    , p1) => fun Hp1 
-      => let (q,Hq)   := bfn_fifo_f (S n) p1 _     in
-         let (q1,Hq1) := enq q (leaf n) 
-         in  exist _ q1 _
-      | (node a x b, p1) => fun Hp1 
-      => let (p2,Hp2) := enq p1 a                  in
-         let (p3,Hp3) := enq p2 b                  in
-         let (q,Hq)   := bfn_fifo_f (S n) p3 _     in 
-         let (d2,Hd2) := @deq _ q _ 
-         in  _
+    revert Hd1; refine (match d1 with 
+      | (t,p1) => _ end). 
+    refine (match t with
+        | leaf x => fun Hp1 
+        => let (q,Hq)   := bfn_fifo_f (S n) p1 _     in
+           let (q1,Hq1) := enq q (leaf n) 
+           in  exist _ q1 _
+        | node a x b => fun Hp1 
+        => let (p2,Hp2) := enq p1 a                  in
+           let (p3,Hp3) := enq p2 b                  in
+           let (q,Hq)   := bfn_fifo_f (S n) p3 _     in 
+           let (d2,Hd2) := @deq _ q _ 
+           in  _
     end); simpl in Hp1.
     all: cycle 4. (* We queue 4 POs *)
     revert Hd2; refine (match d2 with (u,q1) => _ end); intros Hq1.
