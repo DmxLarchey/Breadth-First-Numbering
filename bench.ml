@@ -1,6 +1,9 @@
 open List;;
 
-#use "bfn.ml";;
+#use "bfn_2lists_3llists.ml";;
+
+let bfn_3q = BFN_3llists.bfn_fifo;;
+let bfn_2l = BFN_2lists.bfn_fifo;;
 
 let mytime () = Sys.time ();;
 let measure f =

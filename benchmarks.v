@@ -45,3 +45,4 @@ Extraction "bfn_axm" BFN_axm.bfn_fifo.
 Extraction "bfn_triv" BFN_triv.bfn_fifo.
 Extraction "bfn_2lists" BFN_2lists.bfn_fifo.
 Extraction "bfn_3llists" BFN_3llists.bfn_fifo.
+Extraction "bfn_2lists_3llists" BFN_2lists.bfn_fifo BFN_3llists.bfn_fifo.
