@@ -23,10 +23,16 @@ Section bt.
 
   Inductive bt := leaf : X -> bt | node : bt -> X -> bt -> bt.
 
-  Definition root (t: bt): X :=
+  Definition root (t : bt) : X :=
     match t with 
       | leaf x     => x
       | node _ x _ => x
+    end.
+
+  Definition subt (t : bt) : list bt :=
+    match t with 
+      | leaf x     => nil
+      | node a _ b => a::b::nil 
     end.
 
   (** measure: number of constructors *)

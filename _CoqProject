@@ -6,7 +6,6 @@ zip.v
 sorted.v
 increase.v
 llist.v
-php.v
 
 bt.v
 
@@ -18,7 +17,9 @@ fifo.v
 
 dft_std.v
 bft_std.v
-bft.v
+bft_forest.v
+
+bft_inj.v
 dft_bft_compare.v
 
 bft_fifo.v

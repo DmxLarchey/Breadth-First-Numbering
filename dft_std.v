@@ -9,7 +9,7 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import List Arith Omega.
+Require Import List Arith Omega Extraction.
 Require Import list_utils bt sorted.
 
 Set Implicit Arguments.
