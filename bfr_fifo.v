@@ -15,8 +15,11 @@ Require Import bt bft fifo.
 
 Set Implicit Arguments.
 
-Section bfr_fifo.
+Module BFR_FIFO (M: FIFO).
 
+  Export M.
+
+  Section bfr_fifo.
   Variable (X Y : Type).
 
   Implicit Type (p : fifo (bt X)) (ll : list Y).
@@ -140,9 +143,4 @@ Check bfr_fifo.
 Check bfr_fifo_spec_1.
 Check bfr_fifo_spec_2.
 
-
-
-
-
-
-
+End BFR_FIFO.
