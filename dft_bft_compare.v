@@ -9,7 +9,6 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-
 Require Import List Arith Omega Permutation.
 Require Import list_utils bt sorted dft_std bft_std.
 

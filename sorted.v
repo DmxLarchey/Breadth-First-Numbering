@@ -11,7 +11,7 @@
 
 Require Import List Arith Omega Wellfounded Permutation.
 
-Require Import list_utils php.
+Require Import list_utils.
 
 Set Implicit Arguments.
 
@@ -57,6 +57,64 @@ Proof.
     * apply IH2; intros ? ? ? ?; apply H3; simpl; auto.
 Qed.
 
+Section list_has_dup.
+
+  Variable (X : Type).
+
+  Implicit Types (l m : list X).
+  
+  Inductive list_has_dup : list X -> Prop :=
+    | in_list_hd0 : forall l x, In x l -> list_has_dup (x::l)
+    | in_list_hd1 : forall l x, list_has_dup l -> list_has_dup (x::l).
+  
+  Fact list_hd_cons_inv x l : list_has_dup (x::l) -> In x l \/ list_has_dup l.
+  Proof. inversion 1; subst; auto. Qed.
+  
+  Fact list_has_dup_app_left l m : list_has_dup m -> list_has_dup (l++m).
+  Proof. induction l; simpl; auto; constructor 2; auto. Qed.
+  
+  Fact list_has_dup_app_right l m : list_has_dup l -> list_has_dup (l++m).
+  Proof. 
+    induction 1; simpl.
+    + constructor 1; apply in_or_app; left; auto.
+    + constructor 2; auto.
+  Qed.
+
+  Fact perm_list_has_dup l m : l ~p m -> list_has_dup l -> list_has_dup m.
+  Proof.
+    induction 1 as [ | x l m H1 IH1 | x y l | ]; auto; 
+      intros H; apply list_hd_cons_inv in H.
+    + destruct H as [ H | H ].
+      * apply Permutation_in with (1 := H1) in H.
+        apply in_list_hd0; auto.
+      * apply in_list_hd1; auto.
+    + destruct H as [ [ H | H ] | H ]; subst.
+      * apply in_list_hd0; left; auto.
+      * apply in_list_hd1, in_list_hd0; auto.
+      * apply list_hd_cons_inv in H.
+        destruct H as [ H | H ].
+        - apply in_list_hd0; right; auto.
+        - do 2 apply in_list_hd1; auto.
+  Qed.
+
+  Fact list_has_dup_eq_duplicates m: list_has_dup m <-> exists x aa bb cc, m = aa++x::bb++x::cc.
+  Proof.
+    split.
+    + induction 1 as [ m x Hm | m x _ IHm ].
+      - apply in_split in Hm.
+        destruct Hm as (bb & cc & Hm).
+        exists x, nil, bb, cc; subst; auto.
+      - destruct IHm as (y & aa & bb & cc & IHm).
+        exists y, (x::aa), bb, cc; subst; auto.
+    + intros (x & aa & bb & cc & Hm).
+      subst m.
+      apply list_has_dup_app_left.
+      constructor 1; apply in_or_app; right.
+      constructor 1; reflexivity.
+  Qed.
+
+End list_has_dup.
+
 Section sorted_no_dup.
  
   Variables (X : Type) (R : X -> X -> Prop) (HR : forall x, ~ R x x).
@@ -97,35 +155,72 @@ Section no_dup_sorted_with_ineq.
 
 End no_dup_sorted_with_ineq.
 
+Section no_dups_eq_perm.
+  
+  Variables (X : Type). 
+
+  Lemma no_dups_eq_perm (l m : list X) : 
+        (forall x, In x l <-> In x m)
+     -> ~ list_has_dup l
+     -> ~ list_has_dup m
+     -> l ~p m.
+  Proof.
+    revert m; induction l as [ | x l IH ]; intros m H1 H2 H3.
+    * destruct m as [ | y m ].
+      + constructor.
+      + exfalso; apply (H1 y); simpl; auto.
+    * assert (In x m) as Hm.
+      { apply H1; simpl; auto. }
+      apply in_split in Hm.
+      destruct Hm as (m1 & m2 & ?); subst.
+      assert (~ In x l) as H4.
+      { contradict H2; constructor 1; auto. }
+      assert (~ In x m1) as H5.
+      { contradict H3.
+        apply in_split in H3.
+        destruct H3 as (p1 & p2 & ?); subst.
+        apply list_has_dup_eq_duplicates.
+        exists x,p1,p2,m2; rewrite app_ass; auto. }
+      assert (~ In x m2) as H6.
+      { contradict H3.
+        apply in_split in H3.
+        destruct H3 as (p1 & p2 & ?); subst.
+        apply list_has_dup_eq_duplicates.
+        exists x,m1,p1,p2; auto. }
+      apply Permutation_cons_app, IH.
+      + intros y; split.
+        - intros G1.
+          generalize (proj1 (H1 y) (or_intror G1)).
+          intros G2.
+          apply in_app_or in G2.
+          apply in_or_app.
+          destruct G2 as [|[|]]; subst; tauto.
+        - intros G1.
+          generalize (proj2 (H1 y)); intros G2.
+          apply in_app_or in G1.
+          destruct G2; subst; try tauto.
+          apply in_or_app; simpl; tauto.
+      + contradict H2; constructor 2; auto.
+      + contradict H3.
+        apply perm_list_has_dup with (1 := Permutation_middle _ _ _).
+        constructor 2; auto.
+  Qed.
+
+End no_dups_eq_perm.
+
 Section sorted_perm.
 
-  Variables (X : Type) (R S : X -> X -> Prop) (l m : list X) (Hlm : forall x, In x l <-> In x m).
-
-  Section sorted_perm_aux.
-  
-    Hypothesis (Hl : ~ list_has_dup l) (Hm : ~ list_has_dup m).
-
-    Hint Resolve Permutation_sym.
-
-    (* length_le_and_incl_implies_dup_or_perm is from the proof of the PHP, see php.v
-       I know, I should find a better name ...
-     *)
-
-    Lemma sorted_perm_aux : l ~p m.
-    Proof.
-      destruct (le_lt_dec (length l) (length m)).
-      + destruct (@length_le_and_incl_implies_dup_or_perm _ l m); auto; try tauto; intro; apply Hlm.
-      + destruct (@length_le_and_incl_implies_dup_or_perm _ m l); auto; try tauto; try omega; intro; apply Hlm.
-    Qed.
-
-  End sorted_perm_aux.
-
-  Hypothesis (HR : forall x, ~ R x x) (HS : forall x, ~ S x x)
-             (Hl : sorted R l) (Hm : sorted S m).
-
-  Hint Resolve sorted_no_dup.
+  Variables (X : Type) (R S : X -> X -> Prop) (l m : list X) 
+            (Hlm : forall x, In x l <-> In x m)
+            (HR : forall x, ~ R x x) 
+            (HS : forall x, ~ S x x)
+            (Hl : sorted R l) (Hm : sorted S m).
 
   Theorem sorted_perm : l ~p m.
-  Proof. apply sorted_perm_aux; eauto. Qed.
+  Proof. 
+    apply no_dups_eq_perm; auto.
+    + apply sorted_no_dup with (1 := HR); trivial.
+    + apply sorted_no_dup with (1 := HS); trivial.
+  Qed.
 
 End sorted_perm.
