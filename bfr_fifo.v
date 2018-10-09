@@ -9,30 +9,30 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import List Arith Omega Extraction.
-Require Import list_utils wf_utils.
-Require Import bt bft fifo.
+Require Import List Arith Omega.
+Require Import list_utils wf_utils bt fifo bft_forest bft_std.
 
 Set Implicit Arguments.
 
 Module BFR_FIFO (M: FIFO).
 
-  Export M.
+Export M.
 
-  Section bfr_fifo.
+Section bfr_fifo.
+
   Variable (X Y : Type).
 
   Implicit Type (p : fifo (bt X)) (ll : list Y).
 
   Fixpoint bfr_fifo_f p (ll : list Y) { struct ll } : 
             fifo_lsum p = length ll
-         -> { q  | fifo_list p ~lt rev (fifo_list q) 
-                /\ bft_f (rev (fifo_list q)) = ll }.
+         -> { q  | tolist p ~lt rev (tolist q) 
+                /\ bft_f (rev (tolist q)) = ll }.
   Proof.
     refine (match ll with 
-      | nil   => fun Hll => let (q,Hq)   := fifo_nil 
+      | nil   => fun Hll => let (q,Hq)   := empty _ 
                             in  exist _ q _
-      | y::mm => fun Hll => let (d1,Hd1) := fifo_deq p _ 
+      | y::mm => fun Hll => let (d1,Hd1) := @deq _ p _ 
                             in  _
     end).
     all: cycle 2.
@@ -40,35 +40,35 @@ Module BFR_FIFO (M: FIFO).
     rewrite Hp1 in Hll; simpl in Hll; clear d1.
     revert Hll Hp1; refine (match t with 
       | leaf x     => fun Hll Hp1 => let (q,Hq)   := bfr_fifo_f p1 mm _ in 
-                                     let (q1,Hq1) := fifo_enq q (leaf y) 
+                                     let (q1,Hq1) := enq q (leaf y) 
                                      in  exist _ q1 _
-      | node a x b => fun Hll Hp1 => let (p2,Hp2) := fifo_enq p1 a     in
-                                     let (p3,Hp3) := fifo_enq p2 b     in
+      | node a x b => fun Hll Hp1 => let (p2,Hp2) := enq p1 a           in
+                                     let (p3,Hp3) := enq p2 b           in
                                      let (q,Hq)   := bfr_fifo_f p3 mm _ in  
-                                     let (d2,Hd2) := fifo_deq q _     
+                                     let (d2,Hd2) := @deq _ q _     
                                      in  _
     end); auto.
     all: cycle 3.
     revert Hd2; refine (match d2 with 
-      | (u,q1) => fun Hd2 => let (d3,Hd3) := fifo_deq q1 _ 
+      | (u,q1) => fun Hd2 => let (d3,Hd3) := @deq _ q1 _ 
                              in  _ 
     end).
     all: cycle 1.
     revert Hd3; refine (match d3 with
-      | (v,q2) => fun Hd3 => let (q3,Hq3) := fifo_enq q2 (node v y u) 
+      | (v,q2) => fun Hd3 => let (q3,Hq3) := enq q2 (node v y u) 
                              in  exist _ q3 _
     end).
     all: cycle 1.
 
     * revert Hll; rewrite Hq; simpl.
-      generalize (fifo_list p).
+      generalize (tolist p).
       intros [ | [] ? ]; simpl; try discriminate.
       split; auto.
-      rewrite bft_f_fix_0; reflexivity.
+      rewrite bft_f_fix_oka_0; reflexivity.
     * intros E; rewrite E in Hll; discriminate.
     * destruct Hq as (Hq2 & Hq3).
       rewrite Hp1, Hq1, rev_app_distr; split; simpl; auto.
-      rewrite bft_f_fix_3, <- app_nil_end, Hq3; auto.
+      rewrite bft_f_fix_oka_1, Hq3; auto.
     * rewrite Hp3, Hp2; do 2 rewrite lsum_app; simpl in Hll |- *; omega.
     * destruct Hq as (Hq_1 & Hq_2); 
       apply Forall2_rev in Hq_1; rewrite rev_involutive in Hq_1.
@@ -90,20 +90,20 @@ Module BFR_FIFO (M: FIFO).
       apply Forall2_cons_inv in Hq_1; destruct Hq_1 as (Hq_4 & Hq_1).
       apply Forall2_rev in Hq_1; rewrite rev_involutive in Hq_1.
       split; auto.
-      rewrite bft_f_fix_3; simpl; f_equal.
+      rewrite bft_f_fix_oka_2; simpl; f_equal.
       rewrite <- Hq_2, Hd2, Hd3; f_equal; simpl.
       rewrite app_ass; reflexivity.
   Defined.
   
   Section bfr.
 
-    Let bfr_fifo_full (t : bt X) (l : list Y) : m_bt t = length l -> { t' | t ~t t' /\ bft_std t' = l }.
+    Let bfr_fifo_full (t : bt X) (l : list Y) : m_bt t = length l -> { t' | t ~t t' /\ bft_forest t' = l }.
     Proof.
       intros H.
-      refine (let (p,Hp) := @fifo_nil _     in
-              let (q,Hq) := fifo_enq p t    in 
+      refine (let (p,Hp) := @empty _         in
+              let (q,Hq) := enq p t          in 
               let (r,Hr) := bfr_fifo_f q l _ in
-              let (d1,Hd1) := fifo_deq r _ 
+              let (d1,Hd1) := @deq _ r _ 
               in _).
       all: cycle 2.
       revert Hd1; refine(match d1 with
@@ -123,8 +123,7 @@ Module BFR_FIFO (M: FIFO).
         apply Forall2_nil_inv_right in Hr_1.
         split; auto.
         rewrite Hd1, Hr_1 in Hr_2.
-        simpl in Hr_2.
-        rewrite <- bft_eq_bft_std; assumption.
+        simpl in Hr_2; auto.
     Qed.
 
     Definition bfr_fifo t l H := proj1_sig (bfr_fifo_full t l H).
@@ -133,7 +132,10 @@ Module BFR_FIFO (M: FIFO).
     Proof. apply (proj2_sig (bfr_fifo_full t l H)). Qed.
 
     Fact bfr_fifo_spec_2 t l H : bft_std (bfr_fifo t l H) = l.
-    Proof. apply (proj2_sig (bfr_fifo_full t l H)). Qed.
+    Proof.
+      rewrite <- bft_forest_eq_bft_std. 
+      apply (proj2_sig (bfr_fifo_full t l H)). 
+    Qed.
 
   End bfr.
 
