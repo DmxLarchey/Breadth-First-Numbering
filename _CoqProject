@@ -16,8 +16,10 @@ fifo_triv.v
 fifo_3llists.v
 fifo.v
 
+dft_std.v
+bft_std.v
 bft.v
-bft_spec.v
+dft_bft_compare.v
 
 bft_fifo.v
 bfn_fifo.v
@@ -27,8 +29,3 @@ bfr_bfn_fifo.v
 extraction.v
 
 benchmarks.v
-
-
-
-
-
