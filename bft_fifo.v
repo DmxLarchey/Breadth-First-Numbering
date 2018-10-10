@@ -11,7 +11,7 @@
 
 (** We exploit the following equations from bft_forest to 
     get an efficient implementation with queues ... this
-    corresponds to bftrav' in Okazaki's paper
+    corresponds to bftrav' in Okasaki's paper
 
     See bft_forest.v for the proofs 
 
