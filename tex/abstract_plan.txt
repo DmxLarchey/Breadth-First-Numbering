@@ -1,0 +1,150 @@
+Possible Title:
+
+"Breadth First Extraction: Lessons from Small Exercice in Algorithm Certification"
+
+Authors: DLW & RM
+
+Abstract: Breadth First algorithm are famous algorithms with many applications.
+   As  explained in Okasaki's landmark paper, even when restricted to 
+   e.g. binary trees, implementing them efficiently in purely functional style 
+   can be chalenging until one considers using FIFOs. We cerfify those
+   FIFO-based Breadth First algorithms on binary trees by extracting them 
+   from fully specified Coq term. In addition, we characterize BFT as the traversal 
+   of branches, the shortest before the longest, and when equal length, the
+   leftmost before the rightmost. We also propose efficient certitied implementations
+   of FIFOs by extraction, either with pairs of lists (amortized constant time enq/deq)
+   or triple of lazy lists (constant time enq/deq). 
+
+Keywords: Breadth first algorithm, functional FIFOs, correctness by extraction, Coq
+
+-------------------
+Plan
+-------------------
+
+
+0) Proof and Fixpoints by measure induction, a useful tactic
+   with good extraction props
+
+1) Specifying searching algorithms over binary trees
+  - standard DFT & BFT
+  - trees branches, order
+  - DFT = lexico
+  - BFT = length then lexico
+  - axiomatic charac of length + lexico
+
+2) BFT of a forest (list) of binary trees
+  - equations for spec
+
+     (1) bft_f nil = nil
+and  (2) bft_f l = roots l ++ bft_f (subtrees l)
+
+where roots = map root and subtrees = flat_map subt
+and   root <x> = x    and root <_,x,_> = x
+and   subt <x> = nil  and subt <a,_,b> = a::b::nil
+
+  - a first implementation using (2) when l <> nil
+    as subtrees l < l with l <> nil. Extraction gives
+
+   let rec forest_decomp = function
+     | []   -> ([], [])
+     | t::l -> let ro,sf = forest_decomp l 
+               in match t with
+                    | <x>     -> (x::ro,sf)
+                    | <a,x,b> -> (x::ro,a::b::sf)
+
+   let rec bft_f = function 
+     | [] -> []
+     | _  -> let ro,st = forest_decomp u in ro @ bft_f st
+
+   let bft_forest t = bft_f (t::nil)
+
+  - we show bft_forest t = bft_std t
+
+  - further equations from the spec
+    
+    App: bft_t (l++m) = bft_f (l++m) = roots l ++ bft_f (m++subt l)
+
+    Nice proof where l & m switch roles ... by induction of |l++m|
+    at recursive calls
+
+    Corollary
+
+    Oka1 : bft_f (<x>::l) = x :: bft_f l
+    Oka2 : bft_f (<a,x,b>::l) = x :: bft_f (l++a::b::nil)
+
+  - Hint at a definition of bft_f based on queues
+    this is the spec of Okazaki's bftrav'
+
+3) - An axiomatization of FIFOs
+
+             (fifo    : Type -> Type)
+             (tolist  : forall X, fifo X -> list X)
+             (empty   : forall X, { q : fifo X | tolist q = nil })
+             (enq     : forall X q x, { q' : fifo X | tolist q' = tolist q ++ x :: nil })
+             (deq     : forall X q, @tolist X q <> nil -> { c : X * fifo X | let (x,q') := c in tolist q = x::tolist q' })
+             (void    : forall X q, { b : bool | b = true <-> @tolist X q = nil }).
+
+3.1) - BFT_fifo extracted as
+
+    let rec bft_fifo_f u =
+      if void u then []
+      else let t,q = deq u in
+        match t with
+          | <x>     -> x::bft_fifo_f q
+          | <a,x,b> -> x::bft_fifo_f (enq (enq q a) b))
+
+    let bft_fifo t = bft_fifo_f (enq empty t)
+
+   - proof that bft_fifo t = bft_std t
+
+3.2) - BFN 
+     - spec for bfn : bfn t = t' s.t. t ~ t' /\ bft t' = [0,1,2,...,|t|-1]
+     - BFN_fifo extracted as
+
+    let rec bfn_fifo_f u v =
+      if void v then empty
+      else let t,p1 = deq v in
+        match t with
+          | <_>     -> enq (bfn_fifo_f (1+u) p1) <u>
+          | <a,_,b> -> let u0,q1 = deq (bfn_fifo_f (1+u) (enq (enq p1 a) b)) in
+                       let v0,q2 = deq q1 
+                       in  enq q2 <v0,u,u0>
+
+    let bfn_fifo t =
+      let x,_ = deq (bfn_fifo_f 0 (enq empty t)) in x
+
+     - show CC/PO
+     - statement of the spec
+
+3.3) - BFR
+     - spec for bfr : bfr t l = t' s.t. t ~ t' /\ bft t' = l (only if |t| = |l|)
+     - BFT_fifo
+
+    let rec bfr_fifo_f p = function
+      | [] -> empty
+      | y::mm -> let t,p1 = deq p in
+        match t with
+          | <_>     -> enq (bfr_fifo_f p1 mm) <y>
+          | <a,_,b> -> let u,q1 = deq (bfr_fifo_f (enq (enq p1 a) b) mm) in
+                       let v,q2 = deq q1 
+                       in  enq q2 <v,y,u>
+
+    let bfr_fifo t l =
+      let t',_ = deq (bfr_fifo_f (enq empty t) l) in t
+
+     - show CC/PO
+     - statement of the spec 
+
+4) Realizing FIFOs axioms with efficient functional code
+
+   We explain how to realize those axioms with either a trivial/naive
+   implementation with lists, a more clever with 2 lists, and an even
+   more complicated with 3 lazy lists
+
+   Remark: We can/may explain that record don't work so well
+
+5 or presentation) We could/might explain that benchmarks are not what is
+  announced in Okazaki's paper when the GC starts functionning
+  heavily for tree's of size 4k+
+
+  The GC kills linear time after 4k+ nodes
