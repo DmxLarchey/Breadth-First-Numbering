@@ -31,16 +31,15 @@
 *)
 
 Require Import List Arith Omega Extraction.
-
 Require Import list_utils wf_utils bt fifo bft_forest bft_std.
 
 Set Implicit Arguments.
 
 Module BFN_FIFO (M: FIFO).
 
-Export M.
-
 Section bfn_fifo.
+
+  Export M.
 
   Variable (X : Type).
 
