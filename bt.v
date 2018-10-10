@@ -393,3 +393,20 @@ Proof. induction 1; constructor; auto. Qed.
 
 Fact bt_eq_trans X Y Z (r : bt X) (s : bt Y) (t : bt Z) : r ~t s -> s ~t t -> r ~t t.
 Proof. intros H; revert H t; induction 1; inversion 1; auto. Qed.
+
+Fact lbt_eq_refl X (l : list (bt X)) : l ~lt l.
+Proof. induction l; constructor; auto; apply bt_eq_refl. Qed.
+
+Fact lbt_eq_sym X Y (s : list (bt X)) (t : list (bt Y)) : s ~lt t -> t ~lt s.
+Proof. induction 1; constructor; auto; apply bt_eq_sym; auto. Qed.
+
+Fact lbt_eq_trans X Y Z (r : list (bt X)) (s : list (bt Y)) (t : list (bt Z)) : r ~lt s -> s ~lt t -> r ~lt t.
+Proof.
+  intros H; revert H t.
+  induction 1 as [ | a b r s H1 H2 IH2 ]; intros [ | c t ] H3; try (inversion H3; fail).
+  + constructor.
+  + apply Forall2_cons_inv in H3.
+    destruct H3 as (H3 & H4).
+    constructor; auto.
+    apply bt_eq_trans with (1 := H1); auto.
+Qed. 
