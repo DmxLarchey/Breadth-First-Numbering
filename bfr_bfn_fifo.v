@@ -14,7 +14,7 @@
 
 Require Import List Arith Omega Extraction.
 Require Import list_utils wf_utils.
-Require Import bt bft_std bft_inj fifo bfn_fifo bfr_fifo.
+Require Import bt bft_inj fifo bfn_fifo bfr_fifo.
 
 Set Implicit Arguments.
 
