@@ -9,7 +9,7 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import bt List.
+Require Import bt List Extraction.
 
 Require fifo_axm fifo_triv fifo_2lists fifo_3llists.
 
@@ -43,6 +43,9 @@ Module FIFO_triv <: FIFO.
 
 End FIFO_triv.
 
+Extraction Inline fifo_triv.fifo fifo_triv.fifo_list fifo_triv.fifo_nil
+                  fifo_triv.fifo_enq fifo_triv.fifo_deq fifo_triv.fifo_void.
+
 (** implementation based on two lists *)
 Module FIFO_2lists <: FIFO.
 
@@ -55,6 +58,9 @@ Module FIFO_2lists <: FIFO.
 
 End FIFO_2lists.
 
+Extraction Inline fifo_2lists.fifo fifo_2lists.fifo_list fifo_2lists.fifo_nil
+                  fifo_2lists.fifo_enq fifo_2lists.fifo_deq fifo_2lists.fifo_void.
+
 (** implementation based on three lazy lists *)
 Module FIFO_3llists <: FIFO.
 
@@ -66,6 +72,10 @@ Module FIFO_3llists <: FIFO.
   Definition void := fifo_3llists.fifo_void.
 
 End FIFO_3llists.
+
+Extraction Inline fifo_3llists.fifo fifo_3llists.fifo_list fifo_3llists.fifo_nil
+                  fifo_3llists.fifo_enq fifo_3llists.fifo_deq fifo_3llists.fifo_void.
+
 
 (** now the redundant module that cannot serve for program extraction *)
 Module FIFO_axm <: FIFO.
