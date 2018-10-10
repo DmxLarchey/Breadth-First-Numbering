@@ -28,9 +28,9 @@ Set Implicit Arguments.
 
 Module BFT_FIFO (M: FIFO).
 
-Export M.
-
 Section bft_fifo.
+
+  Export M.
 
   Variable (X : Type).
 

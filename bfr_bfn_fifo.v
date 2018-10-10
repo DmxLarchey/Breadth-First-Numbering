@@ -18,7 +18,6 @@ Require Import bt bft_std bft_inj fifo bfn_fifo bfr_fifo.
 
 Set Implicit Arguments.
 
-
 Module BFR_BFN_FIFO (M: FIFO).
 
   Export M.

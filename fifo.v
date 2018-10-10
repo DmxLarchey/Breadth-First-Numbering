@@ -25,35 +25,3 @@ Module Type FIFO.
   Notation fifo_lsum := ((fun X (q : fifo (bt X)) => lsum (tolist q)) _).
 
 End FIFO.
-
-
-(*
-
-(** implementation based on a list *)
-
-Extraction Inline fifo_triv.fifo fifo_triv.fifo_list fifo_triv.fifo_nil
-                  fifo_triv.fifo_enq fifo_triv.fifo_deq fifo_triv.fifo_void.
-
-(** implementation based on two lists *)
-
-Extraction Inline fifo_2lists.fifo fifo_2lists.fifo_list fifo_2lists.fifo_nil
-                  fifo_2lists.fifo_enq fifo_2lists.fifo_deq fifo_2lists.fifo_void.
-
-
-Extraction Inline fifo_3llists.fifo fifo_3llists.fifo_list fifo_3llists.fifo_nil
-                  fifo_3llists.fifo_enq fifo_3llists.fifo_deq fifo_3llists.fifo_void.
-
-
-(** now the redundant module that cannot serve for program extraction *)
-Module FIFO_axm <: FIFO.
-
-  Definition fifo := fifo_axm.fifo.
-  Definition tolist := fifo_axm.fifo_list.
-  Definition empty := @fifo_axm.fifo_nil.
-  Definition enq := fifo_axm.fifo_enq.
-  Definition deq := @fifo_axm.fifo_deq.
-  Definition void := fifo_axm.fifo_void.
-
-End FIFO_axm.
-
-*)
