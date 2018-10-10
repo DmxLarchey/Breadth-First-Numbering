@@ -175,9 +175,9 @@ Section breadth_first_traversal.
 
   Section bft_eq_bft_std.
 
-    (** bft is extensionnaly equal to bft_std *)
+    (** [bft] is extensionally equal to [bft_std] *)
 
-    (* We characterize niveaux inductively *)
+    (** We characterize [niveaux] inductively *)
 
     Inductive g_niv : list (bt X) -> list (list X) -> Prop :=
       | in_gn_0 : g_niv nil nil

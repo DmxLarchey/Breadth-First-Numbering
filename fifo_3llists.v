@@ -11,12 +11,14 @@
 
 Require Import List Arith Omega.
 
-Require Import wf_utils llist.
+Require Import wf_utils llist fifo.
 
 Set Implicit Arguments.
 
 (* We provide an implementation of FIFO as a triple of lazy lists 
    satisfying the axioms in fifo_axm.v *)
+
+Module FIFO_3llists <: FIFO.
 
 Section fifo_three_lazy_lists.
 
@@ -57,7 +59,7 @@ Section fifo_three_lazy_lists.
 
   Implicit Types (q : fifo) (x : X).
 
-  Definition fifo_list : fifo -> list X.
+  Definition tolist : fifo -> list X.
   Proof.
     intros (((l,r),l') & H).
     refine (llist_list l _ ++ rev (llist_list r _));
@@ -71,10 +73,10 @@ Section fifo_three_lazy_lists.
     rewrite lfin_length_fix_0; auto.
   Defined.
 
-  Definition fifo_nil : { q | fifo_list q = nil }.
+  Definition empty : { q | tolist q = nil }.
   Proof. exists fifo_nil_val; trivial. Defined.
 
-  Definition fifo_make l r l' : (exists Hl Hr Hl', lfin_length l' Hl' + lfin_length r Hr = 1 + lfin_length l Hl) -> fifo.
+  Definition make l r l' : (exists Hl Hr Hl', lfin_length l' Hl' + lfin_length r Hr = 1 + lfin_length l Hl) -> fifo.
   Proof.
     destruct l' as [ | x l'' ]; intros E.
     + cut (lfin l); [ intros Hl1 | ].
@@ -102,10 +104,10 @@ Section fifo_three_lazy_lists.
 
   Hint Resolve llist_list_eq.
 
-  Fact fifo_make_spec l r l' Hl Hr H : llist_list l Hl ++ rev (llist_list r Hr) = fifo_list (@fifo_make l r l' H).
+  Fact make_spec l r l' Hl Hr H : llist_list l Hl ++ rev (llist_list r Hr) = tolist (@make l r l' H).
   Proof.
     destruct H as (Hl1 & Hr1 & Hl' & E).
-    unfold fifo_list, fifo_make; destruct l' as [ | x l' ].
+    unfold tolist, make; destruct l' as [ | x l' ].
     + rewrite (llist_rotate_eq _ _ (@lfin_lnil _) _).
       repeat rewrite llist_list_fix_0; simpl.
       repeat rewrite <- app_nil_end; repeat (f_equal; auto).
@@ -115,31 +117,31 @@ Section fifo_three_lazy_lists.
   Let fifo_enq_val q x : fifo.
   Proof.
     destruct q as (((l,r),l') & H).
-    refine (@fifo_make l (lcons x r) l' _).
+    refine (@make l (lcons x r) l' _).
     destruct H as (Hl & Hr & Hl' & E).
     exists Hl, (lfin_lcons _ Hr), Hl'.
     rewrite lfin_length_fix_1, (lfin_length_eq _ Hr); omega.
   Defined.
 
-  Definition fifo_enq q x : { q' | fifo_list q' = fifo_list q ++ x :: nil }.
+  Definition enq q x : { q' | tolist q' = tolist q ++ x :: nil }.
   Proof.  
     exists (fifo_enq_val q x).
     revert q x.
     unfold fifo_enq_val.
     intros  (((l,r),l') & Hl & Hr & Hl' & E) x.
-    rewrite <- (@fifo_make_spec _ _ _ Hl (lfin_lcons _ Hr)).
-    unfold fifo_list. 
+    rewrite <- (@make_spec _ _ _ Hl (lfin_lcons _ Hr)).
+    unfold tolist. 
     rewrite llist_list_fix_1, app_ass; trivial.
   Defined.
 
-  Let fifo_deq_val q : fifo_list q <> nil -> X * fifo.
+  Let fifo_deq_val q : tolist q <> nil -> X * fifo.
   Proof.
     destruct q as (((l,r),l') & H); revert H.
     refine (match l with 
       | lnil      => fun H1 H2 => _
-      | lcons x l => fun H1 H2 => (x,@fifo_make l r l' _)
+      | lcons x l => fun H1 H2 => (x,@make l r l' _)
     end); [ exfalso | ]; destruct H1 as (Hl & Hr & Hl' & E).
-    + unfold fifo_list in H2.
+    + unfold tolist in H2.
       destruct r.
       * do 2 rewrite llist_list_fix_0 in H2; destruct H2; trivial.
       * rewrite lfin_length_fix_1, lfin_length_fix_0 in E; omega.
@@ -147,7 +149,7 @@ Section fifo_three_lazy_lists.
       rewrite E, lfin_length_fix_1; auto.
   Defined.
 
-  Definition fifo_deq q : fifo_list q <> nil -> { c : X * fifo | let (x,q') := c in fifo_list q = x::fifo_list q' }.
+  Definition deq q : tolist q <> nil -> { c : X * fifo | let (x,q') := c in tolist q = x::tolist q' }.
   Proof.
     intros Hq.
     exists (fifo_deq_val q Hq).
@@ -155,12 +157,12 @@ Section fifo_three_lazy_lists.
     unfold fifo_deq_val.
     intros ((([ | x l],r),n) & Hl & Hr & Hl' & E) Hq.
     + exfalso.
-      unfold fifo_list in Hq.
+      unfold tolist in Hq.
       destruct r.
       * do 2 rewrite llist_list_fix_0 in Hq; destruct Hq; trivial.
       * rewrite lfin_length_fix_1, lfin_length_fix_0 in E; omega.
-    + rewrite <- (@fifo_make_spec _ _ _ (lfin_inv Hl) Hr).
-      unfold fifo_list.
+    + rewrite <- (@make_spec _ _ _ (lfin_inv Hl) Hr).
+      unfold tolist.
       rewrite llist_list_fix_1; auto.
   Defined.
 
@@ -171,11 +173,11 @@ Section fifo_three_lazy_lists.
     + exact false.
   Defined.
 
-  Definition fifo_void q : { b : bool | b = true <-> fifo_list q = nil }.
+  Definition void q : { b : bool | b = true <-> tolist q = nil }.
   Proof.
     exists (fifo_void_val q).
     revert q.
-    unfold fifo_list, fifo_void_val.
+    unfold tolist, fifo_void_val.
     intros ((([ | x l],r),n) & Hl & Hr & Hl' & E).
     + split; auto; intros _. 
       rewrite llist_list_fix_0.
@@ -188,10 +190,7 @@ Section fifo_three_lazy_lists.
 
 End fifo_three_lazy_lists.
 
-Arguments fifo_nil {X}.
-Arguments fifo_deq {X}.
-
-
+End FIFO_3llists.
 
 
 

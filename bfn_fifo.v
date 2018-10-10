@@ -20,7 +20,7 @@
 
 (** We exploit the following equations from bft_forest to 
     get an efficient implementation with queues ... this
-    corresponds to bftrav' in Okazaki's paper
+    corresponds to bftrav' in Okasaki's paper
 
     See bft_forest.v for the proofs 
 
@@ -31,16 +31,15 @@
 *)
 
 Require Import List Arith Omega Extraction.
-
 Require Import list_utils wf_utils bt fifo bft_forest bft_std.
 
 Set Implicit Arguments.
 
 Module BFN_FIFO (M: FIFO).
 
-Export M.
-
 Section bfn_fifo.
+
+  Export M.
 
   Variable (X : Type).
 
