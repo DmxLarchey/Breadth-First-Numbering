@@ -16,7 +16,9 @@ fifo.v
 
 dft_std.v
 bft_std.v
+
 bft_forest.v
+bfn_forest.v
 
 bft_inj.v
 dft_bft_compare.v
