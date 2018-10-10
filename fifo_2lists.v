@@ -11,22 +11,23 @@
 
 Require Import List Arith Omega.
 
-Require Import wf_utils.
+Require Import wf_utils fifo_intf.
 
 Set Implicit Arguments.
 
 (* We provide an implementation of FIFO as a pair of lists 
    satisfying the axioms in fifo_axm.v *)
 
-Section rev_linear.
+Module FIFO_2lists <: FIFO.
 
-  Variable (X : Type).
-  Implicit Type (l m : list X).
+Section fifo_two_lists.
 
-  Fixpoint rev' l m :=
+  Variable X : Type.
+
+  Let rev' := fix loop (l m : list X) :=
     match m with
       | nil  => l
-      | x::m => rev' (x::l) m
+      | x::m => loop (x::l) m
     end.
 
   Let rev'_spec l m : rev' l m = rev m ++ l.
@@ -42,22 +43,16 @@ Section rev_linear.
     unfold rev_linear; rewrite rev'_spec, <- app_nil_end; auto.
   Qed.
 
-End rev_linear.
-
-Section fifo_two_lists.
-
-  Variable X : Type.
-
   Definition fifo := (list X * list X)%type.
 
   Implicit Type q : fifo.
 
-  Definition fifo_list q := let (l,r) := q in l++rev r.
+  Definition tolist q := let (l,r) := q in l++rev r.
 
-  Definition fifo_nil : { q | fifo_list q = nil }.
+  Definition empty : { q | tolist q = nil }.
   Proof. exists (nil,nil); trivial. Defined.
 
-  Definition fifo_enq q x : { q' | fifo_list q' = fifo_list q ++ x :: nil }.
+  Definition enq q x : { q' | tolist q' = tolist q ++ x :: nil }.
   Proof. 
     exists (let (l,r) := q in (l,x::r)).
     destruct q; simpl; rewrite app_ass; auto.
@@ -76,11 +71,11 @@ Section fifo_two_lists.
 
        *)
 
-  Definition fifo_deq q : fifo_list q <> nil -> { c : X * fifo | let (x,q') := c in fifo_list q = x::fifo_list q' }.
+  Definition deq q : tolist q <> nil -> { c : X * fifo | let (x,q') := c in tolist q = x::tolist q' }.
   Proof.
-    induction on q as fifo_deq with measure (length (fst q)+2*length (snd q)); intros Hq.
+    induction on q as deq with measure (length (fst q)+2*length (snd q)); intros Hq.
     refine (match q as q' return q = q' -> _ with 
-      | (nil,r)   => fun E  => let (res,Hres) := fifo_deq (rev_linear r,nil) _ _ in exist _ res _
+      | (nil,r)   => fun E  => let (res,Hres) := deq (rev_linear r,nil) _ _ in exist _ res _
       | (x::l,r)  => fun _  => exist _ (x,(l,r)) _
     end eq_refl); subst; simpl in * |- *; trivial.
     + rewrite rev_linear_spec, rev_length.
@@ -89,7 +84,7 @@ Section fifo_two_lists.
     + destruct res; rewrite <- Hres, rev_linear_spec, <- app_nil_end; reflexivity.
   Defined.
 
-  Definition fifo_void q : { b : bool | b = true <-> fifo_list q = nil }.
+  Definition void q : { b : bool | b = true <-> tolist q = nil }.
   Proof.
     exists (match q with (nil,nil) => true | _ => false end).
     revert q.
@@ -99,6 +94,5 @@ Section fifo_two_lists.
 
 End fifo_two_lists.
 
-Arguments fifo_nil {X}.
-Arguments fifo_deq {X}.
+End FIFO_2lists.
 

@@ -10,11 +10,14 @@
 (**************************************************************)
 
 Require Import List Extraction.
+Require Import fifo_intf.
 
 Set Implicit Arguments.
 
 (* We provide a trivial implementation of FIFO as lists 
    satisfying the axioms in fifo_axm.v *)
+
+Module FIFO_triv <: FIFO.
 
 Section fifo_triv.
 
@@ -24,21 +27,21 @@ Section fifo_triv.
 
   Implicit Type q : fifo.
 
-  Definition fifo_list : fifo -> list X:= fun x => x.
+  Definition tolist : fifo -> list X := fun x => x.
   
-  Definition fifo_nil : { q | fifo_list q = nil }.
+  Definition empty : { q | tolist q = nil }.
   Proof. exists nil; trivial. Defined.
 
-  Definition fifo_enq q x : { q' | fifo_list q' = fifo_list q ++ x :: nil }.
+  Definition enq q x : { q' | tolist q' = tolist q ++ x :: nil }.
   Proof. exists (q++x::nil); trivial. Defined.
  
-  Definition fifo_deq q : fifo_list q <> nil -> { c : X * fifo | let (x,q') := c in fifo_list q = x::fifo_list q' }.
+  Definition deq q : tolist q <> nil -> { c : X * fifo | let (x,q') := c in tolist q = x::tolist q' }.
   Proof.
     refine (match q with nil => _ | x::q => fun _ => exist _ (x,q) _ end); trivial.
     intros []; reflexivity.
   Defined.
 
-  Definition fifo_void q : { b : bool | b = true <-> fifo_list q = nil }.
+  Definition void q : { b : bool | b = true <-> tolist q = nil }.
   Proof.
     exists (match q with nil => true | _ => false end).
     destruct q; split; try tauto; discriminate.
@@ -46,9 +49,6 @@ Section fifo_triv.
   
 End fifo_triv.
 
-Arguments fifo_nil {X}.
-Arguments fifo_deq {X}.
-
-
+End FIFO_triv.
 
 

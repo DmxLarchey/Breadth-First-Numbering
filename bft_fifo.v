@@ -22,7 +22,7 @@
 *)
 
 Require Import List Arith Omega.
-Require Import list_utils wf_utils bt fifo bft_std bft_forest.
+Require Import list_utils wf_utils bt fifo_intf bft_std bft_forest.
 
 Set Implicit Arguments.
 

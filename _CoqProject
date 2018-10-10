@@ -14,6 +14,7 @@ fifo_2lists.v
 fifo_triv.v
 fifo_3llists.v
 fifo.v
+fifo_intf.v
 
 dft_std.v
 bft_std.v
