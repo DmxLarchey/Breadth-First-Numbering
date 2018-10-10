@@ -11,7 +11,7 @@
 
 Require Import List Arith Omega.
 
-Require Import wf_utils llist fifo_intf.
+Require Import wf_utils llist fifo.
 
 Set Implicit Arguments.
 

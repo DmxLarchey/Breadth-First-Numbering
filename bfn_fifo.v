@@ -32,7 +32,7 @@
 
 Require Import List Arith Omega Extraction.
 
-Require Import list_utils wf_utils bt fifo_intf bft_forest bft_std.
+Require Import list_utils wf_utils bt fifo bft_forest bft_std.
 
 Set Implicit Arguments.
 

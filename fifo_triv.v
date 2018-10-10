@@ -10,7 +10,7 @@
 (**************************************************************)
 
 Require Import List Extraction.
-Require Import fifo_intf.
+Require Import fifo.
 
 Set Implicit Arguments.
 

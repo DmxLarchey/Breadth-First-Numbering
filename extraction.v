@@ -10,8 +10,13 @@
 (**************************************************************)
 
 Require Import List Extraction.
-Require Import bt fifo_intf bft_std bft_forest bft_fifo bfn_fifo bfr_fifo.
-Require Import fifo_triv fifo_2lists fifo_3llists.
+
+Require Import bt.
+Require Import fifo fifo_triv fifo_2lists fifo_3llists.
+
+Require Import bft_std bft_forest bft_fifo.
+Require Import bfn_fifo.
+Require Import bfr_fifo.
 
 Extract Inductive bool => "bool" [ "true" "false" ].
 Extract Inductive prod => "(*)"  [ "(,)" ].
