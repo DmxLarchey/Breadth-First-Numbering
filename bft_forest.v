@@ -80,15 +80,59 @@ Section breadth_first_traversal.
   Fact forest_decomp_eq ll : forest_decomp ll = (roots ll, subtrees ll).
   Proof. induction ll as [ | [] ? IH ]; simpl; auto; rewrite IH; auto. Qed.
 
+  Section bft_f_spec.
+
+    Variables (bft_f : list (bt X) -> list X)
+              (bft_f_0 : bft_f nil = nil)
+              (bft_f_1 : forall l, bft_f l = roots l ++ bft_f (subtrees l)).
+
+    (** The identity   bft_f (l++m) = map root l ++ bft_f (m++subt l) is critical
+        to show the correctness of Breadth First Numbering *)
+
+    (* The induction is a bit complex here because l and m alternate in the proof
+       so we proceed by induction on lsum (l++m) *)
+
+    Theorem bft_f_app l m : bft_f (l++m) = roots l ++ bft_f (m++subtrees l).
+    Proof.
+      induction on l m as IH with measure (lsum (l++m)).
+      destruct l as [ | [ x | a x b ] l ]; 
+        try (rewrite <- app_nil_end; auto; fail);
+      rewrite bft_f_1; simpl;
+      (rewrite map_app, app_ass; do 2 f_equal; rewrite IH;
+       [ do 2 f_equal; rewrite subtrees_app; auto
+       | simpl; do 2 rewrite lsum_app; simpl; generalize (subtrees_le l); omega ]).
+    Qed.
+
+    Corollary bft_f_okazaki t l : bft_f (t::l) = root t :: bft_f (l++subt t).
+    Proof.
+      change (t::l) with ((t::nil)++l).
+      rewrite bft_f_app; simpl.
+      rewrite <- app_nil_end; trivial.
+    Qed.
+
+    Corollary bft_f_okazaki_1 x l : bft_f (leaf x::l) = x::bft_f l.
+    Proof. rewrite bft_f_okazaki; simpl; rewrite <- app_nil_end; trivial. Qed.
+ 
+    Corollary bft_f_okazaki_2 a x b l : bft_f (node a x b::l) = x::bft_f (l++a::b::nil).
+    Proof. apply bft_f_okazaki. Qed.
+
+  End bft_f_spec.
+
   Ltac mysolve := try match goal with H: ?x <> ?x |- _ => destruct H; reflexivity end.
 
   Section bft_f_def.
+
+    (* we use the specification bft_f_0 and bft_f_1 as a definition for
+       btf_f where the equation bft_f_1 is used only when wf, ie l <> nil 
+
+       let us first write the graph of the algorithm
+     *)
 
     Inductive g_bft_f : list (bt X) -> list X -> Prop :=
       | in_g_bft_f_0 : g_bft_f nil nil
       | in_g_bft_f_1 : forall ll r, ll <> nil -> g_bft_f (subtrees ll) r -> g_bft_f ll (roots ll ++ r).
 
-    Fact g_bft_f_inj ll r1 r2 : g_bft_f ll r1 -> g_bft_f ll r2 -> r1 = r2.
+    Fact g_bft_f_fun ll r1 r2 : g_bft_f ll r1 -> g_bft_f ll r2 -> r1 = r2.
     Proof.
       intros H1; revert H1 r2.
       induction 1; inversion 1; subst; auto.
@@ -122,10 +166,10 @@ Section breadth_first_traversal.
     Hint Resolve bft_f_spec.
 
     Fact bft_f_fix_0 : bft_f nil = nil.
-    Proof. apply g_bft_f_inj with nil; auto; constructor. Qed.
+    Proof. apply g_bft_f_fun with nil; auto; constructor. Qed.
 
     Fact bft_f_fix_1 ll : ll <> nil -> bft_f ll = roots ll ++ bft_f (subtrees ll).
-    Proof. intro; apply g_bft_f_inj with ll; auto; constructor; auto. Qed.
+    Proof. intro; apply g_bft_f_fun with ll; auto; constructor; auto. Qed.
  
   End bft_f_def.
 
@@ -135,41 +179,16 @@ Section breadth_first_traversal.
     apply bft_f_fix_1; discriminate.
   Qed.
 
-  (** The identity   bft_f (l++m) = map root l ++ bft_f (m++subt l) is critical
-      to show the correctness of Breadth First Numbering *)
-
-  (* The induction is a bit complex here because l and m alternate in the proof
-     so we proceed by induction on lsum (l++m) *)
-
-  Theorem bft_f_fix_3 l m : bft_f (l++m) = roots l ++ bft_f (m++subtrees l).
-  Proof.
-    induction on l m as IH with measure (lsum (l++m)).
-    destruct l as [ | [ x | a x b ] l ]; 
-      try (rewrite <- app_nil_end; auto; fail);
-    rewrite bft_f_fix_2; simpl;
-    (rewrite map_app, app_ass; do 2 f_equal; rewrite IH;
-     [ do 2 f_equal; rewrite subtrees_app; auto
-     | simpl; do 2 rewrite lsum_app; simpl; generalize (subtrees_le l); omega ]).
-  Qed.
-
-  Corollary bft_f_fix_4 t l : bft_f (t::l) = root t :: bft_f (l++subt t).
-  Proof.
-    change (t::l) with ((t::nil)++l).
-    rewrite bft_f_fix_3; simpl.
-    rewrite <- app_nil_end; trivial.
-  Qed.
-
-  Corollary bft_f_fix_oka_0 : bft_f nil = nil.
+  Fact bft_f_fix_oka_0 : bft_f nil = nil.
   Proof. exact bft_f_fix_0. Qed.
 
-  Corollary bft_f_fix_oka_1 x l : bft_f (leaf x::l) = x::bft_f l.
-  Proof.
-    rewrite bft_f_fix_4; simpl.
-    rewrite <- app_nil_end; trivial.
-  Qed.
- 
-  Corollary bft_f_fix_oka_2 a x b l : bft_f (node a x b::l) = x::bft_f (l++a::b::nil).
-  Proof. apply bft_f_fix_4. Qed.
+  Hint Resolve bft_f_fix_2.
+
+  Fact bft_f_fix_oka_1 x l : bft_f (leaf x::l) = x::bft_f l.
+  Proof. apply bft_f_okazaki_1; auto. Qed.
+
+  Fact bft_f_fix_oka_2 a x b l : bft_f (node a x b::l) = x::bft_f (l++a::b::nil).
+  Proof. apply bft_f_okazaki_2; auto. Qed.
 
   Definition bft_forest t := bft_f (t::nil).
 
@@ -183,7 +202,7 @@ Section breadth_first_traversal.
       | in_gn_0 : g_niv nil nil
       | in_gn_1 : forall l rl, l <> nil -> g_niv (subtrees l) rl -> g_niv l (roots l :: rl).
     
-    Fact g_niv_app l rl m rm : g_niv l rl -> g_niv m rm -> g_niv (l++m) (zip (@app _) rl rm).
+    Lemma g_niv_app l rl m rm : g_niv l rl -> g_niv m rm -> g_niv (l++m) (zip (@app _) rl rm).
     Proof.
       intros H1; revert H1 m rm.
       induction 1 as [ | l rl H1 H2 IH2 ]; simpl; auto.
@@ -195,7 +214,7 @@ Section breadth_first_traversal.
         + rewrite subtrees_app; apply IH2; auto.
     Qed. 
 
-    Fact g_niv_niveaux t : g_niv (t::nil) (niveaux t).
+    Lemma g_niv_niveaux t : g_niv (t::nil) (niveaux t).
     Proof.
       induction t as [ x | a Ha x b Hb ].
       * constructor 2; try discriminate.
@@ -204,15 +223,15 @@ Section breadth_first_traversal.
         apply (g_niv_app Ha Hb).
     Qed.
 
-    Fact g_niv_bft_f l rl : g_niv l rl -> g_bft_f l (concat rl).
+    Lemma g_niv_bft_f l rl : g_niv l rl -> g_bft_f l (concat rl).
     Proof. induction 1; simpl; constructor; auto. Qed.
 
-    Fact g_bft_f_bft_std t : g_bft_f (t::nil) (bft_std t).
+    Lemma g_bft_f_bft_std t : g_bft_f (t::nil) (bft_std t).
     Proof. apply g_niv_bft_f, g_niv_niveaux. Qed.
  
     Theorem bft_forest_eq_bft_std t : bft_forest t = bft_std t.
     Proof. 
-      apply g_bft_f_inj with (t::nil).
+      apply g_bft_f_fun with (t::nil).
       + apply bft_f_spec.
       + apply g_niv_bft_f, g_niv_niveaux.
     Qed.
@@ -220,14 +239,6 @@ Section breadth_first_traversal.
   End bft_eq_bft_std.
 
 End breadth_first_traversal.
-
-Extract Inductive bool => "bool" [ "true" "false" ].
-Extract Inductive prod => "(*)"  [ "(,)" ].
-Extract Inductive list => "list" [ "[]" "(::)" ].
-Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
-(* Extract Constant app => "(@)". Extraction Inline app. *)
-
-Recursive Extraction bft_forest.
 
 Check forest_decomp_eq.
 Check bft_forest_eq_bft_std.
