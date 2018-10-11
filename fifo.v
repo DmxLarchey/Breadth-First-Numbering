@@ -9,7 +9,7 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import bt List.
+Require Import bt List Extraction.
 
 Set Implicit Arguments.
 
