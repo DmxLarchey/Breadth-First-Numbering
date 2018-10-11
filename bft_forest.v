@@ -103,18 +103,18 @@ Section breadth_first_traversal.
        | simpl; do 2 rewrite lsum_app; simpl; generalize (subtrees_le l); omega ]).
     Qed.
 
-    Corollary bft_f_okazaki t l : bft_f (t::l) = root t :: bft_f (l++subt t).
+    Corollary bft_f_okasaki t l : bft_f (t::l) = root t :: bft_f (l++subt t).
     Proof.
       change (t::l) with ((t::nil)++l).
       rewrite bft_f_app; simpl.
       rewrite <- app_nil_end; trivial.
     Qed.
 
-    Corollary bft_f_okazaki_1 x l : bft_f (leaf x::l) = x::bft_f l.
-    Proof. rewrite bft_f_okazaki; simpl; rewrite <- app_nil_end; trivial. Qed.
+    Corollary bft_f_okasaki_1 x l : bft_f (leaf x::l) = x::bft_f l.
+    Proof. rewrite bft_f_okasaki; simpl; rewrite <- app_nil_end; trivial. Qed.
  
-    Corollary bft_f_okazaki_2 a x b l : bft_f (node a x b::l) = x::bft_f (l++a::b::nil).
-    Proof. apply bft_f_okazaki. Qed.
+    Corollary bft_f_okasaki_2 a x b l : bft_f (node a x b::l) = x::bft_f (l++a::b::nil).
+    Proof. apply bft_f_okasaki. Qed.
 
   End bft_f_spec.
 
@@ -180,7 +180,7 @@ Section breadth_first_traversal.
   Qed.
 
   Fact bft_f_fix_4 t lt : bft_f (t::lt) = root t :: bft_f (lt++subt t).
-  Proof. apply bft_f_okazaki, bft_f_fix_2. Qed.
+  Proof. apply bft_f_okasaki, bft_f_fix_2. Qed.
 
   Fact bft_f_fix_oka_0 : bft_f nil = nil.
   Proof. exact bft_f_fix_0. Qed.
@@ -188,10 +188,10 @@ Section breadth_first_traversal.
   Hint Resolve bft_f_fix_2.
 
   Fact bft_f_fix_oka_1 x l : bft_f (leaf x::l) = x::bft_f l.
-  Proof. apply bft_f_okazaki_1; auto. Qed.
+  Proof. apply bft_f_okasaki_1; auto. Qed.
 
   Fact bft_f_fix_oka_2 a x b l : bft_f (node a x b::l) = x::bft_f (l++a::b::nil).
-  Proof. apply bft_f_okazaki_2; auto. Qed.
+  Proof. apply bft_f_okasaki_2; auto. Qed.
 
   Definition bft_forest t := bft_f (t::nil).
 
