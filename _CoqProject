@@ -29,3 +29,4 @@ bfr_bfn_fifo.v
 extraction.v
 
 benchmarks.v
+wf_example.v
