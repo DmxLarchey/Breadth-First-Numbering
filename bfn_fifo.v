@@ -35,11 +35,11 @@ Require Import list_utils wf_utils bt fifo bft_forest bft_std.
 
 Set Implicit Arguments.
 
-Module BFN_FIFO (M: FIFO).
+Module BFN_FIFO (Q: FIFO).
 
 Section bfn_fifo.
 
-  Export M.
+  Export Q.
 
   Variable (X : Type).
 
