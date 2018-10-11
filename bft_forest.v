@@ -179,6 +179,9 @@ Section breadth_first_traversal.
     apply bft_f_fix_1; discriminate.
   Qed.
 
+  Fact bft_f_fix_4 t lt : bft_f (t::lt) = root t :: bft_f (lt++subt t).
+  Proof. apply bft_f_okazaki, bft_f_fix_2. Qed.
+
   Fact bft_f_fix_oka_0 : bft_f nil = nil.
   Proof. exact bft_f_fix_0. Qed.
 
