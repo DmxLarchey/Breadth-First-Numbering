@@ -80,11 +80,15 @@ Section breadth_first_traversal.
   Fact forest_decomp_eq ll : forest_decomp ll = (roots ll, subtrees ll).
   Proof. induction ll as [ | [] ? IH ]; simpl; auto; rewrite IH; auto. Qed.
 
-  Section bft_f_spec.
+  Section equivalences.
+      
+    Variable (bft_f : list (bt X) -> list X).
 
-    Variables (bft_f : list (bt X) -> list X)
-              (bft_f_0 : bft_f nil = nil)
-              (bft_f_1 : forall l, bft_f l = roots l ++ bft_f (subtrees l)).
+    Let bft_f_prop_0 := forall l, bft_f l = roots l ++ bft_f (subtrees l).
+    Let bft_f_prop_1 := forall l m, bft_f (l++m) = roots l ++ bft_f (m++subtrees l).
+    Let bft_f_prop_2 := forall t l, bft_f (t::l) = root t :: bft_f (l++subt t).
+    Let bft_f_prop_3 := (forall x l, bft_f (leaf x::l) = x::bft_f l)
+                     /\ (forall a b x l, bft_f (node a x b::l) = x::bft_f (l++a::b::nil)).
 
     (** The identity   bft_f (l++m) = map root l ++ bft_f (m++subt l) is critical
         to show the correctness of Breadth First Numbering *)
@@ -92,38 +96,101 @@ Section breadth_first_traversal.
     (* The induction is a bit complex here because l and m alternate in the proof
        so we proceed by induction on lsum (l++m) *)
 
-    Theorem bft_f_app l m : bft_f (l++m) = roots l ++ bft_f (m++subtrees l).
+    Let prop_0_prop_1 : bft_f_prop_0 -> bft_f_prop_1.
     Proof.
+      unfold bft_f_prop_0, bft_f_prop_1.
+      intros H l m.
       induction on l m as IH with measure (lsum (l++m)).
-      destruct l as [ | [ x | a x b ] l ]; 
-        try (rewrite <- app_nil_end; auto; fail);
-      rewrite bft_f_1; simpl;
-      (rewrite map_app, app_ass; do 2 f_equal; rewrite IH;
-       [ do 2 f_equal; rewrite subtrees_app; auto
-       | simpl; do 2 rewrite lsum_app; simpl; generalize (subtrees_le l); omega ]).
+      destruct l as [ | t l ]; try (rewrite <- app_nil_end; auto; fail).
+      rewrite H; simpl.
+      rewrite (IH m), map_app, app_ass, app_ass, subtrees_app; auto.
+      repeat rewrite lsum_app; simpl.
+      generalize (subtrees_le l); destruct t; simpl; omega.
     Qed.
 
-    Corollary bft_f_okazaki t l : bft_f (t::l) = root t :: bft_f (l++subt t).
+    Let prop_1_prop_0 : bft_f_prop_1 -> bft_f_prop_0.
     Proof.
-      change (t::l) with ((t::nil)++l).
-      rewrite bft_f_app; simpl.
-      rewrite <- app_nil_end; trivial.
+      unfold bft_f_prop_0, bft_f_prop_1.
+      intros H l; rewrite (app_nil_end l) at 1.
+      apply H.
     Qed.
 
-    Corollary bft_f_okazaki_1 x l : bft_f (leaf x::l) = x::bft_f l.
-    Proof. rewrite bft_f_okazaki; simpl; rewrite <- app_nil_end; trivial. Qed.
- 
-    Corollary bft_f_okazaki_2 a x b l : bft_f (node a x b::l) = x::bft_f (l++a::b::nil).
-    Proof. apply bft_f_okazaki. Qed.
+    Let prop_1_prop_2 : bft_f_prop_1 -> bft_f_prop_2.
+    Proof.
+      unfold bft_f_prop_1, bft_f_prop_2.
+      intros H t l.
+      specialize (H (t::nil) l).  
+      simpl in H; rewrite H, <- app_nil_end; trivial.
+    Qed.
 
-  End bft_f_spec.
+    Let prop_2_prop_1 : bft_f_prop_2 -> bft_f_prop_1.
+    Proof.
+      unfold bft_f_prop_1, bft_f_prop_2.
+      intros H l m.
+      induction on l m as IH with measure (lsum (l++m)).
+      destruct l as [ | t l ]; 
+        try (rewrite <- app_nil_end; auto; fail).
+      simpl; rewrite H; simpl; rewrite app_ass; f_equal.
+      rewrite <- (app_ass m), <- IH; auto.
+      simpl; repeat rewrite lsum_app.
+      destruct t; simpl; omega.
+    Qed.
 
-  Ltac mysolve := try match goal with H: ?x <> ?x |- _ => destruct H; reflexivity end.
+    Let prop_2_prop_3 : bft_f_prop_2 -> bft_f_prop_3.
+    Proof.
+      unfold bft_f_prop_2, bft_f_prop_3.
+      intros H; split.
+      + intros ? ?; rewrite H.
+        simpl; rewrite <- app_nil_end; auto.
+      + intros; apply H.
+    Qed.
 
-  Section bft_f_def.
+    Let prop_3_prop_2 : bft_f_prop_3 -> bft_f_prop_2.
+    Proof.
+      unfold bft_f_prop_2, bft_f_prop_3.
+      intros [] [|] ?; simpl; auto.
+      rewrite <- app_nil_end; auto.
+    Qed.
 
-    (* we use the specification bft_f_0 and bft_f_1 as a definition for
-       btf_f where the equation bft_f_1 is used only when wf, ie l <> nil 
+    Theorem bft_f_equivalences :  
+           (bft_f_prop_0 -> bft_f_prop_1)
+        /\ (bft_f_prop_1 -> bft_f_prop_2)
+        /\ (bft_f_prop_2 -> bft_f_prop_3)
+        /\ (bft_f_prop_3 -> bft_f_prop_0).
+    Proof. repeat (split; auto). Qed.
+  
+  End equivalences.
+
+  Section unicity.
+
+    Variable (bf1 bf2 : list (bt X) -> list X).
+
+    Hypothesis (H10 : bf1 nil = nil)
+               (H20 : bf2 nil = nil)
+               (H11 : forall l, bf1 l = roots l ++ bf1 (subtrees l))
+               (H21 : forall l, bf2 l = roots l ++ bf2 (subtrees l)).
+
+    Theorem bft_f_unicity l : bf1 l = bf2 l.
+    Proof.
+      induction on l as IH with measure (lsum l).
+      case_eq l.
+      + rewrite H10, H20; trivial.
+      + intros b l' E; rewrite <- E, H11, H21.
+        f_equal; apply IH.
+        destruct (subtrees_dec l); auto.
+        subst; discriminate.
+    Qed.
+
+  End unicity.
+
+  Section existence.
+
+    Ltac mysolve := try match goal with H: ?x <> ?x |- _ => destruct H; reflexivity end.
+
+    (* we use the specification:
+           
+          bft_f nil = nil
+          bft_f l = roots l ++ bft_f (subtrees l) for l <> nil
 
        let us first write the graph of the algorithm
      *)
@@ -131,6 +198,8 @@ Section breadth_first_traversal.
     Inductive g_bft_f : list (bt X) -> list X -> Prop :=
       | in_g_bft_f_0 : g_bft_f nil nil
       | in_g_bft_f_1 : forall ll r, ll <> nil -> g_bft_f (subtrees ll) r -> g_bft_f ll (roots ll ++ r).
+
+    (* This graph is functional *)
 
     Fact g_bft_f_fun ll r1 r2 : g_bft_f ll r1 -> g_bft_f ll r2 -> r1 = r2.
     Proof.
@@ -140,27 +209,29 @@ Section breadth_first_traversal.
       f_equal; auto.
     Qed.
 
-    Let bft_f_rec ll : sig (g_bft_f ll).
+    (* We define bft_f by measure induction on lsum l *)
+
+    Let bft_f_rec l : sig (g_bft_f l).
     Proof.
-      induction on ll as loop with measure (lsum ll).
-      refine (match ll as l return ll = l -> sig (g_bft_f ll) with
-        | nil  => fun _  => exist _ nil _
-        | t::l => fun E1 => 
-        match forest_decomp ll as c return forest_decomp ll = c -> sig (g_bft_f ll) with
+      induction on l as loop with measure (lsum l).
+      refine (match l as l' return l = l' -> sig (g_bft_f l) with
+        | nil   => fun _  => exist _ nil _
+        | t::l' => fun E1 => 
+        match forest_decomp l as c return forest_decomp l = c -> sig (g_bft_f l) with
           | (ro,st) => fun E2 => let (mm,Hmm) := loop st _
                                  in exist _ (ro ++ mm) _ 
         end eq_refl
       end eq_refl).
       + subst; constructor.
       + rewrite forest_decomp_eq in E2; inversion E2.
-        destruct (subtrees_dec ll); auto; subst; discriminate.
+        destruct (subtrees_dec l); auto; subst; discriminate.
       + rewrite forest_decomp_eq in E2; inversion E2.
         constructor; subst; auto; discriminate.
     Qed.
 
-    Definition bft_f ll := proj1_sig (bft_f_rec ll).
+    Definition bft_f l := proj1_sig (bft_f_rec l).
 
-    Fact bft_f_spec ll : g_bft_f ll (bft_f ll).
+    Fact bft_f_spec l : g_bft_f l (bft_f l).
     Proof. apply (proj2_sig _). Qed.
 
     Hint Resolve bft_f_spec.
@@ -170,25 +241,35 @@ Section breadth_first_traversal.
 
     Fact bft_f_fix_1 ll : ll <> nil -> bft_f ll = roots ll ++ bft_f (subtrees ll).
     Proof. intro; apply g_bft_f_fun with ll; auto; constructor; auto. Qed.
+
+    Hint Resolve bft_f_fix_1.
+
+    Fact bft_f_fix_2 lt : bft_f lt = roots lt ++ bft_f (subtrees lt).
+    Proof. 
+      destruct lt; auto.
+      apply bft_f_fix_1; discriminate.
+    Qed.
  
-  End bft_f_def.
+  End existence.
 
-  Fact bft_f_fix_2 lt : bft_f lt = roots lt ++ bft_f (subtrees lt).
-  Proof. 
-    destruct lt; auto.
-    apply bft_f_fix_1; discriminate.
-  Qed.
-
-  Fact bft_f_fix_oka_0 : bft_f nil = nil.
-  Proof. exact bft_f_fix_0. Qed.
+  (* We derive additional properties from bft_f_fix_2 *)
 
   Hint Resolve bft_f_fix_2.
 
+  Fact bft_f_fix_3 t l m : bft_f (l++m) = roots l ++ bft_f (m++subtrees l).
+  Proof. do 1 apply bft_f_equivalences; auto. Qed.
+
+  Fact bft_f_fix_4 t l : bft_f (t::l) = root t :: bft_f (l++subt t).
+  Proof. do 2 apply bft_f_equivalences; auto. Qed.
+
+  Fact bft_f_fix_oka_0 : bft_f nil = nil.
+  Proof. apply bft_f_fix_0. Qed.
+
   Fact bft_f_fix_oka_1 x l : bft_f (leaf x::l) = x::bft_f l.
-  Proof. apply bft_f_okazaki_1; auto. Qed.
+  Proof. do 3 apply bft_f_equivalences; auto. Qed.
 
   Fact bft_f_fix_oka_2 a x b l : bft_f (node a x b::l) = x::bft_f (l++a::b::nil).
-  Proof. apply bft_f_okazaki_2; auto. Qed.
+  Proof. do 3 apply bft_f_equivalences; auto. Qed.
 
   Definition bft_forest t := bft_f (t::nil).
 
@@ -231,9 +312,8 @@ Section breadth_first_traversal.
  
     Theorem bft_forest_eq_bft_std t : bft_forest t = bft_std t.
     Proof. 
-      apply g_bft_f_fun with (t::nil).
-      + apply bft_f_spec.
-      + apply g_niv_bft_f, g_niv_niveaux.
+      apply g_bft_f_fun with (1 := bft_f_spec _).
+      apply g_niv_bft_f, g_niv_niveaux.
     Qed.
  
   End bft_eq_bft_std.
