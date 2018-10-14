@@ -129,7 +129,7 @@ Section bfn_fifo.
 
   Implicit Type p : fifo (bt X).
 
-  Definition bfn_fifo_f n p : { q | tolist p ~lt rev (tolist q) /\ is_bfn_from n (rev (tolist q)) }.
+  Definition bfn_fifo_f n p : { q | f2l p ~lt rev (f2l q) /\ is_bfn_from n (rev (f2l q)) }.
   Proof.
     induction on n p as bfn_fifo_f with measure (fifo_lsum p).
 

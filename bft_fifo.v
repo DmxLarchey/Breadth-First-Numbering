@@ -36,7 +36,7 @@ Section bft_fifo.
 
   Implicit Type p : fifo (bt X). 
 
-  Definition bft_fifo_f p : { l | l = bft_f (tolist p) }.
+  Definition bft_fifo_f p : { l | l = bft_f (f2l p) }.
   Proof.
     induction on p as bft_fifo_f with measure (fifo_lsum p).
 

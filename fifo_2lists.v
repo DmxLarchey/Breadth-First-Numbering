@@ -47,12 +47,12 @@ Section fifo_two_lists.
 
   Implicit Type q : fifo.
 
-  Definition tolist q := let (l,r) := q in l++rev r.
+  Definition f2l q := let (l,r) := q in l++rev r.
 
-  Definition empty : { q | tolist q = nil }.
+  Definition empty : { q | f2l q = nil }.
   Proof. exists (nil,nil); trivial. Defined.
 
-  Definition enq q x : { q' | tolist q' = tolist q ++ x :: nil }.
+  Definition enq q x : { q' | f2l q' = f2l q ++ x :: nil }.
   Proof. 
     exists (let (l,r) := q in (l,x::r)).
     destruct q; simpl; rewrite app_ass; auto.
@@ -71,7 +71,7 @@ Section fifo_two_lists.
 
        *)
 
-  Definition deq q : tolist q <> nil -> { c : X * fifo | let (x,q') := c in tolist q = x::tolist q' }.
+  Definition deq q : f2l q <> nil -> { c : X * fifo | let (x,q') := c in f2l q = x::f2l q' }.
   Proof.
     induction on q as deq with measure (length (fst q)+2*length (snd q)); intros Hq.
     refine (match q as q' return q = q' -> _ with 
@@ -84,7 +84,7 @@ Section fifo_two_lists.
     + destruct res; rewrite <- Hres, rev_linear_spec, <- app_nil_end; reflexivity.
   Defined.
 
-  Definition void q : { b : bool | b = true <-> tolist q = nil }.
+  Definition void q : { b : bool | b = true <-> f2l q = nil }.
   Proof.
     exists (match q with (nil,nil) => true | _ => false end).
     revert q.

@@ -16,12 +16,12 @@ Set Implicit Arguments.
 Module Type FIFO.
 
   Parameters (fifo    : Type -> Type)
-             (tolist  : forall X, fifo X -> list X)
-             (empty   : forall X, { q : fifo X | tolist q = nil })
-             (enq     : forall X q x, { q' : fifo X | tolist q' = tolist q ++ x :: nil })
-             (deq     : forall X q, @tolist X q <> nil -> { c : X * fifo X | let (x,q') := c in tolist q = x::tolist q' })
-             (void    : forall X q, { b : bool | b = true <-> @tolist X q = nil }).
+             (f2l  : forall X, fifo X -> list X)
+             (empty   : forall X, { q : fifo X | f2l q = nil })
+             (enq     : forall X q x, { q' : fifo X | f2l q' = f2l q ++ x :: nil })
+             (deq     : forall X q, @f2l X q <> nil -> { c : X * fifo X | let (x,q') := c in f2l q = x::f2l q' })
+             (void    : forall X q, { b : bool | b = true <-> @f2l X q = nil }).
 
-  Notation fifo_lsum := ((fun X (q : fifo (bt X)) => lsum (tolist q)) _).
+  Notation fifo_lsum := ((fun X (q : fifo (bt X)) => lsum (f2l q)) _).
 
 End FIFO.
