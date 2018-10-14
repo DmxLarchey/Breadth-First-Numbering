@@ -28,16 +28,14 @@ Section breadth_first_numbering_by_levels.
       end
     end.
 
-(*
-  Fact forest_children_eq X ll : let (n,ch) := @forest_children X ll in ch = subtrees ll /\ 2*n = length ch. 
+  Fact forest_children_eq X ll : @forest_children X ll = (length ll,subtrees ll). 
   Proof. 
     induction ll as [ | [ x | a x b ] ll IH ]; simpl; auto; 
-    destruct (forest_children ll) as (n,ch); auto.
-    destruct IH as (? & IH); subst; split; auto; simpl; omega.
+    destruct (forest_children ll) as (n,ch); auto;
+    inversion IH; subst; auto.
   Qed.
-*)
 
-  Context (X : Type).
+  Variable (X : Type).
  
   Implicit Type (t : bt X) (l m ll ts : list (bt X)).
 
@@ -118,21 +116,25 @@ Section breadth_first_numbering_by_levels.
       * rewrite subtrees_app.
         apply Forall2_app; auto.
         
-    Admitted.
+  Admitted.
 
-    Definition bfn_level_f i l : { r | l ~lt r /\ is_bfn_from i r }.
-    Proof.
-      induction on i l as loop with measure (lsum l).
-      case_eq l.
-      + intros E.
-        exists nil; split.
-        * constructor.
-        * red; rewrite bft_f_fix_0; red; auto.
-      + intros b l' E.
-        refine (let (r',Hr') := loop (length l+i) (subtrees l) _ in _).
-        { destruct (subtrees_dec l); auto; subst; discriminate. }
-        exists (forest_rebuild i l r').
-        destruct Hr'; rewrite <- E; apply forest_rebuild_spec; auto.
+  Definition bfn_level_f i l : { r | l ~lt r /\ is_bfn_from i r }.
+  Proof.
+    induction on i l as loop with measure (lsum l).
+    case_eq l.
+    + intros E.
+      exists nil; split.
+      * constructor.
+      * red; rewrite bft_f_fix_0; red; auto.
+    + intros b l' E.
+      case_eq (forest_children l).
+      intros n cs E'.
+      refine (let (r',Hr') := loop (n+i) cs _ in _).
+      { rewrite forest_children_eq in E'; inversion E'.
+        destruct (subtrees_dec l); auto; subst; discriminate. }
+      exists (forest_rebuild i l r').
+      rewrite forest_children_eq in E'; inversion E'; subst n cs.
+      destruct Hr'; rewrite <- E; apply forest_rebuild_spec; auto.
     Defined.
 
     Let bfn_level_full t : { t' | t ~t t' /\ is_seq_from 0 (bft_forest t') }.

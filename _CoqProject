@@ -18,13 +18,15 @@ dft_std.v
 bft_std.v
 
 bft_forest.v
-bfn_forest.v
 
 bft_inj.v
 dft_bft_compare.v
 
 bft_fifo.v
+
 bfn_fifo.v
+bfn_level.v
+
 bfr_fifo.v
 
 bfr_bfn_fifo.v

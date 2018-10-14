@@ -14,7 +14,7 @@ Require Import bt.
 Require Import fifo fifo_triv fifo_2lists fifo_3llists.
 
 Require Import bft_std bft_forest bft_fifo.
-Require Import bfn_fifo.
+Require Import bfn_fifo bfn_level.
 Require Import bfr_fifo.
 
 Extract Inductive bool => "bool" [ "true" "false" ].
@@ -49,7 +49,7 @@ Recursive Extraction BFR_triv.bfr_fifo BFR_2lists.bfr_fifo BFR_3llists.bfr_fifo.
 (*Recursive Extraction BFT_triv.bft_fifo BFN_triv.bfn_fifo  BFR_triv.bfr_fifo. *)
 
 Recursive Extraction BFT_2lists.bft_fifo BFN_3llists.bfn_fifo BFR_triv.bfr_fifo.
-
+Recursive Extraction bfn_level.bfn_level.
 Recursive Extraction bft_forest.bft_forest.
 
 (*
