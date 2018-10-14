@@ -9,7 +9,7 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import List Arith Omega Extraction.
+Require Import List Arith Omega Program Extraction.
 Require Import wf_utils.
 
 Set Implicit Arguments.
@@ -37,10 +37,10 @@ Section interleave.
 
   Definition itl2_full l m : { r | r = itl1 l m }.
   Proof.
-    induction on l m as itl2 with measure (length l+length m).
-    revert itl2; refine (match l with
+    induction on l m as loop with measure (length l+length m).
+    revert loop; refine (match l with
       | nil   => fun _    => exist _ m _
-      | x::l' => fun itl2 => let (r,Hr) := itl2 m l' _ in exist _ (x::r) _
+      | x::l' => fun loop => let (r,Hr) := loop m l' _ in exist _ (x::r) _
     end).
     + trivial.
     + simpl; omega.
