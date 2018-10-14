@@ -9,6 +9,8 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
+(* This corresponds to bfnum on page 4 of Okasaki's article *)
+
 Require Import List Arith Omega Wellfounded Extraction.
 Require Import list_utils wf_utils zip bt bft_std bft_forest.
 
