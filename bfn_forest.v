@@ -120,7 +120,7 @@ Section breadth_first_numbering_by_levels.
         
     Admitted.
 
-    Fixpoint bfn_f_level i l : { r | l ~lt r /\ is_bfn_from i r }.
+    Definition bfn_level_f i l : { r | l ~lt r /\ is_bfn_from i r }.
     Proof.
       induction on i l as loop with measure (lsum l).
       case_eq l.
@@ -128,13 +128,52 @@ Section breadth_first_numbering_by_levels.
         exists nil; split.
         * constructor.
         * red; rewrite bft_f_fix_0; red; auto.
-      + intros b l' E; rewrite <- E.
-        destruct (loop (length l+i) (subtrees l)) as (r' & H1 & H2).
+      + intros b l' E.
+        refine (let (r',Hr') := loop (length l+i) (subtrees l) _ in _).
         { destruct (subtrees_dec l); auto; subst; discriminate. }
         exists (forest_rebuild i l r').
-        apply forest_rebuild_spec; auto.
+        destruct Hr'; rewrite <- E; apply forest_rebuild_spec; auto.
     Defined.
+
+    Let bfn_level_full t : { t' | t ~t t' /\ is_seq_from 0 (bft_forest t') }.
+    Proof.
+      refine (let (r,Hr) := bfn_level_f 0 (t::nil) in _).
+      destruct r as [ | t' r ].
+      + exfalso; destruct Hr as (Hr & _); inversion Hr.
+      + exists t'.
+        destruct Hr as (H1 & H2).
+        apply Forall2_cons_inv in H1.
+        destruct H1 as (H1 & H3).
+        inversion H3; subst r.
+        split; auto.
+    Qed.
+
+    Definition bfn_level t := proj1_sig (bfn_level_full t).
+
+    Fact bfn_level_spec_1 t : t ~t bfn_level t.
+    Proof. apply (proj2_sig (bfn_level_full t)). Qed.
+
+    Fact bfn_level_spec_2 t : exists n, bft_std (bfn_level t) = seq_an 0 n.
+    Proof. 
+      apply is_seq_from_spec.
+      rewrite <- bft_forest_eq_bft_std.
+      apply (proj2_sig (bfn_level_full t)).
+    Qed.
+
+    Corollary bfn_level_spec_3 t : bft_std (bfn_level t) = seq_an 0 (m_bt t).
+    Proof.
+      destruct (bfn_level_spec_2 t) as (n & Hn).
+      rewrite Hn.
+      apply f_equal with (f := @length _) in Hn.
+      rewrite seq_an_length, bft_std_length in Hn.
+      generalize (bfn_level_spec_1 t); intros E.
+      apply bt_eq_m in E.
+      rewrite <- Hn, <- E; trivial.
+    Qed.
 
 End breadth_first_numbering_by_levels.
 
-Extraction bfn_f_level.
+Recursive Extraction bfn_level.
+
+Check bfn_level_spec_1.
+Check bfn_level_spec_3.
