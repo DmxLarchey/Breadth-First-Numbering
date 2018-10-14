@@ -39,7 +39,7 @@ Section breadth_first_numbering_by_levels.
 
   Context (X : Type).
  
-  Implicit Type (t : bt X) (l m ll : list (bt X)).
+  Implicit Type (t : bt X) (l m ll ts : list (bt X)).
 
   Fixpoint forest_rebuild i (ts : list (bt X)) cs :=
     match ts with 
@@ -61,10 +61,40 @@ Section breadth_first_numbering_by_levels.
       constructor; auto; constructor; apply bt_eq_refl.
   Qed.
 
+  (** cs ~lt subtrees ts is a clear precondition for forest_rebuilt to 
+      work correctly *)
+
+  Fact forest_rebuild_app i ts1 ts2 cs :
+          cs ~lt subtrees (ts1++ts2) 
+       -> exists cs1 cs2, 
+          cs = cs1 ++cs2
+       /\ forest_rebuild i (ts1++ts2) cs = forest_rebuild i ts1 cs1 
+                                        ++ forest_rebuild (length ts1+i) ts2 cs2.
+  Proof.
+    revert i cs; induction ts1 as [ | [ x | u x v ] ts1 IH ]; intros i cs H; simpl.
+    + exists nil, cs; auto.
+    + simpl in H.
+      destruct (IH (S i) cs H) as (cs1 & cs2 & H1 & H2).
+      exists cs1, cs2; split; auto.
+      rewrite H2; do 3 f_equal; omega.
+    + simpl in H.
+      destruct cs as [ | a [ | b cs' ] ].
+      - inversion H.
+      - apply Forall2_cons_inv, proj2 in H.
+        inversion H.
+      - apply Forall2_cons_inv in H; destruct H as (H1 & H).
+        apply Forall2_cons_inv in H; destruct H as (H2 & H).
+        destruct (IH (S i) cs' H) as (cs1 & cs2 & H3 & H4).
+        exists (a::b::cs1), cs2; split.
+        * subst; auto.
+        * rewrite H4; simpl.
+          do 3 f_equal; omega.
+  Qed.
+
   Definition is_bfn_from n k := is_seq_from n (bft_f k).
 
   Lemma forest_rebuild_spec i ts cs :
-                               cs ~lt subtrees ts 
+                               subtrees ts ~lt cs
                             -> is_bfn_from (length ts + i) cs 
                             -> ts ~lt forest_rebuild i ts cs
                             /\ is_bfn_from i (forest_rebuild i ts cs).
@@ -88,15 +118,23 @@ Section breadth_first_numbering_by_levels.
       * rewrite subtrees_app.
         apply Forall2_app; auto.
         
-
-(*      change (u::v::cs) with ((u::v::nil)++cs) in H2. *)
-      do 2 (rewrite bft_f_fix_4 in H2; simpl in H2).
-      destruct H2 as (H5 & H6 & H2).
-      split.
-      Focus 2.
-      red.
-      rewrite bft_f_fix_oka_2.
-      split; auto.
     Admitted.
 
+    Fixpoint bfn_f_level i l : { r | l ~lt r /\ is_bfn_from i r }.
+    Proof.
+      induction on i l as loop with measure (lsum l).
+      case_eq l.
+      + intros E.
+        exists nil; split.
+        * constructor.
+        * red; rewrite bft_f_fix_0; red; auto.
+      + intros b l' E; rewrite <- E.
+        destruct (loop (length l+i) (subtrees l)) as (r' & H1 & H2).
+        { destruct (subtrees_dec l); auto; subst; discriminate. }
+        exists (forest_rebuild i l r').
+        apply forest_rebuild_spec; auto.
+    Defined.
+
 End breadth_first_numbering_by_levels.
+
+Extraction bfn_f_level.
