@@ -9,7 +9,7 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-(* This corresponds to bfnum on page 4 of Okasaki's article *)
+(** This corresponds to bfnum on page 134 (section 4 and Figure 5) of Okasaki's article *)
 
 Require Import List Arith Omega Wellfounded Extraction.
 Require Import list_utils wf_utils zip bt bft_std bft_inj bft_forest bfn_trivial.
@@ -21,7 +21,7 @@ Set Implicit Arguments.
 
 Section breadth_first_numbering_by_levels.
 
-  Fixpoint forest_children {X} ll : nat * list (bt X) :=
+  Fixpoint forest_children {X: Type} (ll : list (bt X)) : nat * list (bt X) :=
     match ll with 
       | nil   => (0,nil)
       | t::l => let (n,ch) := forest_children l in
@@ -31,14 +31,15 @@ Section breadth_first_numbering_by_levels.
       end
     end.
 
-  Fact forest_children_eq X ll : @forest_children X ll = (length ll,subtrees ll). 
+  (** the following could have served as a less optimized definition *)
+  Fact forest_children_eq X ll : @forest_children X ll = (length ll, subtrees ll).
   Proof. 
     induction ll as [ | [ x | a x b ] ll IH ]; simpl; auto; 
     destruct (forest_children ll) as (n,ch); auto;
     inversion IH; subst; auto.
   Qed.
 
-  Fixpoint forest_rebuild {X} i (ts : list (bt X)) cs :=
+  Fixpoint forest_rebuild {X: Type} (i: nat) (ts : list (bt X)) (cs: list (bt nat)): list (bt nat) :=
     match ts with 
       | nil => nil
       | leaf _ :: ts => leaf i :: forest_rebuild (S i) ts cs
@@ -49,15 +50,16 @@ Section breadth_first_numbering_by_levels.
       end
     end.
 
-  Lemma forest_rebuild_id i ts : 
+  Lemma forest_rebuild_id (i: nat) (ts : list (bt nat)):
           is_seq_from i (roots ts) -> forest_rebuild i ts (subtrees ts) = ts.
   Proof.
     revert i.
     induction ts as [ | [|] ]; simpl; auto; intros ? []; subst; f_equal; auto.
   Qed.
 
-  Lemma forest_rebuild_lt X Y i ts1 ts2 cs :
-          ts1 ~lt ts2 -> @forest_rebuild X i ts1 cs = @forest_rebuild Y i ts2 cs.
+  Lemma forest_rebuild_lt (X Y: Type) (i: nat)
+        (ts1: list (bt X)) (ts2: list (bt Y)) (cs: list (bt nat)):
+         ts1 ~lt ts2 -> @forest_rebuild X i ts1 cs = @forest_rebuild Y i ts2 cs.
   Proof.
     intros H; revert H i cs.
     induction 1 as [ | [|] [|] ? ? H1 ]; 
@@ -68,13 +70,12 @@ Section breadth_first_numbering_by_levels.
      
   Variable (X : Type).
  
-  Implicit Type (t : bt X) (l m ll ts : list (bt X)).
+  Implicit Type (i: nat) (t : bt X) (l m ll ts : list (bt X)) (cs: list (bt nat)).
 
   Lemma forest_rebuild_spec i ts cs :
-                               subtrees ts ~lt cs
-                            -> is_bfn_from (length ts + i) cs 
-                            -> ts ~lt forest_rebuild i ts cs
-                            /\ is_bfn_from i (forest_rebuild i ts cs).
+    subtrees ts ~lt cs
+    -> is_bfn_from (length ts + i) cs (* skip over root labels *)
+    -> ts ~lt forest_rebuild i ts cs /\ is_bfn_from i (forest_rebuild i ts cs).
   Proof.
     intros H1 H2.
     destruct (bfn_f i ts) as (ls & H3 & H4).
@@ -83,12 +84,12 @@ Section breadth_first_numbering_by_levels.
     assert (cs = subtrees ls) as E.
     { apply lbt_is_bfn_from_eq with (2 := H2).
       * apply lbt_eq_sym, lbt_eq_trans with (2 := H1),
-              lbt_eq_sym, lbt_eq_subtrees; auto.
+              lbt_eq_sym, lbt_eq_subtrees; assumption.
       * red in H4.
         rewrite bft_f_fix_2 in H4.
         apply is_seq_from_app_right in H4.
-        rewrite map_length, <- (Forall2_length H3) in H4; trivial. }
-    rewrite E, forest_rebuild_id; auto.
+        rewrite map_length, <- (Forall2_length H3) in H4; assumption. }
+    rewrite E, forest_rebuild_id; try (split; assumption).
     red in H4.
     rewrite bft_f_fix_2 in H4.
     revert H4; apply is_seq_from_app_left.
@@ -110,7 +111,7 @@ Section breadth_first_numbering_by_levels.
         destruct (subtrees_dec l); auto; subst; discriminate. }
       exists (forest_rebuild i l r').
       rewrite forest_children_eq in E'; inversion E'; subst n cs.
-      destruct Hr'; rewrite <- E; apply forest_rebuild_spec; auto.
+      destruct Hr'; rewrite <- E; apply forest_rebuild_spec; assumption.
     Defined.
 
     Let bfn_level_full t : { t' | t ~t t' /\ is_seq_from 0 (bft_forest t') }.
@@ -123,7 +124,7 @@ Section breadth_first_numbering_by_levels.
         apply Forall2_cons_inv in H1.
         destruct H1 as (H1 & H3).
         inversion H3; subst r.
-        split; auto.
+        split; assumption.
     Qed.
 
     Definition bfn_level t := proj1_sig (bfn_level_full t).
