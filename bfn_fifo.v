@@ -43,12 +43,6 @@ Section bfn_fifo.
 
   Variable (X : Type).
 
-  (* the forest (list of bt nat) is a breadth first numbering from n if
-     its breadth first traversal yields [n;n+1;....;m[ for some m
-   *)
-
-  Definition is_bfn_from n l := is_seq_from n (bft_f l).
-
   (* Breath First Numbering: maps a forest X to a forest nat such that
           1) the two forests are of the same shape
           2) the result is a breadth first numbering from n
@@ -200,6 +194,27 @@ Section bfn_fifo.
       rewrite bft_f_fix_oka_2; simpl; auto.
   Defined.
 
+  Section bfn_f_fifo.
+
+    Definition list2fifo (l : list (bt X)) : { q | tolist q = rev l }.
+    Proof.
+      induction l as [ | t l (q & Hq) ].
+      + apply empty.
+      + destruct (enq q t) as (q' & Hq').
+        exists q'; simpl; rewrite Hq'; f_equal; auto.
+    Qed.
+    
+    Definition bfn_f_fifo n (l : list (bt X)) : { m | l ~lt m /\ is_bfn_from n m }.
+    Proof.
+      destruct (list2fifo (rev l)) as (p & Hp).
+      rewrite rev_involutive in Hp.
+      destruct (bfn_fifo_f n p) as (q & H1 & H2).
+      exists (rev (tolist q)); split; auto.
+      rewrite <- Hp; auto.
+    Qed.
+
+  End bfn_f_fifo.
+
   Section bfn.
 
     Implicit Type (t : bt X).
@@ -234,22 +249,21 @@ Section bfn_fifo.
     Fact bfn_fifo_spec_1 t : t ~t bfn_fifo t.
     Proof. apply (proj2_sig (bfn_fifo_full t)). Qed.
 
-    Fact bfn_fifo_spec_2 t : exists n, bft_std (bfn_fifo t) = seq_an 0 n.
-    Proof. 
-      apply is_seq_from_spec.
-      rewrite <- bft_forest_eq_bft_std. 
-      apply (proj2_sig (bfn_fifo_full t)). 
+    Corollary bfn_fifo_m t : m_bt (bfn_fifo t) = m_bt t.
+    Proof.
+      symmetry; apply bt_eq_m with (1 := bfn_fifo_spec_1 _).
     Qed.
+
+    Fact bfn_fifo_spec_2 t : is_seq_from 0 (bft_forest (bfn_fifo t)).
+    Proof. apply (proj2_sig (bfn_fifo_full t)). Qed.
 
     Corollary bfn_fifo_spec_3 t : bft_std (bfn_fifo t) = seq_an 0 (m_bt t).
     Proof.
-      destruct (bfn_fifo_spec_2 t) as (n & Hn).
-      rewrite Hn.
-      apply f_equal with (f := @length _) in Hn.
-      rewrite seq_an_length, bft_std_length in Hn.
-      generalize (bfn_fifo_spec_1 t); intros E.
-      apply bt_eq_m in E.
-      rewrite <- Hn, <- E; trivial.
+      generalize (bfn_fifo_spec_2 t).
+      rewrite is_seq_from_spec.
+      rewrite bft_forest_eq_bft_std.
+      rewrite bft_std_length, bfn_fifo_m.
+      trivial.
     Qed.
 
   End bfn.

@@ -45,27 +45,6 @@ Section breadth_first_traversal.
   Context (X : Type).
  
   Implicit Type (t : bt X) (l m ll : list (bt X)).
-
-  Notation roots := (map (@root X)).
-  Notation subtrees := (flat_map (@subt X)).
-
-  Fact roots_app l m : roots (l++m) = roots l ++ roots m.
-  Proof. apply map_app. Qed. 
-  
-  Fact subtrees_app l m : subtrees (l++m) = subtrees l ++ subtrees m.
-  Proof.
-    repeat rewrite flat_map_concat_map.
-    rewrite map_app, concat_app; trivial.
-  Qed. 
-
-  Fact subtrees_dec ll : ll = nil \/ lsum (subtrees ll) < lsum ll.
-  Proof.
-    induction ll as [ | [|] ]; simpl; auto;
-      right; destruct IHll; subst; simpl; auto; omega.
-  Qed.
-
-  Fact subtrees_le ll : lsum (subtrees ll) <= lsum ll.
-  Proof. destruct (subtrees_dec ll); subst; simpl; omega. Qed.
   
   Fixpoint forest_decomp ll : list X * list (bt X) :=
     match ll with 
@@ -209,6 +188,12 @@ Section breadth_first_traversal.
       f_equal; auto.
     Qed.
 
+    Fact g_bft_f_length ll r : g_bft_f ll r -> length r = lsum ll.
+    Proof.
+      induction 1 as [ | ll r H1 H2 IH2 ]; auto.
+      rewrite app_length, IH2, <- lsum_roots_subtrees; auto.
+    Qed.
+
     (* We define bft_f by measure induction on lsum l *)
 
     Let bft_f_rec l : sig (g_bft_f l).
@@ -249,6 +234,9 @@ Section breadth_first_traversal.
       destruct lt; auto.
       apply bft_f_fix_1; discriminate.
     Qed.
+
+    Fact bft_f_length lt : length (bft_f lt) = lsum lt.
+    Proof. apply g_bft_f_length, bft_f_spec. Qed.
  
   End existence.
 
@@ -320,5 +308,10 @@ Section breadth_first_traversal.
 
 End breadth_first_traversal.
 
-Check forest_decomp_eq.
-Check bft_forest_eq_bft_std.
+Definition is_bfn_from n l := is_seq_from n (bft_f l).
+
+Fact is_bfn_from_eq n l : is_bfn_from n l <-> bft_f l = seq_an n (lsum l).
+Proof.
+  unfold is_bfn_from.
+  rewrite is_seq_from_spec, bft_f_length; tauto.
+Qed.

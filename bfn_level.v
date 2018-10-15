@@ -12,7 +12,10 @@
 (* This corresponds to bfnum on page 4 of Okasaki's article *)
 
 Require Import List Arith Omega Wellfounded Extraction.
-Require Import list_utils wf_utils zip bt bft_std bft_forest.
+Require Import list_utils wf_utils zip bt bft_std bft_inj bft_forest bfn_trivial.
+
+(* We need the (non-informative) existence of a BFN numbering for the proof to work ...
+   It does not impact the CC of the following code *)
 
 Set Implicit Arguments.
 
@@ -37,11 +40,7 @@ Section breadth_first_numbering_by_levels.
     inversion IH; subst; auto.
   Qed.
 
-  Variable (X : Type).
- 
-  Implicit Type (t : bt X) (l m ll ts : list (bt X)).
-
-  Fixpoint forest_rebuild i (ts : list (bt X)) cs :=
+  Fixpoint forest_rebuild {X} i (ts : list (bt X)) cs :=
     match ts with 
       | nil => nil
       | leaf _ :: ts => leaf i :: forest_rebuild (S i) ts cs
@@ -52,46 +51,27 @@ Section breadth_first_numbering_by_levels.
       end
     end.
 
-  Fact forest_rebuild_bt_eq i j ts cs : forest_rebuild i ts cs ~lt forest_rebuild j ts cs.
+  Lemma forest_rebuild_id i ts : 
+            is_seq_from i (roots ts) 
+         -> forest_rebuild i ts (subtrees ts) = ts.
   Proof.
-    revert i j cs; induction ts as [ | [ x | a x b ] ts IH ]; intros i j cs; simpl.
-    + constructor.
-    + constructor; auto.
-    + destruct cs as [ | u [ | v ? ] ]; simpl; auto.
-      constructor; auto; constructor; apply bt_eq_refl.
+    revert i.
+    induction ts as [ | [|] ]; simpl; auto; intros ? []; subst; f_equal; auto.
   Qed.
 
-  (** cs ~lt subtrees ts is a clear precondition for forest_rebuilt to 
-      work correctly *)
-
-  Fact forest_rebuild_app i ts1 ts2 cs :
-          cs ~lt subtrees (ts1++ts2) 
-       -> exists cs1 cs2, 
-          cs = cs1 ++cs2
-       /\ forest_rebuild i (ts1++ts2) cs = forest_rebuild i ts1 cs1 
-                                        ++ forest_rebuild (length ts1+i) ts2 cs2.
+  Lemma forest_rebuild_lt X Y i ts1 ts2 cs :
+          ts1 ~lt ts2 -> @forest_rebuild X i ts1 cs = @forest_rebuild Y i ts2 cs.
   Proof.
-    revert i cs; induction ts1 as [ | [ x | u x v ] ts1 IH ]; intros i cs H; simpl.
-    + exists nil, cs; auto.
-    + simpl in H.
-      destruct (IH (S i) cs H) as (cs1 & cs2 & H1 & H2).
-      exists cs1, cs2; split; auto.
-      rewrite H2; do 3 f_equal; omega.
-    + simpl in H.
-      destruct cs as [ | a [ | b cs' ] ].
-      - inversion H.
-      - apply Forall2_cons_inv, proj2 in H.
-        inversion H.
-      - apply Forall2_cons_inv in H; destruct H as (H1 & H).
-        apply Forall2_cons_inv in H; destruct H as (H2 & H).
-        destruct (IH (S i) cs' H) as (cs1 & cs2 & H3 & H4).
-        exists (a::b::cs1), cs2; split.
-        * subst; auto.
-        * rewrite H4; simpl.
-          do 3 f_equal; omega.
+    intros H; revert H i cs.
+    induction 1 as [ | [|] [|] ? ? H1 ]; 
+      intros ? cs; simpl; auto; try (inversion H1; fail).
+    + f_equal; auto.
+    + destruct cs as [ | ? [|] ]; simpl; auto; f_equal; auto.
   Qed.
-
-  Definition is_bfn_from n k := is_seq_from n (bft_f k).
+     
+  Variable (X : Type).
+ 
+  Implicit Type (t : bt X) (l m ll ts : list (bt X)).
 
   Lemma forest_rebuild_spec i ts cs :
                                subtrees ts ~lt cs
@@ -99,26 +79,31 @@ Section breadth_first_numbering_by_levels.
                             -> ts ~lt forest_rebuild i ts cs
                             /\ is_bfn_from i (forest_rebuild i ts cs).
   Proof.
-    revert i cs.
-    induction on ts as IH with measure (lsum ts).
-    revert ts IH; intros [ | [ x | a x b ] ts ] IH; simpl; intros i cs H1 H2.
-    + split; auto; red; rewrite bft_f_fix_0; red; auto.
-    + destruct (IH ts) with (i := S i) (cs := cs) as (H3 & H4); auto.
-      { rewrite plus_comm; simpl; rewrite plus_comm; auto. }
-      split.
-      * repeat (constructor; auto).
-      * red; rewrite bft_f_fix_oka_1; simpl; split; auto.
-    + destruct cs as [ | u cs ]; try (inversion H1; fail).
-      apply Forall2_cons_inv in H1; destruct H1 as (H3 & H1).
-      destruct cs as [ | v cs ]; try (inversion H1; fail).
-      apply Forall2_cons_inv in H1; destruct H1 as (H4 & H1).
+    intros H1 H2.
+    destruct (bfn_f i ts) as (ls & H3 & H4).
+    generalize (forest_rebuild_lt i cs H3); intros H5.
+    rewrite H5.
+    assert (cs = subtrees ls) as E.
+    { unfold is_bfn_from in H4.
+      rewrite bft_f_fix_2 in H4.
+      apply is_seq_from_app_right in H4.
+      rewrite map_length in H4.
       red in H2.
-      destruct (IH (ts++a::b::nil)) with (i := S i) (cs := cs++u::v::nil).
-      * rewrite lsum_app; simpl; omega.
-      * rewrite subtrees_app.
-        apply Forall2_app; auto.
-        
-  Admitted.
+      rewrite is_seq_from_spec,bft_f_length in H2.
+      rewrite is_seq_from_spec, bft_f_length in H4.
+      rewrite (Forall2_length H3) in H2.
+      apply lbt_eq_subtrees in H3.
+      symmetry; apply bft_f_inj.
+      * apply lbt_eq_trans with (2 := H1), lbt_eq_sym; auto.
+      * rewrite H4, H2.
+        apply lbt_eq_lsum in H1.
+        apply lbt_eq_lsum in H3.
+        rewrite <- H1, <- H3; auto. }
+    rewrite E, forest_rebuild_id; auto.
+    red in H4.
+    rewrite bft_f_fix_2 in H4.
+    revert H4; apply is_seq_from_app_left.
+  Qed.
 
   Definition bfn_level_f i l : { r | l ~lt r /\ is_bfn_from i r }.
   Proof.
@@ -157,27 +142,21 @@ Section breadth_first_numbering_by_levels.
     Fact bfn_level_spec_1 t : t ~t bfn_level t.
     Proof. apply (proj2_sig (bfn_level_full t)). Qed.
 
-    Fact bfn_level_spec_2 t : exists n, bft_std (bfn_level t) = seq_an 0 n.
-    Proof. 
-      apply is_seq_from_spec.
-      rewrite <- bft_forest_eq_bft_std.
-      apply (proj2_sig (bfn_level_full t)).
-    Qed.
-
+ 
+    Fact bfn_level_spec_2 t : is_seq_from 0 (bft_forest (bfn_level t)).
+    Proof. apply (proj2_sig (bfn_level_full t)). Qed.
+ 
     Corollary bfn_level_spec_3 t : bft_std (bfn_level t) = seq_an 0 (m_bt t).
     Proof.
-      destruct (bfn_level_spec_2 t) as (n & Hn).
-      rewrite Hn.
-      apply f_equal with (f := @length _) in Hn.
-      rewrite seq_an_length, bft_std_length in Hn.
-      generalize (bfn_level_spec_1 t); intros E.
-      apply bt_eq_m in E.
-      rewrite <- Hn, <- E; trivial.
+      generalize (bfn_level_spec_2 t).
+      rewrite is_seq_from_spec.
+      rewrite bft_forest_eq_bft_std.
+      rewrite bft_std_length.
+      rewrite (bt_eq_m (bfn_level_spec_1 t)).
+      trivial.
     Qed.
 
 End breadth_first_numbering_by_levels.
-
-Recursive Extraction bfn_level.
 
 Check bfn_level_spec_1.
 Check bfn_level_spec_3.

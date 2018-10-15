@@ -25,6 +25,7 @@ dft_bft_compare.v
 bft_fifo.v
 
 bfn_fifo.v
+bfn_trivial.v
 bfn_level.v
 
 bfr_fifo.v
@@ -33,3 +34,4 @@ bfr_bfn_fifo.v
 extraction.v
 
 benchmarks.v
+

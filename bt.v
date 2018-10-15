@@ -53,6 +53,32 @@ Section bt.
   Fact lsum_app l m : lsum (l++m) = lsum l + lsum m.
   Proof. induction l; simpl; omega. Qed.
 
+  Notation roots := (map root).
+  Notation subtrees := (flat_map subt).
+
+  Fact roots_app l m : roots (l++m) = roots l ++ roots m.
+  Proof. apply map_app. Qed. 
+  
+  Fact subtrees_app l m : subtrees (l++m) = subtrees l ++ subtrees m.
+  Proof.
+    repeat rewrite flat_map_concat_map.
+    rewrite map_app, concat_app; trivial.
+  Qed. 
+
+  Fact subtrees_dec ll : ll = nil \/ lsum (subtrees ll) < lsum ll.
+  Proof.
+    induction ll as [ | [|] ]; simpl; auto;
+      right; destruct IHll; subst; simpl; auto; omega.
+  Qed.
+
+  Fact subtrees_le ll : lsum (subtrees ll) <= lsum ll.
+  Proof. destruct (subtrees_dec ll); subst; simpl; omega. Qed.
+
+  Fact lsum_roots_subtrees ll : lsum ll = length (roots ll) + lsum (subtrees ll).
+  Proof.
+    induction ll as [ | [|] ]; simpl; omega.
+  Qed.
+
   (* A branch is a list of left/right Boolean choices *)
 
   (* The branches that correspond to a node in a binary tree *)
@@ -99,6 +125,10 @@ End bt.
 
 Arguments root {X}.
 Arguments m_bt {X}.
+
+Notation roots := (map (@root _)).
+Notation subtrees := (flat_map (@subt _)).
+
 
 Hint Constructors btb.
 
@@ -410,3 +440,18 @@ Proof.
     constructor; auto.
     apply bt_eq_trans with (1 := H1); auto.
 Qed. 
+
+Fact lbt_eq_lsum  X Y (s : list (bt X)) (t : list (bt Y)) : s ~lt t -> lsum s = lsum t.
+Proof.
+  induction 1 as [ | x y s t H1 H2 IH2 ]; simpl; auto.
+  apply bt_eq_m in H1; omega.
+Qed.
+
+Fact lbt_eq_subtrees X Y (s : list (bt X)) (t : list (bt Y)) : s ~lt t -> subtrees s ~lt subtrees t.
+Proof.
+  induction 1 as [ | x y s t H1 H2 IH2 ]; simpl.
+  + constructor.
+  + apply Forall2_app; auto.
+    destruct x as [|]; destruct y as [|]; 
+      inversion H1; subst; simpl; repeat constructor; auto.
+Qed.
