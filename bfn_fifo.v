@@ -196,7 +196,7 @@ Section bfn_fifo.
 
   Section bfn_f_fifo.
 
-    Definition list2fifo (l : list (bt X)) : { q | tolist q = rev l }.
+    Definition list2fifo (l : list (bt X)) : { q | f2l q = rev l }.
     Proof.
       induction l as [ | t l (q & Hq) ].
       + apply empty.
@@ -209,7 +209,7 @@ Section bfn_fifo.
       destruct (list2fifo (rev l)) as (p & Hp).
       rewrite rev_involutive in Hp.
       destruct (bfn_fifo_f n p) as (q & H1 & H2).
-      exists (rev (tolist q)); split; auto.
+      exists (rev (f2l q)); split; auto.
       rewrite <- Hp; auto.
     Qed.
 
