@@ -14,11 +14,11 @@ Require Import list_utils wf_utils bt fifo bft_forest bft_std.
 
 Set Implicit Arguments.
 
-Module BFR_FIFO (M: FIFO).
+Module BFR_FIFO (Q: FIFO).
 
 Section bfr_fifo.
 
-  Export M.
+  Export Q.
 
   Variable (X Y : Type).
 
@@ -26,8 +26,8 @@ Section bfr_fifo.
 
   Fixpoint bfr_fifo_f p (ll : list Y) { struct ll } : 
             fifo_lsum p = length ll
-         -> { q  | tolist p ~lt rev (tolist q) 
-                /\ bft_f (rev (tolist q)) = ll }.
+         -> { q  | f2l p ~lt rev (f2l q)
+                /\ bft_f (rev (f2l q)) = ll }.
   Proof.
     refine (match ll with 
       | nil   => fun Hll => let (q,Hq)   := empty _ 
@@ -61,7 +61,7 @@ Section bfr_fifo.
     all: cycle 1.
 
     * revert Hll; rewrite Hq; simpl.
-      generalize (tolist p).
+      generalize (f2l p).
       intros [ | [] ? ]; simpl; try discriminate.
       split; auto.
       rewrite bft_f_fix_oka_0; reflexivity.

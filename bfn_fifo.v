@@ -35,11 +35,11 @@ Require Import list_utils wf_utils bt fifo bft_forest bft_std.
 
 Set Implicit Arguments.
 
-Module BFN_FIFO (M: FIFO).
+Module BFN_FIFO (Q: FIFO).
 
 Section bfn_fifo.
 
-  Export M.
+  Export Q.
 
   Variable (X : Type).
 
@@ -123,7 +123,7 @@ Section bfn_fifo.
 
   Implicit Type p : fifo (bt X).
 
-  Definition bfn_fifo_f n p : { q | tolist p ~lt rev (tolist q) /\ is_bfn_from n (rev (tolist q)) }.
+  Definition bfn_fifo_f n p : { q | f2l p ~lt rev (f2l q) /\ is_bfn_from n (rev (f2l q)) }.
   Proof.
     induction on n p as bfn_fifo_f with measure (fifo_lsum p).
 

@@ -242,6 +242,7 @@ Section breadth_first_traversal.
 
   (* We derive additional properties from bft_f_fix_2 *)
 
+
   Hint Resolve bft_f_fix_2.
 
   Fact bft_f_fix_3 t l m : bft_f (l++m) = roots l ++ bft_f (m++subtrees l).

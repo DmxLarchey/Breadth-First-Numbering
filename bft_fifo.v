@@ -26,52 +26,52 @@ Require Import list_utils wf_utils bt fifo bft_std bft_forest.
 
 Set Implicit Arguments.
 
-Module BFT_FIFO (M: FIFO).
+Module BFT_FIFO (Q: FIFO).
 
 Section bft_fifo.
 
-  Export M.
+  Export Q.
 
   Variable (X : Type).
 
-  Implicit Type p : fifo (bt X). 
+  Implicit Type q : fifo (bt X).
 
-  Definition bft_fifo_f p : { l | l = bft_f (tolist p) }.
+  Definition bft_fifo_f q : { l | l = bft_f (f2l q) }.
   Proof.
-    induction on p as bft_fifo_f with measure (fifo_lsum p).
+    induction on q as bft_fifo_f with measure (fifo_lsum q).
 
-    refine (let (b,Hb) := void p in _).
+    refine (let (b,Hb) := void q in _).
     revert Hb; refine (match b with 
-      | true  => fun Hp 
+      | true  => fun Hq 
       => exist _ nil _
-      | false => fun Hp 
-      => let (c,Hc) := @deq _ p _ 
+      | false => fun Hq 
+      => let (c,Hc) := @deq _ q _ 
          in _
-    end). 
+    end).
     all: cycle 2. (* We queue 2 POs *)
-    revert Hc; refine (match c with (t,q) => _ end); clear c.
+    revert Hc; refine (match c with (t,q') => _ end); clear c.
     refine (match t with
-      | leaf x => fun Hq 
-      => let (r,Hr) := bft_fifo_f q _ 
+      | leaf x => fun Hq' 
+      => let (r,Hr) := bft_fifo_f q' _ 
          in  exist _ (x::r) _
-      | node a x b => fun Hq 
-      => let (r,Hr) := enq q a    in
+      | node a x b => fun Hq' 
+      => let (r,Hr) := enq q' a    in
          let (s,Hs) := enq r b    in
          let (t,Ht) := bft_fifo_f s _
          in  exist _ (x::t) _
-    end); simpl in Hq.
+    end); simpl in Hq'.
     all: cycle 4. (* We queue 4 POs *)
 
     (* And now, we show POs *)
    
-    * rewrite (proj1 Hp); auto.
+    * rewrite (proj1 Hq); auto.
       rewrite bft_f_fix_oka_0; reflexivity.
-    * intros H; apply Hp in H; discriminate.
-    * rewrite Hq; simpl; auto.
-    * rewrite Hr, Hq, bft_f_fix_oka_1; auto.
-    * rewrite Hs, Hr, Hq; simpl.
+    * intros H; apply Hq in H; discriminate.
+    * rewrite Hq'; simpl; auto.
+    * rewrite Hr, Hq', bft_f_fix_oka_1; auto.
+    * rewrite Hs, Hr, Hq'; simpl.
       do 2 rewrite lsum_app; simpl; omega.
-    * rewrite Ht, Hs, Hr, Hq, bft_f_fix_oka_2, app_ass; auto.
+    * rewrite Ht, Hs, Hr, Hq', bft_f_fix_oka_2, app_ass; auto.
   Defined.
 
   Let bft_fifo_full t : { l : list X | l = bft_forest t }.

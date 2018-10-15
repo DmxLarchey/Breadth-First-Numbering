@@ -18,12 +18,12 @@ Require Import bt bft_inj fifo bfn_fifo bfr_fifo.
 
 Set Implicit Arguments.
 
-Module BFR_BFN_FIFO (M: FIFO).
+Module BFR_BFN_FIFO (Q: FIFO).
 
-  Export M.
+  Export Q.
 
-  Module MBFN := BFN_FIFO M.
-  Module MBFR := BFR_FIFO M.
+  Module MBFN := BFN_FIFO Q.
+  Module MBFR := BFR_FIFO Q.
 
   Export MBFN MBFR.
 
