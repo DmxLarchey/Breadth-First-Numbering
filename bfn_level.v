@@ -131,7 +131,6 @@ Section breadth_first_numbering_by_levels.
 
     Fact bfn_level_spec_1 t : t ~t bfn_level t.
     Proof. apply (proj2_sig (bfn_level_full t)). Qed.
-
  
     Fact bfn_level_spec_2 t : is_seq_from 0 (bft_forest (bfn_level t)).
     Proof. apply (proj2_sig (bfn_level_full t)). Qed.
