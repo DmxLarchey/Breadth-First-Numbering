@@ -121,7 +121,7 @@ Section bfn_fifo.
 
     *)
 
-  Implicit Type p : fifo (bt X).
+  Implicit Types (p : fifo (bt X)) (n: nat).
 
   Definition bfn_fifo_f n p : { q | f2l p ~lt rev (f2l q) /\ is_bfn_from n (rev (f2l q)) }.
   Proof.
@@ -210,7 +210,7 @@ Section bfn_fifo.
       rewrite rev_involutive in Hp.
       destruct (bfn_fifo_f n p) as (q & H1 & H2).
       exists (rev (f2l q)); split; auto.
-      rewrite <- Hp; auto.
+      rewrite <- Hp; assumption.
     Qed.
 
   End bfn_f_fifo.

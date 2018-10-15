@@ -56,6 +56,7 @@ Section breadth_first_traversal.
       end
     end.
 
+  (** the following could have served as a less optimized definition *)
   Fact forest_decomp_eq ll : forest_decomp ll = (roots ll, subtrees ll).
   Proof. induction ll as [ | [] ? IH ]; simpl; auto; rewrite IH; auto. Qed.
 
@@ -63,18 +64,20 @@ Section breadth_first_traversal.
       
     Variable (bft_f : list (bt X) -> list X).
 
-    Let bft_f_prop_0 := forall l, bft_f l = roots l ++ bft_f (subtrees l).
-    Let bft_f_prop_1 := forall l m, bft_f (l++m) = roots l ++ bft_f (m++subtrees l).
-    Let bft_f_prop_2 := forall t l, bft_f (t::l) = root t :: bft_f (l++subt t).
-    Let bft_f_prop_3 := (forall x l, bft_f (leaf x::l) = x::bft_f l)
+    Definition bft_f_prop_0 := forall l, bft_f l = roots l ++ bft_f (subtrees l).
+    Definition bft_f_prop_1 := forall l m, bft_f (l++m) = roots l ++ bft_f (m++subtrees l).
+    Definition bft_f_prop_2 := forall t l, bft_f (t::l) = root t :: bft_f (l++subt t).
+    Definition bft_f_prop_3 := (forall x l, bft_f (leaf x::l) = x::bft_f l)
                      /\ (forall a b x l, bft_f (node a x b::l) = x::bft_f (l++a::b::nil)).
 
-    (** The identity   bft_f (l++m) = map root l ++ bft_f (m++subt l) is critical
-        to show the correctness of Breadth First Numbering *)
+    (** The identity [bft_f (l++m) = roots l ++ bft_f (m++subtrees l)] is critical
+        to show the correctness of Breadth First Numbering. *)
 
-    (* The induction is a bit complex here because l and m alternate in the proof
-       so we proceed by induction on lsum (l++m) *)
+    (* The induction for the implications [bft_f_prop_0 -> bft_f_prop_1] and
+       [bft_f_prop_2 -> bft_f_prop_1] is a bit complex because [l] and [m]
+       alternate in the proof - we proceed by induction on [lsum (l++m)]. *)
 
+    (** here is work to do: *)
     Let prop_0_prop_1 : bft_f_prop_0 -> bft_f_prop_1.
     Proof.
       unfold bft_f_prop_0, bft_f_prop_1.
@@ -87,6 +90,7 @@ Section breadth_first_traversal.
       generalize (subtrees_le l); destruct t; simpl; omega.
     Qed.
 
+    (** the following just an instance relation: *)
     Let prop_1_prop_0 : bft_f_prop_1 -> bft_f_prop_0.
     Proof.
       unfold bft_f_prop_0, bft_f_prop_1.
@@ -94,6 +98,7 @@ Section breadth_first_traversal.
       apply H.
     Qed.
 
+    (** the following just an instance relation: *)
     Let prop_1_prop_2 : bft_f_prop_1 -> bft_f_prop_2.
     Proof.
       unfold bft_f_prop_1, bft_f_prop_2.
@@ -102,6 +107,7 @@ Section breadth_first_traversal.
       simpl in H; rewrite H, <- app_nil_end; trivial.
     Qed.
 
+    (** here is work to do: *)
     Let prop_2_prop_1 : bft_f_prop_2 -> bft_f_prop_1.
     Proof.
       unfold bft_f_prop_1, bft_f_prop_2.
@@ -115,6 +121,7 @@ Section breadth_first_traversal.
       destruct t; simpl; omega.
     Qed.
 
+    (** just two instances to look at: *)
     Let prop_2_prop_3 : bft_f_prop_2 -> bft_f_prop_3.
     Proof.
       unfold bft_f_prop_2, bft_f_prop_3.
@@ -124,6 +131,7 @@ Section breadth_first_traversal.
       + intros; apply H.
     Qed.
 
+    (** just a case analysis: *)
     Let prop_3_prop_2 : bft_f_prop_3 -> bft_f_prop_2.
     Proof.
       unfold bft_f_prop_2, bft_f_prop_3.
@@ -131,7 +139,7 @@ Section breadth_first_traversal.
       rewrite <- app_nil_end; auto.
     Qed.
 
-    Theorem bft_f_equivalences :  
+    Theorem bft_f_equivalences :
            (bft_f_prop_0 -> bft_f_prop_1)
         /\ (bft_f_prop_1 -> bft_f_prop_2)
         /\ (bft_f_prop_2 -> bft_f_prop_3)
@@ -146,8 +154,10 @@ Section breadth_first_traversal.
 
     Hypothesis (H10 : bf1 nil = nil)
                (H20 : bf2 nil = nil)
-               (H11 : forall l, bf1 l = roots l ++ bf1 (subtrees l))
-               (H21 : forall l, bf2 l = roots l ++ bf2 (subtrees l)).
+               (H11: bft_f_prop_0 bf1)
+               (H21: bft_f_prop_0 bf2).
+            (* (H11 : forall l, bf1 l = roots l ++ bf1 (subtrees l))
+               (H21 : forall l, bf2 l = roots l ++ bf2 (subtrees l)). *)
 
     Theorem bft_f_unicity l : bf1 l = bf2 l.
     Proof.
@@ -229,9 +239,10 @@ Section breadth_first_traversal.
 
     Hint Resolve bft_f_fix_1.
 
-    Fact bft_f_fix_2 lt : bft_f lt = roots lt ++ bft_f (subtrees lt).
+    Fact bft_f_fix_2: bft_f_prop_0 bft_f.
+    (** for argument [lt], this is [bft_f lt = roots lt ++ bft_f (subtrees lt)]. *)
     Proof. 
-      destruct lt; auto.
+      intro lt; destruct lt; auto.
       apply bft_f_fix_1; discriminate.
     Qed.
 
@@ -245,10 +256,12 @@ Section breadth_first_traversal.
 
   Hint Resolve bft_f_fix_2.
 
-  Fact bft_f_fix_3 t l m : bft_f (l++m) = roots l ++ bft_f (m++subtrees l).
+  Fact bft_f_fix_3: bft_f_prop_1 bft_f.
+  (** for arguments [t l m], this is [bft_f (l++m) = roots l ++ bft_f (m++subtrees l)]. *)
   Proof. do 1 apply bft_f_equivalences; auto. Qed.
 
-  Fact bft_f_fix_4 t l : bft_f (t::l) = root t :: bft_f (l++subt t).
+  Fact bft_f_fix_4: bft_f_prop_2 bft_f.
+  (** for arguments [t l], this is [bft_f (t::l) = root t :: bft_f (l++subt t)]. *)
   Proof. do 2 apply bft_f_equivalences; auto. Qed.
 
   Fact bft_f_fix_oka_0 : bft_f nil = nil.
