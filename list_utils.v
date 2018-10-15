@@ -304,15 +304,28 @@ Section seq_an.
       | x::l => n=x /\ is_seq_from (S n) l
     end.
 
-  Theorem is_seq_from_spec a l : is_seq_from a l <-> exists n, l = seq_an a n.
+  Fact is_seq_from_app_left n l m : is_seq_from n (l++m) -> is_seq_from n l.
+  Proof.
+    revert n.
+    induction l as [ | x l IH ]; intros n; simpl; auto.
+    intros []; subst; auto.
+  Qed.
+
+  Fact is_seq_from_app_right n l m : is_seq_from n (l++m) -> is_seq_from (length l+n) m.
+  Proof.
+    revert n.
+    induction l as [ | x l IH ]; intros n; simpl; auto.
+    intros []; subst.
+    replace (S (length l+x)) with (length l+S x) by omega; auto.
+  Qed.
+
+  Theorem is_seq_from_spec a l : is_seq_from a l <-> l = seq_an a (length l).
   Proof.
     revert a; induction l as [ | x l IH ]; intros a; simpl.
-    + split; auto; exists 0; auto.
+    + split; auto.
     + rewrite IH; split.
-      * intros (? & n & Hn); subst x; exists (S n); subst; auto.
-      * intros ([ | n ] & ?); subst; try discriminate.
-        simpl in H; inversion H; subst; split; auto.
-        exists n; auto.
+      * intros []; subst; f_equal; auto.
+      * injection 1; auto.
   Qed.
 
 End seq_an.
