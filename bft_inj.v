@@ -50,3 +50,17 @@ Section bft_any_inj.
   Proof. do 2 rewrite <- bft_forest_eq_bft_std; apply bft_forest_inj. Qed.
 
 End bft_any_inj.
+
+Fact lbt_is_bfn_from_eq n l m : l ~lt m -> is_bfn_from n l -> is_bfn_from n m -> l = m.
+Proof.
+  intros H1 H2 H3.
+  apply bft_f_inj; auto.
+  red in H2, H3.
+  rewrite is_seq_from_spec in H2.
+  rewrite is_seq_from_spec in H3.
+  rewrite H2, H3.
+  do 2 rewrite bft_f_length.
+  f_equal.
+  revert H1; apply lbt_eq_lsum.
+Qed.
+

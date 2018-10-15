@@ -21,8 +21,6 @@ Set Implicit Arguments.
 
 Section breadth_first_numbering_by_levels.
 
-  Notation subtrees := (flat_map (@subt _)).
-
   Fixpoint forest_children {X} ll : nat * list (bt X) :=
     match ll with 
       | nil   => (0,nil)
@@ -52,8 +50,7 @@ Section breadth_first_numbering_by_levels.
     end.
 
   Lemma forest_rebuild_id i ts : 
-            is_seq_from i (roots ts) 
-         -> forest_rebuild i ts (subtrees ts) = ts.
+          is_seq_from i (roots ts) -> forest_rebuild i ts (subtrees ts) = ts.
   Proof.
     revert i.
     induction ts as [ | [|] ]; simpl; auto; intros ? []; subst; f_equal; auto.
@@ -84,21 +81,13 @@ Section breadth_first_numbering_by_levels.
     generalize (forest_rebuild_lt i cs H3); intros H5.
     rewrite H5.
     assert (cs = subtrees ls) as E.
-    { unfold is_bfn_from in H4.
-      rewrite bft_f_fix_2 in H4.
-      apply is_seq_from_app_right in H4.
-      rewrite map_length in H4.
-      red in H2.
-      rewrite is_seq_from_spec,bft_f_length in H2.
-      rewrite is_seq_from_spec, bft_f_length in H4.
-      rewrite (Forall2_length H3) in H2.
-      apply lbt_eq_subtrees in H3.
-      symmetry; apply bft_f_inj.
-      * apply lbt_eq_trans with (2 := H1), lbt_eq_sym; auto.
-      * rewrite H4, H2.
-        apply lbt_eq_lsum in H1.
-        apply lbt_eq_lsum in H3.
-        rewrite <- H1, <- H3; auto. }
+    { apply lbt_is_bfn_from_eq with (2 := H2).
+      * apply lbt_eq_sym, lbt_eq_trans with (2 := H1),
+              lbt_eq_sym, lbt_eq_subtrees; auto.
+      * red in H4.
+        rewrite bft_f_fix_2 in H4.
+        apply is_seq_from_app_right in H4.
+        rewrite map_length, <- (Forall2_length H3) in H4; trivial. }
     rewrite E, forest_rebuild_id; auto.
     red in H4.
     rewrite bft_f_fix_2 in H4.
