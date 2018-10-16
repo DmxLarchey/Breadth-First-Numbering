@@ -217,6 +217,15 @@ Section Forall2.
 
   Fact Forall2_rev l m : Forall2 R l m -> Forall2 R (rev l) (rev m).
   Proof. induction 1; simpl; auto; apply Forall2_app; simpl; auto. Qed.
+
+  Fact Forall2_rev_eq l m : Forall2 R l m <-> Forall2 R (rev l) (rev m).
+  Proof.
+    split.
+    + apply Forall2_rev.
+    + intros H.
+      rewrite <- (rev_involutive l),  <- (rev_involutive m).
+      apply Forall2_rev; trivial.
+  Qed.
  
   Fact Forall2_app_inv l1 l2 m1 m2 : length l1 = length m1
                                   -> Forall2 R (l1++l2) (m1++m2)
