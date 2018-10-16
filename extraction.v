@@ -44,8 +44,6 @@ Recursive Extraction BFN_triv.bfn_fifo BFN_2lists.bfn_fifo BFN_3llists.bfn_fifo.
 Recursive Extraction BFR_triv.bfr_fifo BFR_2lists.bfr_fifo BFR_3llists.bfr_fifo.
 *)
 
-(** the following does not yield executable extracted programs *)
-
 (*Recursive Extraction BFT_triv.bft_fifo BFN_triv.bfn_fifo  BFR_triv.bfr_fifo. *)
 
 Recursive Extraction BFT_2lists.bft_fifo BFN_3llists.bfn_fifo BFR_triv.bfr_fifo.
@@ -57,8 +55,4 @@ Recursive Extraction BFT_3llists.bft_fifo
                      BFN_3llists.bfn_fifo
                      BFR_3llists.bfr_fifo.
 
-Recursive Extraction BFT_axm.bft_fifo
-                     BFN_axm.bfn_fifo
-                     BFR_axm.bfr_fifo.
-
-*)
+ *)
