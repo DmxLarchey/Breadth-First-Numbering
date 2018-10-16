@@ -44,8 +44,8 @@ Section bfn_NC. (* necessary conditions *)
   Qed.
 
   Theorem bfn_f_eq_2 i a x b l : exists an bn ln,
-               bfn_f (S i) (l++a::b::nil) = ln++an::bn::nil
-            /\ bfn_f i (node a x b::l) = node an i bn :: ln.
+               bfn_f i (node a x b::l) = node an i bn :: ln
+            /\  bfn_f (S i) (l++a::b::nil) = ln++an::bn::nil.
   Proof.
     generalize (H0 (S i) (l++a::b::nil)); intros H.
     apply Forall2_app_inv_l in H.
@@ -57,7 +57,7 @@ Section bfn_NC. (* necessary conditions *)
     { inversion H3. }
     apply Forall2_cons_inv in H3; destruct H3 as (H6 & H3).
     inversion H3; subst l1; clear H3.
-    exists an, bn, ln; split; [assumption |].
+    exists an, bn, ln; split; [| assumption].
     apply lbt_is_bfn_from_eq with i; [|apply H1|].
     + generalize (H0 (S i) (l++a::b::nil)); rewrite H4; intros G2.
       apply Forall2_2snoc_inv in G2; destruct G2 as (G2 & G3 & G4).
@@ -79,8 +79,8 @@ Section bfn_SC. (* sufficient conditions, synthesis *)
            (H0 : forall i, bfn_f i nil = nil)
            (H1 : forall i x l, bfn_f i (leaf x::l) = leaf i :: bfn_f (S i) l)
            (H2 : forall i a x b l, exists an bn ln,
-                    bfn_f (S i) (l++a::b::nil) = ln++an::bn::nil
-                 /\ bfn_f i (node a x b::l) = node an i bn :: ln).
+                 bfn_f i (node a x b::l) = node an i bn :: ln
+               /\ bfn_f (S i) (l++a::b::nil) = ln++an::bn::nil).
 
   Theorem bfn_f_lt i l : l ~lt bfn_f i l.
   Proof.
@@ -90,10 +90,10 @@ Section bfn_SC. (* sufficient conditions, synthesis *)
     + rewrite H1; repeat constructor.
       apply IH; simpl; omega.
     + destruct (H2 i a x b l) as (an & bn & ln & H3 & H4).
-      rewrite H4.
+      rewrite H3.
       assert (lsum (l++a::b::nil) < lsum (node a x b :: l)) as D.
       { rewrite lsum_app; simpl; omega. }
-      generalize (IH (S i) _ D); rewrite H3.
+      generalize (IH (S i) _ D); rewrite H4.
       intros H5.
       apply Forall2_2snoc_inv in H5; destruct H5 as (? & ? & ?).
       repeat constructor; assumption.
@@ -108,8 +108,8 @@ Section bfn_SC. (* sufficient conditions, synthesis *)
       rewrite bft_f_fix_oka_1; split; auto.
       apply IH; simpl; omega.
     + destruct (H2 i a x b l) as (an & bn & ln & H3 & H4).
-      rewrite H4; red; rewrite bft_f_fix_oka_2; split; auto.
-      rewrite <- H3; apply IH.
+      rewrite H3; red; rewrite bft_f_fix_oka_2; split; auto.
+      rewrite <- H4; apply IH.
       rewrite lsum_app; simpl; omega.
   Qed.
 
