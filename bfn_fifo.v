@@ -121,19 +121,19 @@ Section bfn_fifo.
 
     *)
 
-  Implicit Types (p : fifo (bt X)) (n: nat).
+  Implicit Types (q : fifo (bt X)) (n: nat).
 
-  Definition bfn_fifo_f n p : { q | f2l p ~lt rev (f2l q) /\ is_bfn_from n (rev (f2l q)) }.
+  Definition bfn_fifo_f n q : { q' | f2l q ~lt rev (f2l q') /\ is_bfn_from n (rev (f2l q')) }.
   Proof.
-    induction on n p as bfn_fifo_f with measure (fifo_lsum p).
+    induction on n q as bfn_fifo_f with measure (fifo_lsum q).
 
-    refine (let (b,Hb) := void p in _).
+    refine (let (b,Hb) := void q in _).
     revert Hb; refine (match b with 
-      | true  => fun Hp 
-      => let (q,Hq) := @empty _ 
-         in exist _ q _
-      | false => fun Hp 
-      => let (d1,Hd1) := @deq _ p _ 
+      | true  => fun Hq 
+      => let (q',Hq') := @empty _ 
+         in exist _ q' _
+      | false => fun Hq 
+      => let (d1,Hd1) := @deq _ q _ 
          in _
     end). 
     all: cycle 2. (* We queue 2 POs *)
@@ -141,14 +141,14 @@ Section bfn_fifo.
       | (t,p1) => _ end). 
     refine (match t with
         | leaf x => fun Hp1 
-        => let (q,Hq)   := bfn_fifo_f (S n) p1 _     in
-           let (q1,Hq1) := enq q (leaf n) 
+        => let (q',Hq')   := bfn_fifo_f (S n) p1 _     in
+           let (q1,Hq1) := enq q' (leaf n) 
            in  exist _ q1 _
         | node a x b => fun Hp1 
         => let (p2,Hp2) := enq p1 a                  in
            let (p3,Hp3) := enq p2 b                  in
-           let (q,Hq)   := bfn_fifo_f (S n) p3 _     in 
-           let (d2,Hd2) := @deq _ q _ 
+           let (q',Hq')   := bfn_fifo_f (S n) p3 _     in 
+           let (d2,Hd2) := @deq _ q' _ 
            in  _
     end); simpl in Hp1.
     all: cycle 4. (* We queue 4 POs *)
@@ -164,26 +164,26 @@ Section bfn_fifo.
 
     (* And now, we show POs *)
    
-    * apply proj1 in Hp; rewrite Hp, Hq; split; simpl; auto.
+    * apply proj1 in Hq; rewrite Hq, Hq'; split; simpl; auto.
       red; rewrite bft_f_fix_oka_0; simpl; auto.
-    * intros H; apply Hp in H; discriminate.
+    * intros H; apply Hq in H; discriminate.
     * rewrite Hp1; simpl; omega.
-    * destruct Hq as (H5 & H6).
+    * destruct Hq' as (H5 & H6).
       rewrite Hp1, Hq1; split; auto.
       + rewrite rev_app_distr; simpl; auto.
       + rewrite rev_app_distr; simpl; red.
         rewrite bft_f_fix_oka_1; simpl; auto.
     * rewrite Hp3, Hp2, app_ass; simpl.
       rewrite lsum_app, Hp1; simpl; omega.
-    * apply proj1, Forall2_rev in Hq; intros H; revert Hq.
+    * apply proj1, Forall2_rev in Hq'; intros H; revert Hq'.
       rewrite H, Hp3, Hp2, app_ass; simpl.
       rewrite rev_app_distr; simpl.
       intros G; apply Forall2_length in G; discriminate.
-    * apply proj1, Forall2_rev in Hq; intros H; revert Hq.
+    * apply proj1, Forall2_rev in Hq'; intros H; revert Hq'.
       rewrite Hq1, H, Hp3, Hp2, app_ass; simpl.
       rewrite rev_app_distr; simpl.
       intros G; apply Forall2_length in G; discriminate.
-    * destruct Hq as (H5,H6).
+    * destruct Hq' as (H5,H6).
       rewrite Hp3, Hp2, Hq1, Hq2 in H5. 
       repeat (rewrite app_ass in H5; simpl in H5).
       apply Forall2_2snoc_inv in H5.
