@@ -29,8 +29,9 @@ Section bfn_NC. (* necessary conditions *)
   Theorem bfn_f_eq_0 i : bfn_f i nil = nil.
   Proof.
     symmetry; apply lbt_is_bfn_from_eq with i; auto.
-    + apply lbt_eq_trans with (2 := H0 _ _); constructor.
-    + red; rewrite bft_f_fix_0; simpl; auto.
+    + (** there are two different [nil] in this goal *)
+      apply lbt_eq_trans with (2 := H0 _ _); constructor.
+    + red; rewrite bft_f_fix_0; simpl; constructor.
   Qed.
 
   Theorem bfn_f_eq_1 i x l : bfn_f i (leaf x::l) = leaf i :: bfn_f (S i) l.
@@ -56,12 +57,12 @@ Section bfn_NC. (* necessary conditions *)
     { inversion H3. }
     apply Forall2_cons_inv in H3; destruct H3 as (H6 & H3).
     inversion H3; subst l1; clear H3.
-    exists an, bn, ln; split; auto.
-    apply lbt_is_bfn_from_eq with i; auto.
+    exists an, bn, ln; split; [assumption |].
+    apply lbt_is_bfn_from_eq with i; [|apply H1|].
     + generalize (H0 (S i) (l++a::b::nil)); rewrite H4; intros G2.
       apply Forall2_2snoc_inv in G2; destruct G2 as (G2 & G3 & G4).
       apply lbt_eq_sym, lbt_eq_trans with (2 := H0 _ _), lbt_eq_sym; 
-        repeat constructor; auto.
+        repeat constructor; assumption.
     + red; rewrite bft_f_fix_oka_2; simpl.
       split; auto.
       generalize (H1 (S i) (l++a::b::nil)); rewrite H4; auto.
@@ -71,8 +72,8 @@ End bfn_NC.
 
 Section bfn_SC. (* sufficient conditions, synthesis *)
 
-  (* Assuming bfn_f satisfies the previous equations, 
-     then bfn_f satisfies the functional spec of BFN *)
+  (* Assuming [bfn_f] satisfies the previous equations, 
+     then [bfn_f] satisfies the functional spec of BFN *)
      
   Variable (X : Type) (bfn_f : nat -> list (bt X) -> list (bt nat))
            (H0 : forall i, bfn_f i nil = nil)
@@ -95,14 +96,14 @@ Section bfn_SC. (* sufficient conditions, synthesis *)
       generalize (IH (S i) _ D); rewrite H3.
       intros H5.
       apply Forall2_2snoc_inv in H5; destruct H5 as (? & ? & ?).
-      repeat constructor; auto.
+      repeat constructor; assumption.
   Qed.
 
   Theorem bfn_f_bfn i l : is_bfn_from i (bfn_f i l).
   Proof.
     induction on i l as IH with measure (lsum l).
     destruct l as [ | [ x | a x b ] l ].
-    + rewrite H0; red; rewrite bft_f_fix_0; simpl; auto.
+    + rewrite H0; red; rewrite bft_f_fix_0; simpl; constructor.
     + rewrite H1; red.
       rewrite bft_f_fix_oka_1; split; auto.
       apply IH; simpl; omega.
