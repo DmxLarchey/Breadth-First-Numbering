@@ -22,30 +22,30 @@ Section bfr_fifo.
 
   Variable (X Y : Type).
 
-  Implicit Type (p : fifo (bt X)) (ll : list Y).
+  Implicit Type (q : fifo (bt X)) (ll : list Y).
 
-  Fixpoint bfr_fifo_f p (ll : list Y) { struct ll } : 
-            fifo_lsum p = length ll
-         -> { q  | f2l p ~lt rev (f2l q)
-                /\ bft_f (rev (f2l q)) = ll }.
+  Fixpoint bfr_fifo_f q (ll : list Y) { struct ll } : 
+            fifo_lsum q = length ll
+         -> { q'  | f2l q ~lt rev (f2l q')
+                /\ bft_f (rev (f2l q')) = ll }.
   Proof.
     refine (match ll with 
-      | nil   => fun Hll => let (q,Hq)   := empty _ 
-                            in  exist _ q _
-      | y::mm => fun Hll => let (d1,Hd1) := @deq _ p _ 
+      | nil   => fun Hll => let (q',Hq')   := empty _ 
+                            in  exist _ q' _
+      | y::mm => fun Hll => let (d1,Hd1) := @deq _ q _ 
                             in  _
     end).
     all: cycle 2.
     revert Hd1; refine (match d1 with (t,p1) => _ end); intros Hp1.
     rewrite Hp1 in Hll; simpl in Hll; clear d1.
     revert Hll Hp1; refine (match t with 
-      | leaf x     => fun Hll Hp1 => let (q,Hq)   := bfr_fifo_f p1 mm _ in 
-                                     let (q1,Hq1) := enq q (leaf y) 
+      | leaf x     => fun Hll Hp1 => let (q',Hq')   := bfr_fifo_f p1 mm _ in 
+                                     let (q1,Hq1) := enq q' (leaf y) 
                                      in  exist _ q1 _
       | node a x b => fun Hll Hp1 => let (p2,Hp2) := enq p1 a           in
                                      let (p3,Hp3) := enq p2 b           in
-                                     let (q,Hq)   := bfr_fifo_f p3 mm _ in  
-                                     let (d2,Hd2) := @deq _ q _     
+                                     let (q',Hq')   := bfr_fifo_f p3 mm _ in  
+                                     let (d2,Hd2) := @deq _ q' _     
                                      in  _
     end); auto.
     all: cycle 3.
@@ -60,26 +60,26 @@ Section bfr_fifo.
     end).
     all: cycle 1.
 
-    * revert Hll; rewrite Hq; simpl.
-      generalize (f2l p).
+    * revert Hll; rewrite Hq'; simpl.
+      generalize (f2l q).
       intros [ | [] ? ]; simpl; try discriminate.
       split; auto.
       rewrite bft_f_fix_oka_0; reflexivity.
     * intros E; rewrite E in Hll; discriminate.
-    * destruct Hq as (Hq2 & Hq3).
+    * destruct Hq' as (Hq2 & Hq3).
       rewrite Hp1, Hq1, rev_app_distr; split; simpl; auto.
       rewrite bft_f_fix_oka_1, Hq3; auto.
     * rewrite Hp3, Hp2; do 2 rewrite lsum_app; simpl in Hll |- *; omega.
-    * destruct Hq as (Hq_1 & Hq_2); 
+    * destruct Hq' as (Hq_1 & Hq_2); 
       apply Forall2_rev in Hq_1; rewrite rev_involutive in Hq_1.
       intros H; rewrite H, Hp3, rev_app_distr in Hq_1; inversion Hq_1.
-    * destruct Hq as (Hq_1 & Hq_2).
+    * destruct Hq' as (Hq_1 & Hq_2).
       apply Forall2_rev in Hq_1; rewrite rev_involutive in Hq_1.
       intros H; rewrite Hd2, H, Hp3, Hp2 in Hq_1. 
       do 2 rewrite rev_app_distr in Hq_1.
       inversion Hq_1.
       inversion H5.
-    * destruct Hq as (Hq_1 & Hq_2).
+    * destruct Hq' as (Hq_1 & Hq_2).
       apply Forall2_rev in Hq_1; rewrite rev_involutive in Hq_1.
       simpl in *.
       rewrite Hp1, Hq3, rev_app_distr; simpl.
