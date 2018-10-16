@@ -24,6 +24,8 @@ dft_bft_compare.v
 
 bft_fifo.v
 
+bfn_spec.v
+
 bfn_fifo.v
 bfn_trivial.v
 bfn_level.v
