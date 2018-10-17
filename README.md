@@ -20,7 +20,7 @@ There are 26 Coq vernacular files, here presented in useful order (based on the 
 * *bft_forest.v* --- Breadth-first traversal for forests of trees, paying much attention to the recursive equations that can guide the definition and/or verification.
 * *bft_inj.v* --- Structurally equal forests with the same outcome of breadth-first traversal are equal.
 * *bft_fifo.v* --- Breadth-first traversal given an abstract FIFO.
-* *bfn_spec.v* --- An abstract view of what is need for breadth-first numbering.
+* *bfn_spec_rev.v* --- A characterization of breadth-first numbering.
 * *bfn_fifo.v* --- The certified analogue of Okasaki's algorithm for breadth-first numbering.
 * *bfn_trivial.v* --- Just the instance of the previous with the trivial implementation of FIFOs.
 * *bfn_level.v* --- A certified reconstruction of `bfnum` on page 134 (section 4 and Figure 5) of Okasaki's article. For its full specification, we allow ourselves to use breadth-first numbering obtained in *bfn_trivial.v*.

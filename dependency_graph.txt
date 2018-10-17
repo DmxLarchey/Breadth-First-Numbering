@@ -23,7 +23,7 @@ bft_forest.v:	list_utils wf_utils zip bt bft_std
 bft_inj.v:	list_utils wf_utils bt bft_std bft_forest
 bft_fifo.v:     list_utils wf_utils bt fifo bft_std bft_forest
 
-bfn_spec.v:	list_utils wf_utils bt bft_std bft_forest bft_inj
+bfn_spec_rev.v:	list_utils wf_utils bt bft_std bft_forest bft_inj
 bfn_fifo.v:     list_utils wf_utils bt fifo bft_std bft_forest bft_inj
 bfn_trivial.v:	list_utils fifo fifo_triv bfn_fifo
 bfn_level.v:	list_utils wf_utils zip bt bft_std bft_forest bft_inj bfn_trivial
