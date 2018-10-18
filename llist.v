@@ -77,17 +77,17 @@ Section llist.
     revert l2; induction l1 as [ | x l IHl ]; intros [ | y m ]; auto; try discriminate.
     simpl; intros H; inversion H; f_equal; auto.
   Qed.
-    
+
   Inductive lfin : llist -> Prop :=
     | lfin_lnil :  lfin lnil
     | lfin_lcons : forall a ll, lfin ll -> lfin (lcons a ll).
-    
+
   Fact lfin_inv a ll : lfin (lcons a ll) -> lfin ll.
   Proof. inversion 1; assumption. Defined.
 
   Fact lfin_list_llist l : lfin (list_llist l).
   Proof. induction l; simpl; constructor; trivial. Qed.
-
+ 
   Section llist_list.
 
     Let llist_list_rec : forall ll, lfin ll -> { l | ll = list_llist l }.
