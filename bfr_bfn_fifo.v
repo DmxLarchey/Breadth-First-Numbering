@@ -27,7 +27,7 @@ Module BFR_BFN_FIFO (Q: FIFO).
 
   Export MBFN MBFR.
 
-  Theorem bfr_bfn_fifo (X:Type) (t : bt X) : bfn_fifo t = bfr_fifo t (seq_an 0 (m_bt t)) (eq_sym (seq_an_length _ _)).
+  Theorem bfr_bfn_fifo (X:Type) (t : bt X) : bfn_fifo t = bfr_fifo t (seq_an 1 (m_bt t)) (eq_sym (seq_an_length _ _)).
   Proof.
     apply bft_std_inj.
     * apply bt_eq_trans with (s := t).
