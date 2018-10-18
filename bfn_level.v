@@ -114,9 +114,9 @@ Section breadth_first_numbering_by_levels.
       destruct Hr'; rewrite <- E; apply forest_rebuild_spec; assumption.
     Defined.
 
-    Let bfn_level_full t : { t' | t ~t t' /\ is_seq_from 0 (bft_forest t') }.
+    Let bfn_level_full t : { t' | t ~t t' /\ is_seq_from 1 (bft_forest t') }.
     Proof.
-      refine (let (r,Hr) := bfn_level_f 0 (t::nil) in _).
+      refine (let (r,Hr) := bfn_level_f 1 (t::nil) in _).
       destruct r as [ | t' r ].
       + exfalso; destruct Hr as (Hr & _); inversion Hr.
       + exists t'.
@@ -132,10 +132,10 @@ Section breadth_first_numbering_by_levels.
     Fact bfn_level_spec_1 t : t ~t bfn_level t.
     Proof. apply (proj2_sig (bfn_level_full t)). Qed.
  
-    Fact bfn_level_spec_2 t : is_seq_from 0 (bft_forest (bfn_level t)).
+    Fact bfn_level_spec_2 t : is_seq_from 1 (bft_forest (bfn_level t)).
     Proof. apply (proj2_sig (bfn_level_full t)). Qed.
  
-    Corollary bfn_level_spec_3 t : bft_std (bfn_level t) = seq_an 0 (m_bt t).
+    Corollary bfn_level_spec_3 t : bft_std (bfn_level t) = seq_an 1 (m_bt t).
     Proof.
       generalize (bfn_level_spec_2 t).
       rewrite is_seq_from_spec.

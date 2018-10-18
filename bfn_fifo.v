@@ -219,11 +219,11 @@ Section bfn_fifo.
 
     Implicit Type (t : bt X).
 
-    Let bfn_fifo_full t : { t' | t ~t t' /\ is_seq_from 0 (bft_forest t') }.
+    Let bfn_fifo_full t : { t' | t ~t t' /\ is_seq_from 1 (bft_forest t') }.
     Proof.
       refine (let (p,Hp) := @empty _       in
               let (q,Hq) := enq p t        in 
-              let (r,Hr) := bfn_fifo_f 0 q in
+              let (r,Hr) := bfn_fifo_f 1 q in
               let (d1,Hd1) := @deq _ r _ 
               in _).
       all: cycle 1. (* We queue 1 PO *) 
@@ -254,10 +254,10 @@ Section bfn_fifo.
       symmetry; apply bt_eq_m with (1 := bfn_fifo_spec_1 _).
     Qed.
 
-    Fact bfn_fifo_spec_2 t : is_seq_from 0 (bft_forest (bfn_fifo t)).
+    Fact bfn_fifo_spec_2 t : is_seq_from 1 (bft_forest (bfn_fifo t)).
     Proof. apply (proj2_sig (bfn_fifo_full t)). Qed.
 
-    Corollary bfn_fifo_spec_3 t : bft_std (bfn_fifo t) = seq_an 0 (m_bt t).
+    Corollary bfn_fifo_spec_3 t : bft_std (bfn_fifo t) = seq_an 1 (m_bt t).
     Proof.
       generalize (bfn_fifo_spec_2 t).
       rewrite is_seq_from_spec.
