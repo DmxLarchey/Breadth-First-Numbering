@@ -9,7 +9,7 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import List Arith Omega Program Extraction.
+Require Import List Arith Omega Extraction.
 Require Import wf_utils.
 
 Set Implicit Arguments.
@@ -55,7 +55,6 @@ Section interleave.
 End interleave.
 
 Extract Inductive list => "list" [ "[]" "(::)" ].
-
 Extraction Inline itl2_full.
 
 Recursive Extraction itl1 itl2.

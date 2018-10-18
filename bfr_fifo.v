@@ -141,8 +141,10 @@ Section bfr_fifo.
 
 End bfr_fifo.
 
+(*
 Check bfr_fifo.
 Check bfr_fifo_spec_1.
 Check bfr_fifo_spec_2.
+*)
 
 End BFR_FIFO.

@@ -32,6 +32,7 @@ Section bt_branches.
 
 End bt_branches.
 
+(*
 Check dft_br_spec.
 Check dft_br_length.
 Check dft_br_sorted.
@@ -43,3 +44,4 @@ Check bft_br_sorted.
 Check bft_br_std.
 
 Check bft_br_dft_br.
+*)

@@ -147,5 +147,7 @@ Section breadth_first_numbering_by_levels.
 
 End breadth_first_numbering_by_levels.
 
+(*
 Check bfn_level_spec_1.
 Check bfn_level_spec_3.
+*)

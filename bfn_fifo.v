@@ -202,7 +202,7 @@ Section bfn_fifo.
       + apply empty.
       + destruct (enq q t) as (q' & Hq').
         exists q'; simpl; rewrite Hq'; f_equal; auto.
-    Qed.
+    Defined.
     
     Definition bfn_f_fifo n (l : list (bt X)) : { m | l ~lt m /\ is_bfn_from n m }.
     Proof.
@@ -211,7 +211,7 @@ Section bfn_fifo.
       destruct (bfn_fifo_f n p) as (q & H1 & H2).
       exists (rev (f2l q)); split; auto.
       rewrite <- Hp; assumption.
-    Qed.
+    Defined.
 
   End bfn_f_fifo.
 
@@ -270,9 +270,9 @@ Section bfn_fifo.
 
 End bfn_fifo.
 
-Check bfn_fifo.
+(* Check bfn_fifo.
 Check bfn_fifo_spec_1.
 Check bfn_fifo_spec_2.
-Check bfn_fifo_spec_3.
+Check bfn_fifo_spec_3. *)
 
 End BFN_FIFO.

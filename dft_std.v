@@ -91,8 +91,10 @@ Section dft_std.
 
 End dft_std.
 
+(*
 Recursive Extraction dft_std.
 
 Check dft_br_spec.
 Check dft_br_sorted.
 Check dft_br_std.
+*)

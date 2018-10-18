@@ -166,8 +166,9 @@ Section breadth_first_traversal_standard.
 
 End breadth_first_traversal_standard.
 
+(*
 Check bft_br_spec.
 Check bft_br_sorted.
 Check bft_br_std.
-
+*)
 
