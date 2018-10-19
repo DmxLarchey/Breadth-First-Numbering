@@ -11,7 +11,7 @@
 
 Require Import List Arith Omega.
 
-Require Import wf_utils llist fifo.
+Require Import wf_utils lazy_list fifo.
 
 Set Implicit Arguments.
 
@@ -53,7 +53,7 @@ Section fifo_three_lazy_lists.
   Implicit Types (l r : llist X).
 
   Let Q_spec (c : llist X * llist X * llist X) :=
-    match c with (l,r,l') => exists Hl Hr Hl', lfin_length l' Hl' + lfin_length r Hr = lfin_length l Hl end.
+    match c with (l,r,l') => llength l' + llength r = llength l end.
 
   Definition fifo := sig Q_spec.
 
@@ -62,130 +62,74 @@ Section fifo_three_lazy_lists.
   Definition f2l : fifo -> list X.
   Proof.
     intros (((l,r),l') & H).
-    refine (llist_list l _ ++ rev (llist_list r _));
-    destruct H as (? & ? & _); assumption.
-  Defined.
-
-  Let fifo_nil_val : fifo.
-  Proof.
-    refine (exist _ (lnil,lnil,lnil) _).
-    exists (lfin_lnil _), (lfin_lnil _), (lfin_lnil _); simpl.
-    rewrite lfin_length_fix_0; auto.
+    exact (llist_list l ++ rev (llist_list r)).
   Defined.
 
   Definition empty : { q | f2l q = nil }.
-  Proof. exists fifo_nil_val; trivial. Defined.
-
-  Definition make l r l' : (exists Hl Hr Hl', lfin_length l' Hl' + lfin_length r Hr = 1 + lfin_length l Hl) -> fifo.
   Proof.
-    destruct l' as [ | x l'' ]; intros E.
-    + cut (lfin l); [ intros Hl1 | ].
-      cut (lfin r); [ intros Hr1 | ].
-      2-3 : cycle 1.
-      cut (lfin_length r Hr1 = 1 + lfin_length l Hl1); [ intros E1 | ].
-      2-4 : cycle 1.
-      refine (let l'' := @llist_rotate _ l r lnil Hl1 Hr1 (@lfin_lnil _) E1 
-              in exist _ (l'',lnil,l'') _).
-      all: cycle 1.
-      * destruct E as (? & ? & _); assumption.
-      * destruct E as (? & ? & _); assumption.
-      * destruct E as (Hl & Hr & Hl' & E).
-        rewrite lfin_length_fix_0 in E.
-        rewrite (lfin_length_eq _ Hr), (lfin_length_eq _ Hl); auto.
-      * exists (lfin_rotate _ _ (@lfin_lnil _) E1), 
-             (@lfin_lnil _),
-             (lfin_rotate _ _ (@lfin_lnil _) E1).
-        unfold l''; rewrite llist_rotate_length; auto.
-    + refine (exist _ (l,r,l'') _).
-      destruct E as (Hl & Hr & Hl'' & E).
-      exists Hl, Hr, (lfin_inv Hl'').
-      rewrite lfin_length_fix_1 in E; omega.
+    assert (H : Q_spec (lnil,lnil,lnil)).
+    { red; rewrite llength_nil; auto. }
+    exists (exist _ _ H).
+    unfold f2l; simpl.
+    rewrite llist_list_nil; auto.
   Defined.
 
-  Hint Resolve llist_list_eq.
-
-  Fact make_spec l r l' Hl Hr H : llist_list l Hl ++ rev (llist_list r Hr) = f2l (@make l r l' H).
+  Definition make l r l' : llength l' + llength r = 1 + llength l -> { m | llist_list l ++ rev (llist_list r) = f2l m }.
   Proof.
-    destruct H as (Hl1 & Hr1 & Hl' & E).
-    unfold f2l, make; destruct l' as [ | x l' ].
-    + rewrite (llist_rotate_eq _ _ (@lfin_lnil _) _).
-      repeat rewrite llist_list_fix_0; simpl.
-      repeat rewrite <- app_nil_end; repeat (f_equal; auto).
-    + repeat (f_equal; auto).
-  Qed.
-
-  Let fifo_enq_val q x : fifo.
-  Proof.
-    destruct q as (((l,r),l') & H).
-    refine (@make l (lcons x r) l' _).
-    destruct H as (Hl & Hr & Hl' & E).
-    exists Hl, (lfin_lcons _ Hr), Hl'.
-    rewrite lfin_length_fix_1, (lfin_length_eq _ Hr); omega.
+    induction l' as [ | x l'' _ ] using llist_rect; intros E.
+    + rewrite llength_nil in E; simpl in E.
+      set (l'' := @llist_rotate _ l r lnil E).
+      assert (H : Q_spec (l'',lnil,l'')).
+      { red; unfold l''.
+        rewrite llist_rotate_length, llength_nil; omega. }
+      exists (exist _ _ H).
+      unfold Q_spec; simpl.
+      rewrite llist_list_nil.
+      unfold l''.
+      rewrite llist_rotate_eq, llist_list_nil.
+      repeat rewrite <- app_nil_end; trivial.
+    + assert (H : Q_spec (l,r,l'')).
+      { red; rewrite llength_cons in E; omega. }
+      exists (exist _ _ H).
+      unfold Q_spec; simpl; auto.
   Defined.
 
-  Definition enq q x : { q' | f2l q' = f2l q ++ x :: nil }.
-  Proof.  
-    exists (fifo_enq_val q x).
-    revert q x.
-    unfold fifo_enq_val.
-    intros  (((l,r),l') & Hl & Hr & Hl' & E) x.
-    rewrite <- (@make_spec _ _ _ Hl (lfin_lcons _ Hr)).
-    unfold f2l.
-    rewrite llist_list_fix_1, app_ass; trivial.
+  Definition enq : forall q x, { q' | f2l q' = f2l q ++ x :: nil }.
+  Proof.
+    intros (((l,r),l') & H) x.
+    refine (let (m,Hm) := @make l (lcons x r) l' _ in _).
+    + red in H; rewrite llength_cons; omega.
+    + exists m.
+      simpl; rewrite <- Hm.
+      rewrite llist_list_cons, app_ass; simpl; auto.
   Defined.
 
-  Let fifo_deq_val q : f2l q <> nil -> X * fifo.
+  Definition deq : forall q, f2l q <> nil -> { c : X * fifo | let (x,q') := c in f2l q = x::f2l q' }.
   Proof.
-    destruct q as (((l,r),l') & H); revert H.
-    refine (match l with 
-      | lnil      => fun H1 H2 => _
-      | lcons x l => fun H1 H2 => (x,@make l r l' _)
-    end); [ exfalso | ]; destruct H1 as (Hl & Hr & Hl' & E).
-    + unfold f2l in H2.
-      destruct r.
-      * do 2 rewrite llist_list_fix_0 in H2; destruct H2; trivial.
-      * rewrite lfin_length_fix_1, lfin_length_fix_0 in E; omega.
-    + exists (lfin_inv Hl), Hr, Hl'.
-      rewrite E, lfin_length_fix_1; auto.
+    intros (((l,r),l') & H); revert H; simpl.
+    induction l as [ | x l _ ] using llist_rect.
+    + induction r as [ | y r _ ] using llist_rect; intros H1 H2; exfalso.
+      * destruct H2; rewrite llist_list_nil; auto.
+      * rewrite llength_cons,llength_nil in H1; omega.
+    + intros H1 H2.
+      refine (let (m,Hm) := @make l r l' _ in _).
+      * rewrite llength_cons in H1; omega.
+      * exists (x,m).
+        rewrite llist_list_cons; simpl; f_equal; auto.
   Defined.
 
-  Definition deq q : f2l q <> nil -> { c : X * fifo | let (x,q') := c in f2l q = x::f2l q' }.
+  Definition void : forall q, { b : bool | b = true <-> f2l q = nil }.
   Proof.
-    intros Hq.
-    exists (fifo_deq_val q Hq).
-    revert q Hq.  
-    unfold fifo_deq_val.
-    intros ((([ | x l],r),n) & Hl & Hr & Hl' & E) Hq.
-    + exfalso.
-      unfold f2l in Hq.
-      destruct r.
-      * do 2 rewrite llist_list_fix_0 in Hq; destruct Hq; trivial.
-      * rewrite lfin_length_fix_1, lfin_length_fix_0 in E; omega.
-    + rewrite <- (@make_spec _ _ _ (lfin_inv Hl) Hr).
-      unfold f2l.
-      rewrite llist_list_fix_1; auto.
-  Defined.
-
-  Let fifo_void_val : fifo -> bool.
-  Proof.
-    intros ((([ | x l],_),_) & _).
-    + exact true.
-    + exact false.
-  Defined.
-
-  Definition void q : { b : bool | b = true <-> f2l q = nil }.
-  Proof.
-    exists (fifo_void_val q).
-    revert q.
-    unfold f2l, fifo_void_val.
-    intros ((([ | x l],r),n) & Hl & Hr & Hl' & E).
-    + split; auto; intros _. 
-      rewrite llist_list_fix_0.
-      destruct r.
-      * rewrite llist_list_fix_0; auto.
-      * rewrite lfin_length_fix_0, lfin_length_fix_1 in E; omega.
-    + split; try discriminate.
-      rewrite llist_list_fix_1; discriminate.
+    intros (((l,r),l') & H).
+    induction l as [ | x l _ ] using llist_rect; red in H.
+    + exists true; simpl.
+      split; auto; intros _.
+      induction r as [ | y r _ ] using llist_rect.
+      * rewrite llist_list_nil; auto.
+      * rewrite llength_cons, llength_nil in H; simpl in H; omega.
+    + exists false; simpl.
+      split; try discriminate.
+      rewrite llist_list_cons; discriminate.
   Defined.
 
 End fifo_three_lazy_lists.

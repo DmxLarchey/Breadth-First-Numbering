@@ -9,7 +9,9 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import List Extraction.
+Require Import List Arith Omega Extraction.
+
+Require Import wf_utils.
 
 Set Implicit Arguments.
 
@@ -83,13 +85,10 @@ Section llist.
 
     Variable P : forall ll, sfin ll -> Type.
 
-    Let HP0 : forall ll H1 H2, @P ll H1 -> @P ll H2.
-    Proof.
-      intros ll H1 H2; rewrite (sfin_pirr H1 H2); trivial.
-    Defined.
-
     Hypothesis HP1 : @P _ sfin_snil.
     Hypothesis HP2 : forall a ll H, @P ll H -> P (@sfin_scons a ll H).
+
+    Ltac solve := match goal with |- @P _ ?a -> @P _ ?b => rewrite (@sfin_pirr _ a b); trivial end.
 
     Fixpoint sfin_rect ll H { struct H } : @P ll H.
     Proof.
@@ -98,8 +97,8 @@ Section llist.
         | snil       => fun H => _
         | scons a ll => fun H => _
       end).
-      + apply HP0 with (1 := HP1).
-      + apply HP0 with (1 := @HP2 a ll (sfin_inv H) (@sfin_rect _ _)).
+      + generalize HP1; solve.
+      + generalize (@HP2 a ll (sfin_inv H) (@sfin_rect _ _)); solve.
     Qed.
 
   End sfin_rect.
@@ -185,7 +184,108 @@ Section llist.
     Fact id_llist_llist l : l = llist_list (list_llist l).
     Proof. apply list_llist_inj; rewrite <- id_list_llist; trivial. Qed.
 
+    Fact llist_list_nil : llist_list lnil = nil.
+    Proof. apply list_llist_inj; rewrite <- id_list_llist; auto. Qed.
+
+    Fact llist_list_cons a ll : llist_list (lcons a ll) = a :: llist_list ll.
+    Proof.
+      apply list_llist_inj.
+      simpl; repeat rewrite <- id_list_llist; trivial.
+    Qed.
+
   End list_llist.
 
+  Definition llength ll := length (llist_list ll).
+  
+  Fact llength_nil : llength lnil = 0.
+  Proof.
+    unfold llength; rewrite llist_list_nil; auto.
+  Qed.
+
+  Fact llength_cons a ll : llength (lcons a ll) = S (llength ll).
+  Proof.
+    unfold llength; rewrite llist_list_cons; auto.
+  Qed.
+
 End llist.
+
+Arguments lnil {X}.
+
+Extraction Inline sfin_rect llist_rect.
+
+Section Append.
+
+  Variable (X : Type).
+  
+  Implicit Type (l m k : llist X).
+
+  Definition llist_app l m : { r | llist_list r = llist_list l ++ llist_list m }.
+  Proof.
+    induction l as [ | x l (r & Hr) ] using llist_rect.
+    + exists m; rewrite llist_list_nil; auto.
+    + exists (lcons x r); repeat rewrite llist_list_cons; simpl; f_equal; auto.
+  Defined.
+
+End Append.
+
+Arguments llist_app {X}.
+
+Section Rotate.
+
+  (* Rotate with lazy lists (with a non-informative "finiteness" predicate 
+     It seems the algorithm manipulates f a as lazy lists and r as a list ... no sure
+     or three lazy lists ? *)
+
+  Variable (X : Type).
+  
+  Implicit Type (l r m a : llist X).
+  
+  Section def.
+
+    Let prec l r := llength r = 1 + llength l.
+    Let spec l r a m := llist_list m = llist_list l ++ rev (llist_list r) ++ llist_list a.
+
+    Let llist_rotate_rec l r : forall a, prec l r -> sig (spec l r a).
+    Proof.
+      induction on l r as loop with measure (llength l); intros a.
+      induction r as [ | y r' _ ] using llist_rect; intros H.
+      + exfalso; red in H; revert H; rewrite llength_nil; intros; omega.
+      + revert H.
+        induction l as [ | x l' _ ] using llist_rect; intros H.
+        * exists (lcons y a); red in H |- *.
+          assert (r' = lnil); [ | subst ].
+          { revert H.
+            induction r' as [ | ? r' ] using llist_rect; auto.
+            do 2 rewrite llength_cons.
+            rewrite llength_nil; simpl; intros; omega. }
+          do 2 rewrite llist_list_cons, llist_list_nil; auto.
+        * refine (let (m,Hm) := loop l' r' _ (lcons y a) _ in exist _ (lcons x m) _).
+          - rewrite llength_cons; omega.
+          - red in H |- *; do 2 rewrite llength_cons in H; omega.
+          - red in H, Hm |- *.
+            repeat rewrite llist_list_cons.
+            rewrite Hm, llist_list_cons; simpl.
+            rewrite app_ass; auto.
+    Qed.
+
+    Definition llist_rotate l r a (H : prec l r) := proj1_sig (@llist_rotate_rec l r a H).
+
+    Fact llist_rotate_eq l r a H : @spec l r a (@llist_rotate l r a H).
+    Proof. apply (proj2_sig (@llist_rotate_rec l r a H)). Qed.
+
+  End def.
+
+  Arguments llist_rotate : clear implicits.
+
+  Fact llist_rotate_length l r a H : llength (llist_rotate l r a H) = llength l + llength r + llength a.
+  Proof.
+    unfold llength.
+    rewrite llist_rotate_eq, app_length, app_length, rev_length; omega.
+  Qed.
+
+End Rotate.
+
+Recursive Extraction llist_list llist_app llist_rotate.
+
+
  
