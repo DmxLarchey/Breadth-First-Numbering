@@ -35,44 +35,58 @@ Section llist.
 
   Set Elimination Schemes.
 
-  Fact sfin_inv a ll : sfin (scons a ll) -> sfin ll.
-  Proof. inversion 1; assumption. Defined.
+  Section small_inversions.
 
-  Scheme sfin_ind := Induction for sfin Sort Prop.
-
-  Section sfin_uniq.
-
-    (** We show proof irrelevance for sfin by dependent pattern matching 
-
-        Notice { H | ... = ... } is also of sort Prop !!!
-        Yes it is strange but it is part of CIC 
-      *)
-
-    Let sfin_inv_type ll (H : sfin ll) := 
-      match ll as l return sfin l -> Prop with
-        | snil       => fun H => sfin_snil = H
-        | scons a ll => fun H => { H' | @sfin_scons a ll H' = H }
-      end H.
-
-    Fact sfin_invert ll H : @sfin_inv_type ll H.
-    Proof. 
-      destruct H as [ | ? ? H ]; simpl; trivial. 
-      exists H; trivial.
-    Defined.
-
-    (* The dependent inductive scheme lfin_ind is used here *)
-
-    Lemma sfin_pirr ll (H1 H2 : sfin ll) : H1 = H2.
-    Proof.
-      revert H2.
-      induction H1; intros H2.
-      + apply (sfin_invert H2).
-      + destruct (sfin_invert H2) as (H & E).
-        subst; f_equal; trivial.
-    Qed.
-
-  End sfin_uniq.
+    Let input_inv s  := match s with snil => False | _         => True   end.
+    Let output_inv s := match s with snil => True  | scons x s => sfin s end.
     
+    Definition sfin_inv' x s (H : sfin (scons x s)) : sfin s :=
+      match H in sfin s return input_inv s -> output_inv s with
+        | sfin_snil         => fun E => match E with end
+        | sfin_scons _ _ H1 => fun _ => H1
+      end I.
+
+    Fact sfin_inv x s : sfin (scons x s) -> sfin s.
+    Proof. inversion 1; assumption. Defined.
+
+    Let output_invert s : sfin s -> Prop := 
+      match s as s' return sfin s' -> Prop with
+        | snil      => fun H => sfin_snil = H
+        | scons x s => fun H => { H' | @sfin_scons x s H' = H }
+      end.
+
+   (**  Notice { H | ... = ... } is also of sort Prop !!!
+         Yes it is strange but it is part of CIC
+        see generalization below *)
+
+    Section ex_sig_general.
+
+      Variable (Q : Prop) (P : Q -> Prop).
+
+      Fact reif : (exists H, P H) -> { H | P H }.
+      Proof. intros (H & ?); exists H; assumption. Qed.
+
+    End ex_sig_general.
+
+    Definition sfin_invert s H : @output_invert s H :=
+      match H in sfin s return @output_invert s H with
+        | sfin_snil         => eq_refl
+        | sfin_scons _ _ H' => exist _ H' eq_refl 
+      end.
+
+  End small_inversions.
+
+  (** We show proof irrelevance for sfin by induction/inversion
+      where inversion is obtained by dependent pattern matching *)
+
+  Fixpoint sfin_pirr s (H1 : sfin s) : forall H2, H1 = H2.
+  Proof.
+    destruct H1 as [ | x s H1 ]; intros H2.
+    + apply (sfin_invert H2).
+    + destruct (sfin_invert H2) as (H & E).
+      subst; f_equal; apply sfin_pirr.
+  Defined.
+
   Section sfin_rect.
 
     (** We show dependent recursion principle for sfin implementing
@@ -83,22 +97,29 @@ Section llist.
         if it worked ...
       *)
 
-    Variable P : forall ll, sfin ll -> Type.
+    Variable P : forall s, sfin s -> Type.
 
     Hypothesis HP1 : @P _ sfin_snil.
-    Hypothesis HP2 : forall a ll H, @P ll H -> P (@sfin_scons a ll H).
+    Hypothesis HP2 : forall x s H, @P s H -> P (@sfin_scons x s H).
 
-    Ltac solve := match goal with |- @P _ ?a -> @P _ ?b => rewrite (@sfin_pirr _ a b); trivial end.
+    Ltac pirr := match goal with |- @P _ ?a -> @P _ ?b => rewrite (@sfin_pirr _ a b); trivial end.
 
-    Fixpoint sfin_rect ll H { struct H } : @P ll H.
+    (** For some reason I do not understand, the small inversion sfin_inv' much simpler
+        than sfin_inv, is not recognized as a sub-term 
+
+        I should query JF Monin on that one
+
+     *)
+
+    Fixpoint sfin_rect s H { struct H } : @P s H.
     Proof.
       revert H.
-      refine (match ll with
-        | snil       => fun H => _
-        | scons a ll => fun H => _
+      refine (match s with
+        | snil      => fun H => _
+        | scons x s => fun H => _
       end).
-      + generalize HP1; solve.
-      + generalize (@HP2 a ll (sfin_inv H) (@sfin_rect _ _)); solve.
+      + generalize HP1; pirr.
+      + generalize (@HP2 x s (sfin_inv H) (@sfin_rect s (sfin_inv H))); pirr.
     Qed.
 
   End sfin_rect.
@@ -119,41 +140,41 @@ Section llist.
     apply sfin_scons, H.
   Defined.
 
+  (* Injectivity of constructors *)
+
   Fact lcons_inj a b ll1 ll2 : lcons a ll1 = lcons b ll2 -> a = b /\ ll1 = ll2.
   Proof.
     revert ll1 ll2; intros (s1 & H1) (s2 & H2); simpl.
-    inversion 1; subst; split; auto; f_equal; apply sfin_pirr.
+    intros E; apply f_equal with (f := @proj1_sig _ _) in E; simpl in E.
+    inversion E; subst; split; auto; f_equal.
+    apply sfin_pirr.
   Qed.
 
   Fact lnil_lcons_discr a ll : lnil <> lcons a ll.
   Proof. destruct ll; discriminate. Qed.
 
-  Section llist_rect.
+  (** And a dependent recursion principle identical to list_rect *)
 
-    (** And a dependent recursion principle identical to list_rect *)
+  Section llist_rect.
 
     Variable P : llist -> Type.
     
     Hypothesis (HP0 : P lnil).
     Hypothesis (HP1 : forall a m, P m -> P (lcons a m)).
 
-    Let Q s (H : sfin s) := P (exist _ s H).
-
-    Let Q_total s H : @Q s H.
-    Proof.
-      induction H as [ | a s H IH ].
+    Theorem llist_rect : forall ll, P ll.
+    Proof. 
+      intros (? & H). 
+      induction H as [ | x s H IH ].
       + apply HP0.
       + apply HP1 with (1 := IH).
-    Qed.
+    Defined.
 
-    Theorem llist_rect : forall ll, P ll.
-    Proof. intros []; apply Q_total. Qed.
-  
   End llist_rect.
 
-  Section list_llist.
+  (* We have everything to define an isomorphism between list and llist *)
 
-    (* We define an isomorphism between list and llist *)
+  Section list_llist.
 
     Fixpoint list_llist l :=
       match l with
@@ -169,20 +190,26 @@ Section llist.
       + intros H; apply lcons_inj in H; destruct H; f_equal; auto.
     Qed.
 
-    Let llist_list_rec ll : { l | ll = list_llist l }.
-    Proof.
-      induction ll as [ | a ll (l & Hl) ] using llist_rect.
-      + exists nil; auto.
-      + exists (a::l); simpl; f_equal; auto.
-    Qed.
+    Section llist_list.
 
-    Definition llist_list ll := proj1_sig (llist_list_rec ll).
+      Let llist_list_rec ll : { l | ll = list_llist l }.
+      Proof.
+        induction ll as [ | a ll (l & Hl) ] using llist_rect.
+        + exists nil; auto.
+        + exists (a::l); simpl; f_equal; auto.
+      Qed.
 
-    Fact id_list_llist ll : ll = list_llist (llist_list ll).
-    Proof. apply (proj2_sig (llist_list_rec ll)). Qed.
+      Definition llist_list ll := proj1_sig (llist_list_rec ll).
+
+      Fact id_list_llist ll : ll = list_llist (llist_list ll).
+      Proof. apply (proj2_sig (llist_list_rec ll)). Qed.
+
+    End llist_list.
 
     Fact id_llist_llist l : l = llist_list (list_llist l).
     Proof. apply list_llist_inj; rewrite <- id_list_llist; trivial. Qed.
+
+    (* Fixpoint equations *)
 
     Fact llist_list_nil : llist_list lnil = nil.
     Proof. apply list_llist_inj; rewrite <- id_list_llist; auto. Qed.
@@ -198,14 +225,10 @@ Section llist.
   Definition llength ll := length (llist_list ll).
   
   Fact llength_nil : llength lnil = 0.
-  Proof.
-    unfold llength; rewrite llist_list_nil; auto.
-  Qed.
+  Proof. unfold llength; rewrite llist_list_nil; auto. Qed.
 
   Fact llength_cons a ll : llength (lcons a ll) = S (llength ll).
-  Proof.
-    unfold llength; rewrite llist_list_cons; auto.
-  Qed.
+  Proof. unfold llength; rewrite llist_list_cons; auto. Qed.
 
 End llist.
 
@@ -284,6 +307,8 @@ Section Rotate.
   Qed.
 
 End Rotate.
+
+Check llist_rotate_eq.
 
 Recursive Extraction llist_list llist_app llist_rotate.
 
