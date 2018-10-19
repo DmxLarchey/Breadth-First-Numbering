@@ -37,16 +37,16 @@ Section llist.
 
   Section small_inversions.
 
-    Let input_inv s  := match s with snil => False | _         => True   end.
-    Let output_inv s := match s with snil => True  | scons x s => sfin s end.
+    Let shape_inv s := match s with snil => False | _         => True   end.
+    Let pred_inv s  := match s with snil => snil  | scons x s => s      end.
     
-    Definition sfin_inv' x s (H : sfin (scons x s)) : sfin s :=
-      match H in sfin s return input_inv s -> output_inv s with
+    Definition sfin_inv x s (H : sfin (scons x s)) : sfin s :=
+      match H in sfin s return shape_inv s -> sfin (pred_inv s) with
         | sfin_snil         => fun E => match E with end
         | sfin_scons _ _ H1 => fun _ => H1
       end I.
 
-    Fact sfin_inv x s : sfin (scons x s) -> sfin s.
+    Fact sfin_inv' x s : sfin (scons x s) -> sfin s.
     Proof. inversion 1; assumption. Defined.
 
     Let output_invert s : sfin s -> Prop := 
@@ -57,16 +57,7 @@ Section llist.
 
    (**  Notice { H | ... = ... } is also of sort Prop !!!
          Yes it is strange but it is part of CIC
-        see generalization below *)
-
-    Section ex_sig_general.
-
-      Variable (Q : Prop) (P : Q -> Prop).
-
-      Fact reif : (exists H, P H) -> { H | P H }.
-      Proof. intros (H & ?); exists H; assumption. Qed.
-
-    End ex_sig_general.
+        see ex_sig generalization in the parenthesis below *)
 
     Definition sfin_invert s H : @output_invert s H :=
       match H in sfin s return @output_invert s H with
@@ -75,6 +66,17 @@ Section llist.
       end.
 
   End small_inversions.
+
+  Section ex_sig_general.
+
+    (* Very small parenthesis *)
+
+    Variable (Q : Prop) (P : Q -> Prop).
+
+    Fact reif : (exists H, P H) -> { H | P H }.
+    Proof. intros (H & ?); exists H; assumption. Qed.
+
+  End ex_sig_general.
 
   (** We show proof irrelevance for sfin by induction/inversion
       where inversion is obtained by dependent pattern matching *)
@@ -94,7 +96,16 @@ Section llist.
 
         Scheme sfin_rect := Induction for sfin Sort Type.
 
-        if it worked ...
+        But it is not smart enough to invent PIRR ...
+
+        Remark that we use singleton elimination here ...
+
+        To circumvent, may be it it possible to change sfin_pirr 
+        in 
+            sfin_pirr s (H1 : sfin s) : forall H2 P, P H1 -> P H2 instead of H1 = H2
+
+        but this does not seem obvious ... would something like
+        this work w/o singleton elim ?
       *)
 
     Variable P : forall s, sfin s -> Type.
@@ -104,13 +115,6 @@ Section llist.
 
     Ltac pirr := match goal with |- @P _ ?a -> @P _ ?b => rewrite (@sfin_pirr _ a b); trivial end.
 
-    (** For some reason I do not understand, the small inversion sfin_inv' much simpler
-        than sfin_inv, is not recognized as a sub-term 
-
-        I should query JF Monin on that one
-
-     *)
-
     Fixpoint sfin_rect s H { struct H } : @P s H.
     Proof.
       revert H.
@@ -119,7 +123,7 @@ Section llist.
         | scons x s => fun H => _
       end).
       + generalize HP1; pirr.
-      + generalize (@HP2 x s (sfin_inv H) (@sfin_rect s (sfin_inv H))); pirr.
+      + generalize (@HP2 x s (sfin_inv' H) (@sfin_rect s (sfin_inv' H))); pirr.
     Qed.
 
   End sfin_rect.
