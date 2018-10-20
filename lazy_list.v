@@ -89,6 +89,17 @@ Section llist.
       subst; f_equal; apply sfin_pirr.
   Defined.
 
+  Fixpoint sfin_normalize s (H : sfin s) : sfin s.
+  Proof. 
+    revert H; refine(match s with 
+      | snil      => fun _ => sfin_snil
+      | scons x s => fun H => sfin_scons x s (sfin_normalize _ (sfin_inv H))
+    end).
+  Defined.
+
+  (* For P : forall s, sfin s -> Type, can I show P s H <-> P s H' w/o
+     singleton elim ? *)
+
   Section sfin_rect.
 
     (** We show dependent recursion principle for sfin implementing
