@@ -6,6 +6,7 @@ zip.v
 sorted.v
 increase.v
 llist.v
+lazy_list.v
 
 bt.v
 
@@ -38,3 +39,4 @@ extraction.v
 
 benchmarks.v
 wf_example.v
+
